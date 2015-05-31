@@ -246,7 +246,7 @@ that their accident reports were not completely accurate. These
 inaccuracies are not expected to be significant.
 
 Much of the methodology is described in more detail in the
-`README <https://github.com/stpierre/crashes/README.rst>`_.
+`README <https://github.com/stpierre/crashes/blob/master/README.rst>`_.
 
 I have made no effort at all to determine fault, as that process would
 be fraught beyond any semblance of reason.

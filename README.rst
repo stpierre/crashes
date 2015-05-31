@@ -8,7 +8,7 @@ Department in order to gather statistics about crashes that involve a
 bicycle.
 
 This README documents the code. The results of the data can be found
-at `<http://github.io/stpierre/crashes/>`_.
+at `<http://stpierre.github.io/crashes/>`_.
 
 The CLI is divided into five subcommands that should be run in order:
 
