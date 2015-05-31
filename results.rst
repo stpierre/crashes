@@ -245,8 +245,11 @@ accident report; anecdotally, several cyclists have reported to me
 that their accident reports were not completely accurate. These
 inaccuracies are not expected to be significant.
 
-Much of the methodology is described in more detail in the
-`README <https://github.com/stpierre/crashes/blob/master/README.rst>`_.
+Much of the methodology is described in more detail in the `README
+<https://github.com/stpierre/crashes/blob/master/README.rst>`_. All of
+the code used to generate this report is free and open source under
+the `GPLv2
+<http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>`_
 
 I have made no effort at all to determine fault, as that process would
 be fraught beyond any semblance of reason.
