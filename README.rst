@@ -47,21 +47,28 @@ runs multiple processes. (By default, it spawns one process per CPU.)
   street name, and the accident report must be read to find a specific
   location.
 * ``date``: The date of the accident.
+* ``time``: The time of the accident
 * ``report``: The full text of the accident description.
-* ``cyclist_injured``: Whether or not the cyclist was injured in the
-  crash.
+* ``injury_severity``: The severity of the injury to the cyclist using
+  LPD's bespoke 1-5 scale, where 1 is "Killed" and 5 is "No injury."
+  5's are rarely (if ever) reported.
+* ``injury_region``: Body region of primary injury to the cyclist.
+* ``cyclist_dob``: Date of birth of the cyclist.
 
-Additional data can be added, but all PDFs must be completely
-reparsed, which takes for-freaking-ever.
+Additional data can be added and (fairly) easily added to the data set
+with the ``--reparse-curated`` flag.
 
 As it turns out, PDFs in general and the accident report PDFs
 specifically are an appalling disaster, so this parsing is decidedly
 crufty. RTFS at your peril.
 
-``jsonify`` takes two (optional) arguments:
+``jsonify`` takes a few(optional) arguments:
 
 * ``--processes`` can be used to specify the number of processes to
   spawn, in case you don't want to melt your CPU.
+* ``--reparse-curated`` tells ``jsonify`` to only parse those accident
+  reports that have already been curated and identified as bike-car
+  crashes.
 * Any additional arguments are filenames to parse, which will be used
   instead of trying to parse all of the PDFs in the datadir.
 
@@ -85,7 +92,7 @@ then manually assigned one of five statuses:
   private driveway or, in extreme situations, a car that jumps the
   curb.
 * ``road`` (**R**): Crash happened while a person on a bicycle was
-  riding on the road.
+  riding on the road, including in intersections.
 * ``elsewhere`` (**E**): Crash happened elsewhere. This also includes
   crashes that happened on the road, but where the cyclist was not
   riding on the road as such. (E.g., the cyclist was crossing the
@@ -96,11 +103,20 @@ then manually assigned one of five statuses:
 ``graph``
 =========
 
-Produce pretty pictures of the data. Three graphs are drawn:
+Produce pretty pictures of the data. The following graphs are drawn:
 
 * ``monthly.png``: A histogram of crashes per month.
+* ``location_by_age.png``: Plot of crash location by age of cyclist.
+* ``severity_by_age.png``: Accident severities by age of cyclist.
+* ``ages.png``: Histogram of the distribution of ages of injured
+  cyclists.
+* ``crash_times.png``: Histogram of what time of day crashes happen.
 * ``injury_rates.png``: A histogram of the injury rates of each of the
   four accident types.
+* ``injury_severities.png``: Pie chart of proportions of injury
+  severities.
+* ``injury_regions.png``: Pie chart of the body region with the
+  primary injury.
 * ``proportions.png``: A pie chart of the relative proportions of the
   four accident types.
 
@@ -108,7 +124,8 @@ Produce pretty pictures of the data. Three graphs are drawn:
 ===========
 
 Render a template that includes an explanation of the results in long
-form.
+form. Currently that template is a Pelican input file, so Pelican must
+be run to generate the final site.
 
 Configuration
 =============
@@ -131,7 +148,15 @@ recognized:
 | ``form``  | ``sleep_max``        | Maximum time, in seconds, to sleep between   | 30                                           |
 |           |                      | requests to LPD's website.                   |                                              |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``fetch`` | ``days``             | Days of accident report data to download     | 365                                          |
+| ``fetch`` | ``days``             | Days of accident report data to download.    | 365                                          |
++-----------+----------------------+----------------------------------------------+----------------------------------------------+
+| ``fetch`` | ``start``            | Date (in ``YYYY-MM-DD`` format) from which   | None                                         |
+|           |                      | to download crash data. If ``start`` is      |                                              |
+|           |                      | given, it takes precedence over ``days``.    |                                              |
++-----------+----------------------+----------------------------------------------+----------------------------------------------+
+| ``fetch`` | ``retries``          | Number of times to retry an HTTP request to  | 3                                            |
+|           |                      | LPD's website, either for submitting the     |                                              |
+|           |                      | search form or for downloading a report.     |                                              |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
 | ``files`` | ``datadir``          | Base directory to use for persistent data    | ``./data``                                   |
 |           |                      | storage.                                     |                                              |
