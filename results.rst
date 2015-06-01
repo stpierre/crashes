@@ -4,6 +4,11 @@
 
 :date: {{now.strftime("%Y-%m-%d %H:%M")}}
 
+In February 2015, I was hit by a car while on my bike in a crosswalk,
+and was ticketed for failure to yield the right of way. I got
+interested in bicycle safety and, as a software engineer by trade, I
+decided to download, parse, and quantify as much crash data as
+possible from the Lincoln Police Department.
 
 Quantitative Results
 ====================
@@ -22,6 +27,8 @@ This number is almost certainly an underestimate, for several reasons:
 * Some accident reports are not available online.
 * Some accident reports, particularly older ones, are handwritten and
   thus were not automatically parseable.
+* Accident reports are not written for bicycle-bicycle or
+  bicycle-pedestrian crashes.
 
 Location
 --------
@@ -54,7 +61,10 @@ riding on the sidewalk forces you to encounter crosswalks,
 pragmatically speaking it would seem to be much safer to ride in the
 street.
 
-Unsurprisingly, no accidents happened on off-street bike paths.
+Unsurprisingly, no crashes were reported on off-street bike
+paths. (Recall that these data only include car-bike accidents;
+bike-bike and bike-pedestrian accidents certainly do occur on the
+off-street bike paths.)
 
 The location of crashes varies slightly by the age of the cyclist:
 
@@ -146,10 +156,9 @@ Some takeaways:
 * Some intersections may seem more dangerous solely because they are
   more heavily trafficked, not because they are actually more
   dangerous.
-* That said, a few dangerous corridors seem particularly dangerous,
-  with Capital Parkway/Normal Blvd. leading the pack. The
-  intersections with 27th, 33rd, and South are all among the most
-  dangerous in the city.
+* That said, a few corridors seem particularly dangerous, with Capital
+  Parkway/Normal Blvd. leading the pack. The intersections with 27th,
+  33rd, and South are all among the most dangerous in the city.
 * The 27th street and Vine street corridors put in strong bids for
   second-most dangerous, and unsurprisingly 27th and Vine is a hotbed
   of crosswalk crashes.
@@ -205,7 +214,7 @@ In some cases, the accident report
 {{"B4-032910"|report_link("was not wearing a helmet")}}, despite the
 fact that this has absolutely no legal bearing, nor does it have any
 bearing on whether or not a cyclist is hit. It's hard to see this as
-other than editorial victim-blaming.
+anything other than editorial victim-blaming.
 
 A {{"B3-049103"|report_link("number")}} of accident reports reverse
 the agents, claiming that {{"B4-065578"|report_link("a bike hit a
@@ -235,7 +244,7 @@ Methodology
 
 Accident reports are downloaded automatically from the `Lincoln Police
 Department's website
-<https://lincoln.ne.gov/city/police/stats/acc.htm>`_). The reports are
+<https://lincoln.ne.gov/city/police/stats/acc.htm>`_. The reports are
 parsed automatically and selected data are extracted. The data are
 available at `<{{all_reports}}>`_.
 
@@ -243,13 +252,14 @@ These reports are then curated by hand to determine where the crash
 happened, as described above. This depends on the accuracy of the
 accident report; anecdotally, several cyclists have reported to me
 that their accident reports were not completely accurate. These
-inaccuracies are not expected to be significant.
+inaccuracies are not expected to be significant, but there's no
+obvious way to test this with the given data set.
 
 Much of the methodology is described in more detail in the `README
-<https://github.com/stpierre/crashes/blob/master/README.rst>`_. All of
-the code used to generate this report is free and open source under
+<https://github.com/stpierre/crashes/blob/master/README.rst>`_.  All
+of the code used to generate this report is free and open source under
 the `GPLv2
-<http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>`_
+<http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>`_.
 
 I have made no effort at all to determine fault, as that process would
 be fraught beyond any semblance of reason.
