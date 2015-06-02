@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from pip import req
 import setuptools
 
 setuptools.setup(
@@ -10,6 +11,7 @@ setuptools.setup(
     author_email="chris.a.st.pierre@gmail.com",
     packages=["crashes",
               "crashes.cmd"],
-    install_requires=open("requirements.txt").readlines(),
+    install_requires=[str(r.req)
+                      for r in req.parse_requirements("requirements.txt")],
     entry_points={
         "console_scripts": "crashes = crashes.cli:main"})
