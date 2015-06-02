@@ -19,9 +19,9 @@ def setup_logging(verbose, prefix=None, deconfigure=True):
     fmt = ["%(message)s"]
     if prefix:
         fmt.insert(0, prefix)
+    requests_level = logging.WARN
     if verbose == 1:
         level = logging.INFO
-        requests_level = logging.WARN
     elif verbose > 1:
         level = logging.DEBUG
         requests_level = logging.INFO
