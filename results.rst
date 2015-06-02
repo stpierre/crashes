@@ -276,8 +276,11 @@ quantifying the number of crosswalk crashes in areas with
 street-adjacent bike paths (as opposed to other areas) could be an
 eye-opener.
 
-Charting the time of day of accidents throughout the calendar year
-might demonstrate how darkness affects (or doesn't affect) crashes.
+Charting the time of day of crashes throughout the calendar year might
+demonstrate how darkness affects (or doesn't affect) crashes.
+
+Differentiating between on-street crashes in an intersection and away
+from an intersection might be edifying.
 
 Links
 =====
