@@ -44,9 +44,11 @@ class Results(base.Command):
         rv['report_count'] = len(self._reports)
         rv['first_report'] = None
         rv['last_report'] = None
+        rv['unparseable_count'] = 0
 
         for report in self._reports.values():
             if report['date'] is None:
+                rv['unparseable_count'] += 1
                 continue
             date = datetime.datetime.strptime(report['date'], "%Y-%m-%d")
             if rv['first_report'] is None or date < rv['first_report']:

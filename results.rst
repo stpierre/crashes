@@ -15,9 +15,10 @@ Quantitative Results
 
 The current dataset includes {{report_count}} reports, from
 {{first_report.strftime("%B %e, %Y")}} to
-{{last_report.strftime("%B %e, %Y")}}. Of these reports,
-{{bike_reports}} ({{ '%0.1f' % (100.0 * bike_reports / report_count) }}%)
-involved a bicycle.
+{{last_report.strftime("%B %e, %Y")}}. {{unparseable_count}} reports
+could not be parsed, largely because they were handwritten. Of the
+reports that could be parsed, {{bike_reports}} ({{ '%0.1f' % (100.0 *
+bike_reports / report_count) }}%) involved a person on a bicycle.
 
 This number is almost certainly an underestimate, for several reasons:
 
