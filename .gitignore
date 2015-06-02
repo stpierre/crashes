@@ -1,3 +1,6 @@
 data/pdfs
 *.pyc
 cache
+build
+*.egg-info
+dist
