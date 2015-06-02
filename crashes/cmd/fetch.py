@@ -41,6 +41,11 @@ def retry(func, args=(), kwargs=None, exceptions=None, times=1, wait=3):
 class Fetch(base.Command):
     """Download reports from LPD."""
 
+    arguments = [
+        base.Argument("--start",
+                      type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d"))
+    ]
+
     def _list_reports_for_date(self, date):
         """Get a list of URLs for reports from a given date."""
         post_data = {"CGI": self.options.form_token,
@@ -62,7 +67,9 @@ class Fetch(base.Command):
     def _dates_in_range(self):
         """Generate all dates in the desired range, not including today."""
         end = datetime.date.today()
-        if self.options.fetch_start:
+        if self.options.start:
+            current = self.options.start.date()
+        elif self.options.fetch_start:
             current = datetime.datetime.strptime(self.options.fetch_start,
                                                  "%Y-%m-%d").date()
         else:
