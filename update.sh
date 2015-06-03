@@ -11,11 +11,12 @@ echo "Starting fetch from $start"
 crashes -v fetch --start "$start"
 
 echo "JSONifying new data"
-crashes jsonify --processes 2
+crashes jsonify
 
 if [ -t 1 ]; then
     # stdout is a tty, so we can curate what we downloaded
     crashes curate
+    crashes geocode
 fi
 
 if ! git diff --quiet; then
