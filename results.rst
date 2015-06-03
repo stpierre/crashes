@@ -4,11 +4,11 @@
 
 :date: {{now.strftime("%Y-%m-%d %H:%M")}}
 
-In February 2015, I was hit by a car while on my bike in a crosswalk,
-and was ticketed for failure to yield the right of way. I got
-interested in bicycle safety and, as a software engineer by trade, I
-decided to download, parse, and quantify as much crash data as
-possible from the Lincoln Police Department.
+In March 2015, I was hit by a car while on my bike in a crosswalk, and
+was ticketed for failure to yield the right of way. I got interested
+in bicycle safety and, as a software engineer by trade, I decided to
+download, parse, and quantify as much crash data as possible from the
+Lincoln Police Department.
 
 Quantitative Results
 ====================
