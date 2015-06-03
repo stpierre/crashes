@@ -26,6 +26,7 @@ DEFAULTS = {
     "pdfdir": "pdfs",
     "all_reports": "reports.json",
     "curation_results": "curation.json",
+    "geocoding": "geojson",
     "imagedir": "images",
     "template": "results.rst",
     "content": "content"
@@ -77,6 +78,8 @@ def parse_args():
     options.curation_results = _canonicalize(cfp.get("files",
                                                      "curation_results"),
                                              options.datadir)
+    options.geocoding = _canonicalize(cfp.get("files", "geocoding"),
+                                      options.datadir)
     options.imagedir = _canonicalize(cfp.get("files", "imagedir"),
                                      options.datadir)
     options.template = _canonicalize(cfp.get("files", "template"),

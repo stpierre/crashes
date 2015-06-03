@@ -10,13 +10,15 @@ bicycle.
 This README documents the code. The results of the data can be found
 at `<http://stpierre.github.io/crashes/>`_.
 
-The CLI is divided into five subcommands that should be run in order:
+The CLI is divided into several subcommands that should be run in order:
 
 * ``fetch`` downloads the raw PDF accident reports from LPD;
 * ``jsonify`` extracts key data from the PDFs and generates a single
   (large) JSON document containing those data;
 * ``curate`` assists in manually categorizing all of the
   potentially-relevant accident reports;
+* ``geocode`` assists in manually geocoding (i.e., determining the
+  exact location) of curated accident reports;
 * ``graph`` generates useful graphs of the curated data;
 * ``results`` generates the input data for the explanation of results.
 
@@ -100,6 +102,18 @@ then manually assigned one of five statuses:
 * ``not_involved`` (**N**): Bicycle was not involved in the crash. A
   cyclist may have been a witness, or a bike rack damaged, etc.
 
+``geocode``
+===========
+
+After the data has been curated, we want to geocode the bike-related
+crashes in order to map them; this command assists with that
+semi-manual process. The "Location" field on accident reports is
+frequently ambiguous or incomplete, so ``geocode`` iterates over each
+bike-related accident and attempts to use the "Location" field as
+provided on the report, plus any user input necessary, to look up the
+exact location of the accident (using the Google Geocoding API) and
+output GeoJSON to be used in mapping.
+
 ``graph``
 =========
 
@@ -170,6 +184,10 @@ recognized:
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
 | ``files`` | ``curation_results`` | File, relative to ``datadir``, where the     | ``curation.json``                            |
 |           |                      | results of the ``curate`` command will be    |                                              |
+|           |                      | stored.                                      |                                              |
++-----------+----------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``geocoding``        | Directory, relative to ``datadir``, where    | ``geojson``                                  |
+|           |                      | output from the ``geocode`` command will be  |                                              |
 |           |                      | stored.                                      |                                              |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
 | ``files`` | ``imagedir``         | Directory, relative to ``datadir``, where    | ``images``                                   |
