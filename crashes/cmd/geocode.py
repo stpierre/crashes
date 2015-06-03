@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import copy
 import json
 import logging
 import operator
@@ -38,6 +39,28 @@ class Geocode(base.Command):
     o_re = re.compile(r'\bO\b')
     quote_re = re.compile(r'[\'"]([A-Z])[\'"]')
     no_space_re = re.compile(r'([NS])(\d+)')
+
+    def _fan_out_duplicates(self, features):
+        retval = []
+        shift = 0.0001
+        adj = [-shift, -shift]
+        for feature in features:
+            new = copy.copy(feature)
+            LOG.debug("Adjusting coordinates for %s by %s" %
+                      (new['properties']['case_no'], adj))
+            new['geometry']['coordinates'] = map(
+                lambda c: operator.add(*c),
+                zip(new['geometry']['coordinates'], adj))
+            retval.append(new)
+
+            adj[0] += shift
+            if adj[0] > shift:
+                adj[0] = -shift
+                adj[1] += shift
+                if adj[1] > shift:
+                    shift += shift
+                    adj = [-shift, -shift]
+        return retval
 
     def _parse_location(self, location):
         """Parse a location from an accident report.
@@ -115,6 +138,11 @@ class Geocode(base.Command):
             loc = geocoder.google(address)
             retval = loc.geojson
             retval['properties']['case_no'] = case_no
+            # remove some of the extrameous junk from the geojson properties
+            for key in ('status', 'confidence', 'ok', 'encoding', 'geometry',
+                        'provider', 'bbox', 'location', 'lat', 'lng',
+                        'accuracy', 'quality', 'method'):
+                del retval['properties'][key]
             print("Address: %s" %
                   termcolor.colored(retval['properties']['address'],
                                     "green", attrs=["bold"]))
@@ -173,6 +201,21 @@ class Geocode(base.Command):
             LOG.info("%s/%s coded (%.02f%%)" %
                      (len(coded), len(all_curated),
                       100.0 * len(coded) / len(all_curated)))
+
+        # introduce very small variations in cases with identical
+        # coordinates.
+        duplicates = {}
+        for feature in all_geojson['features']:
+            key = (round(feature['geometry']['coordinates'][0], 6),
+                   round(feature['geometry']['coordinates'][1], 6))
+            duplicates.setdefault(key, []).append(feature)
+
+        for features in duplicates.values():
+            if len(features) > 1:
+                for feature in features:
+                    all_geojson['features'].remove(feature)
+                all_geojson['features'].extend(
+                    self._fan_out_duplicates(features))
 
         # create categorized GeoJSON files
         by_loc = {k: _new_geojson() for k in curation_data.keys()}
