@@ -20,32 +20,27 @@ function initialize() {
     center: {lat: 40.807, lng: -96.69}
   });
 
+  //var baseurl = "http://localhost:8000"
+  var baseurl = "http://stpierre.github.io/crashes"
+
   crosswalk_layer = new google.maps.Data()
-  crosswalk_layer.loadGeoJson(
-    'http://stpierre.github.io/crashes/data/geojson/crosswalk.json');
-  crosswalk_layer.setStyle({
-    icon: "http://stpierre.github.io/crashes/images/orange_MarkerC.png"})
+  crosswalk_layer.loadGeoJson(baseurl + "/data/geojson/crosswalk.json");
+  crosswalk_layer.setStyle({icon: baseurl + "/images/orange_MarkerC.png"})
   crosswalk_layer.setMap(map)
 
   sidewalk_layer = new google.maps.Data()
-  sidewalk_layer.loadGeoJson(
-    'http://stpierre.github.io/crashes/data/geojson/sidewalk.json');
-  sidewalk_layer.setStyle({
-    icon: "http://stpierre.github.io/crashes/images/yellow_MarkerS.png"})
+  sidewalk_layer.loadGeoJson(baseurl + "/data/geojson/sidewalk.json");
+  sidewalk_layer.setStyle({icon: baseurl + "/images/yellow_MarkerS.png"})
   sidewalk_layer.setMap(map)
 
   road_layer = new google.maps.Data()
-  road_layer.loadGeoJson(
-    'http://stpierre.github.io/crashes/data/geojson/road.json');
-  road_layer.setStyle({
-    icon: "http://stpierre.github.io/crashes/images/green_MarkerR.png"})
+  road_layer.loadGeoJson(baseurl + "/data/geojson/road.json");
+  road_layer.setStyle({icon: baseurl + "/images/green_MarkerR.png"})
   road_layer.setMap(map)
 
   elsewhere_layer = new google.maps.Data()
-  elsewhere_layer.loadGeoJson(
-    'http://stpierre.github.io/crashes/data/geojson/elsewhere.json');
-  elsewhere_layer.setStyle({
-    icon: "http://stpierre.github.io/crashes/images/purple_MarkerE.png"})
+  elsewhere_layer.loadGeoJson(baseurl + "/data/geojson/elsewhere.json");
+  elsewhere_layer.setStyle({icon: baseurl + "/images/purple_MarkerE.png"})
   elsewhere_layer.setMap(map)
 }
 
