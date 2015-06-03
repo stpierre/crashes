@@ -18,8 +18,12 @@ def report_link(case_no, text=None):
         text = case_no
     fname = case_no.upper().replace("-", "")
     prefix = fname[0:4]
-    return"`%s <http://cjis.lincoln.ne.gov/~ACC/%s/%s.PDF>`_" % (
-        text, prefix, fname)
+    return ('<a href="http://cjis.lincoln.ne.gov/~ACC/%s/%s.PDF" '
+            'class="reference external">%s</a>' % (prefix, fname, text))
+
+
+def literal(text):
+    return '<tt class="docutils literal">%s</tt>' % text
 
 
 class Results(base.Command):
@@ -68,13 +72,14 @@ class Results(base.Command):
     def __call__(self):
         env = jinja2.Environment()
         env.filters['report_link'] = report_link
+        env.filters['literal'] = literal
 
         LOG.debug("Loading template from %s" % self.options.template)
         template = env.from_string(open(self.options.template).read())
 
-        outfile = os.path.join(self.options.content, "index.rst")
-        LOG.info("Writing output to %s" % outfile)
-        open(outfile, "w").write(template.render(**self._get_vars()))
+        LOG.info("Writing output to %s" % self.options.results_output)
+        open(self.options.results_output,
+             "w").write(template.render(**self._get_vars()))
 
     def satisfied(self):
         return os.path.exists(self.options.crash_graph)

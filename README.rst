@@ -193,8 +193,7 @@ recognized:
 | ``files`` | ``imagedir``         | Directory, relative to ``datadir``, where    | ``images``                                   |
 |           |                      | graph images will be stored.                 |                                              |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``templates``        | Directory where result templates are stored. | ``./templates``                              |
+| ``files`` | ``template``         | Jinja2 template for results.                 | ``./results.html``                           |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``content``          | Directory where Pelican input content is     | ``./content``                                |
-|           |                      | stored.                                      |                                              |
+| ``files`` | ``results_output``   | Filename to write results output to.         | ``./index.html``                             |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+

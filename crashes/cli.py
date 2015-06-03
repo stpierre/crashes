@@ -28,8 +28,8 @@ DEFAULTS = {
     "curation_results": "curation.json",
     "geocoding": "geojson",
     "imagedir": "images",
-    "template": "results.rst",
-    "content": "content"
+    "template": "results.html",
+    "results_output": "index.html"
 }
 
 
@@ -84,7 +84,8 @@ def parse_args():
                                      options.datadir)
     options.template = _canonicalize(cfp.get("files", "template"),
                                      os.getcwd())
-    options.content = _canonicalize(cfp.get("files", "content"), os.getcwd())
+    options.results_output = _canonicalize(cfp.get("files", "results_output"),
+                                           os.getcwd())
 
     options.func = options.command(options)
     return options
@@ -103,9 +104,9 @@ def main():
     if not os.path.exists(options.imagedir):
         LOG.info("Creating imagedir %s" % options.imagedir)
         os.makedirs(options.imagedir)
-    if not os.path.exists(options.content):
-        LOG.info("Creating content path %s" % options.content)
-        os.makedirs(options.content)
+    if not os.path.exists(options.geocoding):
+        LOG.info("Creating geocoding directory %s" % options.geocoding)
+        os.makedirs(options.geocoding)
 
     return options.func()
 

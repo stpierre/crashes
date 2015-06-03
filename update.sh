@@ -31,7 +31,6 @@ git rebase master
 echo "Generating graphs and results"
 crashes graph
 crashes results
-pelican content -o . -s pelicanconf.py
 
 if ! git diff --exit-code; then
     git commit -a -m "Results updated by update.sh"
