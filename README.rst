@@ -94,7 +94,10 @@ then manually assigned one of five statuses:
   private driveway or, in extreme situations, a car that jumps the
   curb.
 * ``road`` (**R**): Crash happened while a person on a bicycle was
-  riding on the road, including in intersections.
+  riding on the road, excluding intersections.
+* ``intersection`` (**I**): Crash happened while a person on a bicycle
+  was riding through an intersection on the road, not using a
+  crosswalk.
 * ``elsewhere`` (**E**): Crash happened elsewhere. This also includes
   crashes that happened on the road, but where the cyclist was not
   riding on the road as such. (E.g., the cyclist was crossing the

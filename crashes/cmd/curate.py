@@ -27,7 +27,8 @@ class Curate(base.Command):
 
     search_re = re.compile(r'\b(bicycle|bike|(?:bi)?cyclist)\b', re.I)
     highlight_re = re.compile(
-        r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|crosswalk|sidewalk)',
+        r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
+        r'crosswalk|sidewalk|intersection)',
         re.I)
     prerequisites = [jsonify.JSONify]
 
@@ -37,6 +38,9 @@ class Curate(base.Command):
     statuses["S"] = CurationStatus("sidewalk", "Bicycle in crash on sidewalk")
     statuses["R"] = CurationStatus("road",
                                    "Bicycle in crash riding on road")
+    statuses["I"] = CurationStatus(
+        "intersection",
+        "Bicycle in crash riding through intersection")
     statuses["E"] = CurationStatus("elsewhere", "Bicycle in crash elsewhere")
     statuses["N"] = CurationStatus("not_involved", "Bicycle not in crash")
     statuses["Q"] = CurationStatus(None, "Quit")
