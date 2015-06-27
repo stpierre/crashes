@@ -40,6 +40,11 @@ class Graph(base.Command):
     """Produce graphs of crash data."""
 
     prerequisites = [curate.Curate]
+    location_colors = {"crosswalk": "#ff9900",
+                       "sidewalk": "#eeee66",
+                       "road": "#009900",
+                       "intersection": "#0099ff",
+                       "elsewhere": "#cc33ff"}
     colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral', 'limegreen',
               'orchid', 'palegoldenrod', 'dodgerblue']
 
@@ -159,18 +164,17 @@ class Graph(base.Command):
 
         figure = pyplot.figure()
         axis = figure.add_subplot(1, 1, 1)
-        color = 0
         for location, data in loc_by_age.items():
             # the values are absolute numbers of crashes; we want the
             # Y axis to be the proportion of crashes by people that
             # age, not number
             y = [n / float(total_by_age[r]) * 100
                  for r, n in data.items()]
-            axis.plot(data.keys(), y, '-',
-                      color=self.colors[color], label=location)
-            color += 1
+            axis.plot(data.keys(), y, '-', linewidth=2,
+                      color=self.location_colors[location.lower()],
+                      label=location)
         axis.plot(total_by_age.keys(), total_by_age.values(), 'o',
-                  color=self.colors[color], label="Total recorded crashes")
+                  color=self.colors[0], label="Total recorded crashes")
         axis.legend(bbox_to_anchor=(1.1, 1.1))
         axis.axis(ymax=100)
         axis.set_xticks(range(len(self.age_ranges)))
@@ -239,7 +243,7 @@ class Graph(base.Command):
         self._savefig(figure, "crash_times.png", bbox_inches='tight')
 
     def _graph_injury_severities(self):
-        """Draw two injury-related graphs:
+        """Draw injury-related graphs:
 
         * A stacked bar graph of injury rates by crash location
         * A pie chart of the relative rates of injury severities
@@ -263,6 +267,17 @@ class Graph(base.Command):
             injuries = sum(c for c in counts)
             total_injuries[loc] = float(injuries) / len(cases) * 100
 
+        def _combined_injury_rates(key1, key2):
+            name = "%s + %s" % (key1, key2)
+            injury_rates[name] = {
+                i: (injury_rates[key1][i] + injury_rates[key2][i]) / 2.0
+                for i in range(1, 5)}
+            total_injuries[name] = (total_injuries[key1] +
+                                    total_injuries[key2]) / 2.0
+
+        _combined_injury_rates("Sidewalk", "Crosswalk")
+        _combined_injury_rates("Road", "Intersection")
+
         labels = []
         for loc, _ in reversed(sorted(total_injuries.items(),
                                       key=operator.itemgetter(1))):
@@ -278,10 +293,19 @@ class Graph(base.Command):
                              color=self.colors[i - 1], bottom=bottoms,
                              label=self.injury_severities[i])
             bottoms = [bottoms[j] + sev_data[j] for j in range(len(bottoms))]
+
+            # label each region
+            for rect in rects:
+                if rect.get_height():
+                    x = rect.get_x() + rect.get_width() / 2.0
+                    y = rect.get_y() + rect.get_height() / 2.0 - 1
+                    axis.text(x, y, "%0.1f%%" % rect.get_height(),
+                              ha='center', va='bottom')
+
         self._autolabel(axis, rects)
         axis.legend(bbox_to_anchor=(1.1, 1.25))
         axis.set_xticks([0.5 + i for i in range(len(labels))])
-        axis.set_xticklabels(labels, ha='center')
+        axis.set_xticklabels(labels, rotation=90, ha='center')
         axis.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d%%'))
         axis.set_xlabel("Injury rates by crash location")
         self._savefig(figure, "injury_rates.png", bbox_inches='tight')
@@ -339,16 +363,18 @@ class Graph(base.Command):
 
         labels = []
         sizes = []
+        colors = []
         total = 0
         for name, cases in reversed(sorted(self._curation.items(),
                                            key=lambda d: len(d[1]))):
             labels.append(name.title())
             sizes.append(len(cases))
+            colors.append(self.location_colors[name])
             total += len(cases)
 
         figure = pyplot.figure()
         axis = figure.add_subplot(1, 1, 1)
-        axis.pie(sizes, labels=labels, colors=self.colors,
+        axis.pie(sizes, labels=labels, colors=colors,
                  autopct=lambda p: "%d (%0.1f%%)" % (total * p / 100, p),
                  startangle=90, shadow=True)
         axis.set_xlabel("Crash locations")
