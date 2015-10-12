@@ -22,6 +22,63 @@ CurationStatus = collections.namedtuple("CurationStatus",
                                         ("name", "description"))
 
 
+class StatusDict(collections.MutableMapping):
+    def __init__(self):
+        self._order = []
+        self._end = ["K", "Q", "?"]
+        self._statuses = {"K": CurationStatus(None, "Skip"),
+                          "Q": CurationStatus(None, "Quit"),
+                          "?": CurationStatus(None, "Help")}
+
+    def __getitem__(self, key):
+        return self._statuses[key]
+
+    def __setitem__(self, key, value):
+        if key in self._statuses:
+            raise KeyError("%s is already present in %s" % (key, self))
+        self._statuses[key] = value
+        self._order.append(key)
+
+    def __delitem__(self, key):
+        del self._statuses[key]
+        self._order.remove(key)
+
+    def __iter__(self):
+        return iter(self._order + self._end)
+
+    def __len__(self):
+        return len(self._statuses)
+
+    @property
+    def help(self):
+        rv = []
+        for key, status in self.items():
+            rv.append("%s: %s" % (key, status.description))
+        return "\n".join(rv)
+
+    @property
+    def choices(self):
+        return "/".join(self.keys())
+
+    def input(self, default=None):
+        if default:
+            prompt = "Status [%s, default=%s] " % (self.choices, default)
+        else:
+            prompt = "Status [%s]: " % self.choices
+        while True:
+            ans = input(prompt).upper()
+            if not ans and default:
+                ans = default
+            if ans == '?' or ans not in self:
+                print(self.help)
+            elif ans == "K":
+                return None
+            elif ans == "Q":
+                raise SystemExit(0)
+            else:
+                return self[ans].name
+
+
 class Curate(base.Command):
     """Find accident reports that may have involved a bicycle."""
 
@@ -32,7 +89,9 @@ class Curate(base.Command):
         re.I)
     prerequisites = [jsonify.JSONify]
 
-    statuses = collections.OrderedDict()
+    results_file = "curation_results"
+
+    statuses = StatusDict()
     statuses["C"] = CurationStatus("crosswalk",
                                    "Bicycle in crash in crosswalk")
     statuses["S"] = CurationStatus("sidewalk", "Bicycle in crash on sidewalk")
@@ -43,35 +102,37 @@ class Curate(base.Command):
         "Bicycle in crash riding through intersection")
     statuses["E"] = CurationStatus("elsewhere", "Bicycle in crash elsewhere")
     statuses["N"] = CurationStatus("not_involved", "Bicycle not in crash")
-    statuses["Q"] = CurationStatus(None, "Quit")
-    statuses["?"] = CurationStatus(None, "Help")
 
-    def _get_answer(self):
-        while True:
-            ans = input("Status [%s]: " %
-                        "/".join(self.statuses.keys())).upper()
-            if ans == '?' or ans not in self.statuses:
-                for key, status in self.statuses.items():
-                    print("%s: %s" % (key, status.description))
-            elif ans == "Q":
-                raise SystemExit(0)
-            else:
-                return self.statuses[ans].name
+    def __init__(self, options):
+        super(Curate, self).__init__(options)
+        self.data = None
+
+    def _get_default(self, case_no):
+        return None
+
+    def _print_additional_info(self, case_no):
+        pass
+
+    def _get_answer(self, case_no):
+        return self.statuses.input(default=self._get_default(case_no))
+
+    def _load_data(self):
+        self.data = json.load(open(self.options.all_reports))
 
     def __call__(self):
-        data = json.load(open(self.options.all_reports))
-        if os.path.exists(self.options.curation_results):
-            curation_data = json.load(open(self.options.curation_results))
+        self._load_data()
+        if os.path.exists(getattr(self.options, self.results_file)):
+            results = json.load(open(getattr(self.options, self.results_file)))
         else:
-            curation_data = {}
+            results = {}
         for status in self.statuses.values():
-            if status.name and status.name not in curation_data:
-                curation_data[status.name] = []
-        complete = 0
-        for case_no, report in data.items():
-            complete += 1
-            if any(case_no in c for c in curation_data.values()):
+            if status.name and status.name not in results:
+                results[status.name] = []
+        complete = sum(len(v) for v in results.values())
+        for case_no, report in self.data.items():
+            if any(case_no in c for c in results.values()):
                 continue
+            complete += 1
             if self.search_re.search(report['report']):
                 split = self.highlight_re.split(report['report'])
 
@@ -84,18 +145,21 @@ class Curate(base.Command):
                     split[i] = termcolor.colored(split[i], 'green',
                                                  attrs=["bold"])
                 print(textwrap.fill("".join(split)))
-                ans = self._get_answer()
-                curation_data[ans].append(case_no)
-                print()
-                LOG.debug("Dumping curation data to %s" %
-                          self.options.curation_results)
-                json.dump(curation_data,
-                          open(self.options.curation_results, "w"))
+                self._print_additional_info(case_no)
+                ans = self._get_answer(case_no)
+                if ans:
+                    results[ans].append(case_no)
+                    print()
+                    LOG.debug("Dumping curation data to %s" %
+                              getattr(self.options, self.results_file))
+                    json.dump(results,
+                              open(getattr(self.options,
+                                           self.results_file), "w"))
                 LOG.info("%s/%s curated (%.02f%%)" %
-                         (complete, len(data),
-                          100 * complete / float(len(data))))
-                LOG.debug(", ".join("%s %s" % (n, len(d))
-                                    for n, d in curation_data.items()))
+                         (complete, len(self.data),
+                          100 * complete / float(len(self.data))))
+                LOG.debug(", ".join("%s: %s" % (n, len(d))
+                                    for n, d in results.items()))
 
     def satisfied(self):
-        return os.path.exists(self.options.curation_results)
+        return os.path.exists(getattr(self.options, self.results_file))
