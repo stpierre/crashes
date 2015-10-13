@@ -137,15 +137,20 @@ class Geocode(base.Command):
             address = (ans or default) + ", Lincoln, NE"
             loc = geocoder.google(address)
             retval = loc.geojson
-            retval['properties']['case_no'] = case_no
-            # remove some of the extrameous junk from the geojson properties
-            for key in ('status', 'confidence', 'ok', 'encoding', 'geometry',
-                        'provider', 'bbox', 'location', 'lat', 'lng',
-                        'accuracy', 'quality', 'method'):
-                del retval['properties'][key]
-            print("Address: %s" %
-                  termcolor.colored(retval['properties']['address'],
-                                    "green", attrs=["bold"]))
+            if not retval['properties']['ok']:
+                print("Error finding %s: %s" %
+                      (address, retval['properties']['status']))
+            else:
+                retval['properties']['case_no'] = case_no
+                # remove some of the extraneous junk from the geojson
+                # properties
+                for key in ('status', 'confidence', 'ok', 'encoding',
+                            'geometry', 'provider', 'bbox', 'location', 'lat',
+                            'lng', 'accuracy', 'quality', 'method'):
+                    del retval['properties'][key]
+                print("Address: %s" %
+                      termcolor.colored(retval['properties']['address'],
+                                        "green", attrs=["bold"]))
 
     def _load_geojson(self, filename):
         fpath = os.path.join(self.options.geocoding, filename)
