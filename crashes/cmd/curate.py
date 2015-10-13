@@ -51,8 +51,8 @@ class Curate(base.Command):
             ans = input("Status [%s]: " %
                         "/".join(self.statuses.keys())).upper()
             if ans == '?' or ans not in self.statuses:
-                for status in self.statuses:
-                    print("%s: %s" % (status.key, status.description))
+                for key, status in self.statuses.items():
+                    print("%s: %s" % (key, status.description))
             elif ans == "Q":
                 raise SystemExit(0)
             else:
