@@ -36,6 +36,10 @@ class AgeRange(object):
             return "%s+" % self._min
 
 
+def auto_percent_with_abs(total):
+    return lambda p: "%d (%0.1f%%)" % (round(total * p / 100), p)
+
+
 class Graph(base.Command):
     """Produce graphs of crash data."""
 
@@ -46,7 +50,7 @@ class Graph(base.Command):
                        "intersection": "#0099ff",
                        "elsewhere": "#cc33ff"}
     colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral', 'limegreen',
-              'orchid', 'palegoldenrod', 'dodgerblue']
+              'orchid', 'palegoldenrod']
 
     injury_severities = {
         1: "Killed",
@@ -176,7 +180,7 @@ class Graph(base.Command):
         axis.plot(total_by_age.keys(), total_by_age.values(), 'o',
                   color=self.colors[0], label="Total recorded crashes")
         axis.legend(bbox_to_anchor=(1.1, 1.1))
-        axis.axis(ymax=100)
+        axis.axis(ymax=max(total_by_age.values()) + 5)
         axis.set_xticks(range(len(self.age_ranges)))
         axis.set_xticklabels(self.age_ranges, ha='center')
         axis.set_xlabel("Age")
@@ -315,7 +319,7 @@ class Graph(base.Command):
         total = sum(severities.values())
         axis.pie(severities.values(), labels=severities.keys(),
                  colors=self.colors,
-                 autopct=lambda p: "%d (%0.1f%%)" % (total * p / 100, p),
+                 autopct=auto_percent_with_abs(total),
                  shadow=True)
         axis.set_xlabel("Injury severities")
         self._savefig(figure, "injury_severities.png", bbox_inches='tight')
@@ -375,7 +379,7 @@ class Graph(base.Command):
         figure = pyplot.figure()
         axis = figure.add_subplot(1, 1, 1)
         axis.pie(sizes, labels=labels, colors=colors,
-                 autopct=lambda p: "%d (%0.1f%%)" % (total * p / 100, p),
+                 autopct=auto_percent_with_abs(total),
                  startangle=90, shadow=True)
         axis.set_xlabel("Crash locations")
         self._savefig(figure, "proportions.png")
