@@ -1,10 +1,10 @@
 ===========================
- Bike Crash Data Analytics
+ Bike Collision Data Analytics
 ===========================
 
 This repository contains a set of Python modules that process and
 analyze public accident report data from the Lincoln (Nebraska) Police
-Department in order to gather statistics about crashes that involve a
+Department in order to gather statistics about collisions that involve a
 bicycle.
 
 This README documents the code. The results of the data can be found
@@ -70,7 +70,7 @@ crufty. RTFS at your peril.
   spawn, in case you don't want to melt your CPU.
 * ``--reparse-curated`` tells ``jsonify`` to only parse those accident
   reports that have already been curated and identified as bike-car
-  crashes.
+  collisions.
 * Any additional arguments are filenames to parse, which will be used
   instead of trying to parse all of the PDFs in the datadir.
 
@@ -81,35 +81,35 @@ testing changes to the ``jsonify`` code.
 ``curate``
 ==========
 
-Once the data have been extracted, we must find crashes that involved
+Once the data have been extracted, we must find collisions that involved
 a bicycle. This is, unfortunately, a manual process. ``curate``
 iterates over every accident report that includes the word
 ``bicycle``, ``bike``, ``cyclist``, or ``bicyclist``. Each report is
 then manually assigned one of five statuses:
 
-* ``crosswalk`` (**C**): Crash happened while a person on a bicycle
+* ``crosswalk`` (**C**): Collision happened while a person on a bicycle
   was using a crosswalk.
-* ``sidewalk`` (**S**): Crash happened while a person on a bicycle was
+* ``sidewalk`` (**S**): Collision happened while a person on a bicycle was
   riding on a sidewalk. For instance, a car entering or leaving a
   private driveway or, in extreme situations, a car that jumps the
   curb.
-* ``road`` (**R**): Crash happened while a person on a bicycle was
+* ``road`` (**R**): Collision happened while a person on a bicycle was
   riding on the road, excluding intersections.
-* ``intersection`` (**I**): Crash happened while a person on a bicycle
+* ``intersection`` (**I**): Collision happened while a person on a bicycle
   was riding through an intersection on the road, not using a
   crosswalk.
-* ``elsewhere`` (**E**): Crash happened elsewhere. This also includes
-  crashes that happened on the road, but where the cyclist was not
+* ``elsewhere`` (**E**): Collision happened elsewhere. This also includes
+  collisions that happened on the road, but where the cyclist was not
   riding on the road as such. (E.g., the cyclist was crossing the
   street away from a crosswalk.)
-* ``not_involved`` (**N**): Bicycle was not involved in the crash. A
+* ``not_involved`` (**N**): Bicycle was not involved in the collision. A
   cyclist may have been a witness, or a bike rack damaged, etc.
 
 ``geocode``
 ===========
 
 After the data has been curated, we want to geocode the bike-related
-crashes in order to map them; this command assists with that
+collisions in order to map them; this command assists with that
 semi-manual process. The "Location" field on accident reports is
 frequently ambiguous or incomplete, so ``geocode`` iterates over each
 bike-related accident and attempts to use the "Location" field as
@@ -122,12 +122,16 @@ output GeoJSON to be used in mapping.
 
 Produce pretty pictures of the data. The following graphs are drawn:
 
-* ``monthly.png``: A histogram of crashes per month.
-* ``location_by_age.png``: Plot of crash location by age of cyclist.
+* ``monthly.png``: A histogram of collisions per month.
+* ``monthly_aggregate.png``: A histogram of aggregate collisions in each
+  month.
+* ``yearly.png``: A histogram of collisions per year.
+* ``location_by_age.png``: Plot of collision location by age of cyclist.
 * ``severity_by_age.png``: Accident severities by age of cyclist.
 * ``ages.png``: Histogram of the distribution of ages of injured
   cyclists.
-* ``crash_times.png``: Histogram of what time of day crashes happen.
+* ``collision_times.png``: Histogram of what time of day collisions
+  happen.
 * ``injury_rates.png``: A histogram of the injury rates of each of the
   four accident types.
 * ``injury_severities.png``: Pie chart of proportions of injury
@@ -141,8 +145,8 @@ Produce pretty pictures of the data. The following graphs are drawn:
 ===========
 
 Render a template that includes an explanation of the results in long
-form. Currently that template is a Pelican input file, so Pelican must
-be run to generate the final site.
+form. Currently that template is a Jinja2 template, so Jinja2 must be
+run to generate the final site.
 
 Configuration
 =============
@@ -168,7 +172,7 @@ recognized:
 | ``fetch`` | ``days``             | Days of accident report data to download.    | 365                                          |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
 | ``fetch`` | ``start``            | Date (in ``YYYY-MM-DD`` format) from which   | None                                         |
-|           |                      | to download crash data. If ``start`` is      |                                              |
+|           |                      | to download collision data. If ``start`` is  |                                              |
 |           |                      | given, it takes precedence over ``days``.    |                                              |
 +-----------+----------------------+----------------------------------------------+----------------------------------------------+
 | ``fetch`` | ``retries``          | Number of times to retry an HTTP request to  | 3                                            |

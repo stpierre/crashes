@@ -1,4 +1,4 @@
-"""Produce graphs of crash data."""
+"""Produce graphs of collision data."""
 
 import collections
 import datetime
@@ -41,7 +41,7 @@ def auto_percent_with_abs(total):
 
 
 class Graph(base.Command):
-    """Produce graphs of crash data."""
+    """Produce graphs of collision data."""
 
     prerequisites = [curate.Curate]
     location_colors = {"crosswalk": "#ff9900",
@@ -74,7 +74,7 @@ class Graph(base.Command):
         del self._curation['not_involved']
 
     def _get_age(self, case_no):
-        """Get the age of the cyclist in years for the given crash."""
+        """Get the age of the cyclist in years for the given collision."""
         try:
             dob = datetime.datetime.strptime(
                 self._reports[case_no]['cyclist_dob'], "%Y-%m-%d")
@@ -96,27 +96,35 @@ class Graph(base.Command):
                 return range_id
 
     def _graph_monthly(self):
-        """Draw a bar graph of crashes per month over the entire dataset."""
-        LOG.info("Creating graph of crashes per month")
-        crash_counts = collections.defaultdict(int)
+        """Draw bar graphs of crashes per month over the entire dataset."""
+        LOG.info("Creating graphs of collisions per month")
+        collision_counts = collections.defaultdict(int)
+        aggregate_data = collections.OrderedDict()
+        for i in range(12):
+            month = datetime.date(2000, i + 1, 1)
+            aggregate_data[month.strftime("%b")] = 0
+
         relevant = reduce(operator.add, self._curation.values())
         for case_no in relevant:
             date_str = self._reports[case_no]['date']
             date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
             month = datetime.date(date.year, date.month, 1)
-            crash_counts[month] += 1
+            collision_counts[month] += 1
+            aggregate_data[date.strftime("%b")] += 1
 
         data = collections.OrderedDict()
-        month = min(crash_counts.keys())
+        month = min(collision_counts.keys())
 
         # color each year differently
+        min_year = month.year
+        max_year = min_year
         year = month.year
         colors = []
         color_indexes = itertools.cycle(range(len(self.colors)))
         cur_color = color_indexes.next()
 
         while month <= datetime.date.today():
-            data[month.strftime("%b %Y")] = crash_counts.get(month, 0)
+            data[month.strftime("%b %Y")] = collision_counts.get(month, 0)
 
             # color each year differently
             if month.year > year:
@@ -126,6 +134,7 @@ class Graph(base.Command):
 
             next_month = month + datetime.timedelta(31)
             month = datetime.date(next_month.year, next_month.month, 1)
+            max_year = next_month.year
 
         figure = pyplot.figure()
         axis = figure.add_subplot(1, 1, 1)
@@ -135,18 +144,59 @@ class Graph(base.Command):
         axis.set_xticklabels(data.keys(), rotation=90,
                              ha='center')
         axis.axis(xmax=len(data.keys()))
-        axis.set_xlabel("Crashes between a vehicle and bicycle")
-        axis.set_ylabel("Number of crashes")
+        axis.set_xlabel("Collisions between a vehicle and bicycle")
+        axis.set_ylabel("Number of collisions")
         self._savefig(figure, "monthly.png", bbox_inches='tight')
+
+        figure = pyplot.figure()
+        axis = figure.add_subplot(1, 1, 1)
+        axis.bar(range(len(aggregate_data.keys())), aggregate_data.values(),
+                 width=1, color=colors)
+        axis.set_xticks([0.5 + i for i in range(len(aggregate_data.keys()))])
+        axis.set_xticklabels(aggregate_data.keys(), rotation=90,
+                             ha='center')
+        axis.axis(xmax=len(aggregate_data.keys()))
+        axis.set_xlabel(
+            "Aggregate collisions between a vehicle and bicycle, %s - %s" %
+            (min_year, max_year))
+        axis.set_ylabel("Number of collisions")
+        self._savefig(figure, "monthly_aggregate.png", bbox_inches='tight')
+
+    def _graph_yearly(self):
+        """Draw a bar graph of collisions per year over the entire dataset."""
+        LOG.info("Creating graph of collisions per year")
+        data = {}
+        relevant = reduce(operator.add, self._curation.values())
+        for case_no in relevant:
+            date_str = self._reports[case_no]['date']
+            date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            if date.year not in data:
+                data[date.year] = 1
+            else:
+                data[date.year] += 1
+
+        years = sorted(data.keys())
+        values = [data[k] for k in years]
+
+        figure = pyplot.figure()
+        axis = figure.add_subplot(1, 1, 1)
+        axis.bar(range(len(years)), values, width=1, color=self.colors)
+        axis.set_xticks([0.5 + i for i in range(len(years))])
+        axis.set_xticklabels(years, rotation=90,
+                             ha='center')
+        axis.axis(xmax=len(years))
+        axis.set_xlabel("Collisions between a vehicle and bicycle")
+        axis.set_ylabel("Number of collisions")
+        self._savefig(figure, "yearly.png", bbox_inches='tight')
 
     def _graph_ages(self):
         """Draw three age-related graphs:
 
-        * Crash location by age
+        * Collision location by age
         * Injury severity by age
-        * A histogram of total number of crashes by age
+        * A histogram of total number of collisions by age
         """
-        LOG.info("Graphing ages of cyclists and crash locations by age")
+        LOG.info("Graphing ages of cyclists and collision locations by age")
 
         ages = []
         sev_by_age = []
@@ -169,8 +219,8 @@ class Graph(base.Command):
         figure = pyplot.figure()
         axis = figure.add_subplot(1, 1, 1)
         for location, data in loc_by_age.items():
-            # the values are absolute numbers of crashes; we want the
-            # Y axis to be the proportion of crashes by people that
+            # the values are absolute numbers of collisions; we want the
+            # Y axis to be the proportion of collisions by people that
             # age, not number
             y = [n / float(total_by_age[r]) * 100
                  for r, n in data.items()]
@@ -178,13 +228,13 @@ class Graph(base.Command):
                       color=self.location_colors[location.lower()],
                       label=location)
         axis.plot(total_by_age.keys(), total_by_age.values(), 'o',
-                  color=self.colors[0], label="Total recorded crashes")
+                  color=self.colors[0], label="Total recorded collisions")
         axis.legend(bbox_to_anchor=(1.1, 1.1))
         axis.axis(ymax=max(total_by_age.values()) + 5)
         axis.set_xticks(range(len(self.age_ranges)))
         axis.set_xticklabels(self.age_ranges, ha='center')
         axis.set_xlabel("Age")
-        axis.set_ylabel("Proportion of crashes by age")
+        axis.set_ylabel("Proportion of collisions by age")
         self._savefig(figure, "location_by_age.png")
 
         # calculate rolling average of severity by age
@@ -220,12 +270,12 @@ class Graph(base.Command):
         axis = figure.add_subplot(1, 1, 1)
         axis.hist(ages, bins=20, color=self.colors[0])
         axis.set_xlabel("Age of cyclist")
-        axis.set_ylabel("Number of crashes")
+        axis.set_ylabel("Number of collisions")
         self._savefig(figure, "ages.png")
 
-    def _graph_crash_times(self):
-        """Draw a histogram of crash time of day."""
-        LOG.info("Graphing crash times")
+    def _graph_collision_times(self):
+        """Draw a histogram of collision time of day."""
+        LOG.info("Graphing collision times")
 
         times = []
         for case_no in reduce(operator.add, self._curation.values()):
@@ -242,14 +292,14 @@ class Graph(base.Command):
         axis.set_xticks(range(0, 23, 2))
         axis.set_xticklabels(["%d:00" % i for i in range(0, 23, 2)],
                              rotation=90)
-        axis.set_xlabel("Distribution of bicycle crash times")
-        axis.set_ylabel("Number of crashes")
-        self._savefig(figure, "crash_times.png", bbox_inches='tight')
+        axis.set_xlabel("Distribution of bicycle collision times")
+        axis.set_ylabel("Number of collisions")
+        self._savefig(figure, "collision_times.png", bbox_inches='tight')
 
     def _graph_injury_severities(self):
         """Draw injury-related graphs:
 
-        * A stacked bar graph of injury rates by crash location
+        * A stacked bar graph of injury rates by collision location
         * A pie chart of the relative rates of injury severities
         """
         LOG.info("Graphing injury severity data")
@@ -311,7 +361,7 @@ class Graph(base.Command):
         axis.set_xticks([0.5 + i for i in range(len(labels))])
         axis.set_xticklabels(labels, rotation=90, ha='center')
         axis.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d%%'))
-        axis.set_xlabel("Injury rates by crash location")
+        axis.set_xlabel("Injury rates by collision location")
         self._savefig(figure, "injury_rates.png", bbox_inches='tight')
 
         figure = pyplot.figure()
@@ -362,8 +412,8 @@ class Graph(base.Command):
         self._savefig(figure, "injury_regions.png")
 
     def _graph_proportions(self):
-        """Draw a pie chart of crashes by location."""
-        LOG.info("Graphing proportions of crash locations")
+        """Draw a pie chart of collisions by location."""
+        LOG.info("Graphing proportions of collision locations")
 
         labels = []
         sizes = []
@@ -381,7 +431,7 @@ class Graph(base.Command):
         axis.pie(sizes, labels=labels, colors=colors,
                  autopct=auto_percent_with_abs(total),
                  startangle=90, shadow=True)
-        axis.set_xlabel("Crash locations")
+        axis.set_xlabel("Collision locations")
         self._savefig(figure, "proportions.png")
 
     @staticmethod
@@ -401,11 +451,12 @@ class Graph(base.Command):
 
     def __call__(self):
         self._graph_monthly()
+        self._graph_yearly()
         self._graph_proportions()
         self._graph_injury_severities()
         self._graph_ages()
-        self._graph_crash_times()
+        self._graph_collision_times()
         self._graph_injury_regions()
 
     def satisfied(self):
-        return os.path.exists(self.options.crash_graph)
+        return os.path.exists(self.options.collision_graph)

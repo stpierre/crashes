@@ -63,6 +63,10 @@ class Results(base.Command):
         rv['bike_reports'] = sum(len(d) for n, d in self._curation.items()
                                  if n != "not_involved")
         rv['statuses'] = {n: len(d) for n, d in self._curation.items()}
+        rv['total_road'] = (len(self._curation['road']) +
+                            len(self._curation['intersection']))
+        rv['total_sidewalk'] = (len(self._curation['sidewalk']) +
+                                len(self._curation['crosswalk']))
 
         rv['imagedir'] = self._relpath(self.options.imagedir)
         rv['all_reports'] = self._relpath(self.options.all_reports)
