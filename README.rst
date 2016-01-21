@@ -117,6 +117,15 @@ provided on the report, plus any user input necessary, to look up the
 exact location of the accident (using the Google Geocoding API) and
 output GeoJSON to be used in mapping.
 
+``locate``
+==========
+
+After the data has been geocoded, this command can help find
+particularly interesting collisions by location. Currently it's
+hardcoded to find sidewalk and crosswalk collisions near bike
+paths. Bikeway data is taken from
+https://github.com/stpierre/lincoln-bike-routes
+
 ``graph``
 =========
 
@@ -154,53 +163,60 @@ Configuration
 The following configuration options (in ``crashes.conf``) are
 recognized:
 
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| Section   | Name                 | Description                                  | Default                                      |
-+===========+======================+==============================================+==============================================+
-| ``form``  | ``url``              | The POST URL of LPD's accident report search | ``HTTP://CJIS.LINCOLN.NE.GOV/HTBIN/CGI.COM`` |
-|           |                      | form.                                        |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``form``  | ``token``            | The POST token to include in accident report | ``DISK0:[020020.WWW]ACCDESK.COM``            |
-|           |                      | search POSTs.                                |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``form``  | ``sleep_min``        | Minimum time, in seconds, to sleep between   | 5                                            |
-|           |                      | requests to LPD's website.                   |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``form``  | ``sleep_max``        | Maximum time, in seconds, to sleep between   | 30                                           |
-|           |                      | requests to LPD's website.                   |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``fetch`` | ``days``             | Days of accident report data to download.    | 365                                          |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``fetch`` | ``start``            | Date (in ``YYYY-MM-DD`` format) from which   | None                                         |
-|           |                      | to download collision data. If ``start`` is  |                                              |
-|           |                      | given, it takes precedence over ``days``.    |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``fetch`` | ``retries``          | Number of times to retry an HTTP request to  | 3                                            |
-|           |                      | LPD's website, either for submitting the     |                                              |
-|           |                      | search form or for downloading a report.     |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``datadir``          | Base directory to use for persistent data    | ``./data``                                   |
-|           |                      | storage.                                     |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``pdfdir``           | Directory, relative to ``datadir``, where    | ``pdfs``                                     |
-|           |                      | accident report PDFs will be stored.         |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``all_reports``      | File, relative to ``datadir``, where the     | ``reports.json``                             |
-|           |                      | results of the ``jsonify`` command will be   |                                              |
-|           |                      | stored.                                      |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``curation_results`` | File, relative to ``datadir``, where the     | ``curation.json``                            |
-|           |                      | results of the ``curate`` command will be    |                                              |
-|           |                      | stored.                                      |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``geocoding``        | Directory, relative to ``datadir``, where    | ``geojson``                                  |
-|           |                      | output from the ``geocode`` command will be  |                                              |
-|           |                      | stored.                                      |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``imagedir``         | Directory, relative to ``datadir``, where    | ``images``                                   |
-|           |                      | graph images will be stored.                 |                                              |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``template``         | Jinja2 template for results.                 | ``./results.html``                           |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
-| ``files`` | ``results_output``   | Filename to write results output to.         | ``./index.html``                             |
-+-----------+----------------------+----------------------------------------------+----------------------------------------------+
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| Section   | Name                   | Description                                  | Default                                      |
++===========+========================+==============================================+==============================================+
+| ``form``  | ``url``                | The POST URL of LPD's accident report search | ``HTTP://CJIS.LINCOLN.NE.GOV/HTBIN/CGI.COM`` |
+|           |                        | form.                                        |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``form``  | ``token``              | The POST token to include in accident report | ``DISK0:[020020.WWW]ACCDESK.COM``            |
+|           |                        | search POSTs.                                |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``form``  | ``sleep_min``          | Minimum time, in seconds, to sleep between   | 5                                            |
+|           |                        | requests to LPD's website.                   |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``form``  | ``sleep_max``          | Maximum time, in seconds, to sleep between   | 30                                           |
+|           |                        | requests to LPD's website.                   |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``fetch`` | ``days``               | Days of accident report data to download.    | 365                                          |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``fetch`` | ``start``              | Date (in ``YYYY-MM-DD`` format) from which   | None                                         |
+|           |                        | to download collision data. If ``start`` is  |                                              |
+|           |                        | given, it takes precedence over ``days``.    |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``fetch`` | ``retries``            | Number of times to retry an HTTP request to  | 3                                            |
+|           |                        | LPD's website, either for submitting the     |                                              |
+|           |                        | search form or for downloading a report.     |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``datadir``            | Base directory to use for persistent data    | ``./data``                                   |
+|           |                        | storage.                                     |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``pdfdir``             | Directory, relative to ``datadir``, where    | ``pdfs``                                     |
+|           |                        | accident report PDFs will be stored.         |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``all_reports``        | File, relative to ``datadir``, where the     | ``reports.json``                             |
+|           |                        | results of the ``jsonify`` command will be   |                                              |
+|           |                        | stored.                                      |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``curation_results``   | File, relative to ``datadir``, where the     | ``curation.json``                            |
+|           |                        | results of the ``curate`` command will be    |                                              |
+|           |                        | stored.                                      |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``geocoding``          | Directory, relative to ``datadir``, where    | ``geojson``                                  |
+|           |                        | output from the ``geocode`` command will be  |                                              |
+|           |                        | stored.                                      |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``imagedir``           | Directory, relative to ``datadir``, where    | ``images``                                   |
+|           |                        | graph images will be stored.                 |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``template``           | Jinja2 template for results.                 | ``./results.html``                           |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``results_output``     | Filename to write results output to.         | ``./index.html``                             |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``bike_route_geojson`` | Path to a GeoJSON file containing all known  | None                                         |
+|           |                        | bikeways.                                    |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+
+| ``files`` | ``lb716_results``      | File, relative to ``datadir``, Where the     | ``lb716.json``                               |
+|           |                        | results of the ``locate`` command will be    |                                              |
+|           |                        | stored.                                      |                                              |
++-----------+------------------------+----------------------------------------------+----------------------------------------------+

@@ -29,15 +29,17 @@ DEFAULTS = {
     "geocoding": "geojson",
     "imagedir": "images",
     "template": "results.html",
-    "results_output": "index.html"
+    "results_output": "index.html",
+    "lb716_results": "lb716.json"
 }
 
 
-def _canonicalize(path, datadir):
+def _canonicalize(path, datadir=None):
     if path.startswith(("~", "/")):
-        return os.path.abspath(os.path.expanduser(path))
-    else:
-        return os.path.abspath(os.path.join(datadir, path))
+        path = os.path.expanduser(path)
+    elif datadir:
+        path = os.path.join(datadir, path)
+    return os.path.abspath(path)
 
 
 def parse_args():
@@ -86,6 +88,10 @@ def parse_args():
                                      os.getcwd())
     options.results_output = _canonicalize(cfp.get("files", "results_output"),
                                            os.getcwd())
+    options.bike_route_geojson = _canonicalize(cfp.get("files",
+                                                       "bike_route_geojson"))
+    options.lb716_results = _canonicalize(cfp.get("files", "lb716_results"),
+                                          options.datadir)
 
     options.func = options.command(options)
     return options
