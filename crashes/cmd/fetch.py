@@ -2,6 +2,7 @@
 
 import datetime
 import glob
+import json
 import logging
 import os
 import random
@@ -75,7 +76,7 @@ class Fetch(base.Command):
         else:
             current = end - datetime.timedelta(self.options.fetch_days)
 
-        while current < end:
+        while current <= end:
             yield current
 
             current += datetime.timedelta(1)
@@ -84,25 +85,31 @@ class Fetch(base.Command):
         """Download the report at the URL to the pdfdir."""
         filename = os.path.split(url)[1]
         filepath = os.path.join(self.options.pdfdir, filename)
-        LOG.debug("Downloading %s to %s" % (url, filepath))
-        if os.path.exists(filepath):
-            LOG.debug("%s already exists, skipping" % filepath)
+        case_no = "-".join((filename[0:2], filename[2:8]))
+        if case_no in self.report_data:
+            LOG.debug("Already parsed %s, skipping" % case_no)
         else:
-            response = retry(requests.get, args=(url,),
-                             kwargs={"stream": True},
-                             exceptions=(requests.exceptions.ConnectionError,),
-                             times=self.options.fetch_retries)
-            if response.status_code != 200:
-                raise Exception("Failed to download report %s: %s" %
-                                (url, response.status_code))
-            with open(filepath, 'wb') as outfile:
-                for chunk in response.iter_content():
-                    outfile.write(chunk)
-            LOG.debug("Wrote data from %s to %s" % (url, filepath))
-            time.sleep(random.randint(self.options.sleep_min,
-                                      self.options.sleep_max))
+            LOG.debug("Downloading %s to %s" % (url, filepath))
+            if os.path.exists(filepath):
+                LOG.debug("%s already exists, skipping" % filepath)
+            else:
+                response = retry(
+                    requests.get, args=(url,),
+                    kwargs={"stream": True},
+                    exceptions=(requests.exceptions.ConnectionError,),
+                    times=self.options.fetch_retries)
+                if response.status_code != 200:
+                    raise Exception("Failed to download report %s: %s" %
+                                    (url, response.status_code))
+                with open(filepath, 'wb') as outfile:
+                    for chunk in response.iter_content():
+                        outfile.write(chunk)
+                LOG.debug("Wrote data from %s to %s" % (url, filepath))
+                time.sleep(random.randint(self.options.sleep_min,
+                                          self.options.sleep_max))
 
     def __call__(self):
+        self.report_data = json.load(open(self.options.all_reports))
         for date in self._dates_in_range():
             time.sleep(random.randint(self.options.sleep_min,
                                       self.options.sleep_max))
