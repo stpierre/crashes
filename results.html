@@ -385,11 +385,11 @@
 
           <p>Although LB716 is pretty narrow, it affects {{ lb716_row
           }} collisions (out of {{ report_count }} total collisions),
-          which is {{ "%01.f" % (lb716_row / statuses.crosswalk) * 100
+          which is {{ "%01.f" % (lb716_row / statuses.crosswalk * 100)
           }}% of all crosswalk collisions.</p>
 
           <p>More importantly, this represents a whopping {{
-          "%0.1f" % (lb716_row / lb716_total) * 100 }}% of all crosswalk
+          "%0.1f" % (lb716_row / lb716_total * 100) }}% of all crosswalk
           collisions on bike paths, so, while obviously an incremental
           improvement, LB716 would make our bike paths safer.</p>
 
