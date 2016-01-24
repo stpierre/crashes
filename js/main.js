@@ -1,4 +1,4 @@
-var map;
+var all_map;
 var layers = {};
 //var datadir = "http://localhost:8000/data/geojson/";
 var datadir = "http://stpierre.github.io/crashes/data/geojson/";
@@ -58,7 +58,7 @@ function init_maps() {
 
     // LB716 map
 
-    lb716_map = new google.maps.Map(
+    var lb716_map = new google.maps.Map(
         document.getElementById('lb716-map-canvas'), {
             zoom: 12,
             center: {lat: 40.807, lng: -96.69}
@@ -98,7 +98,7 @@ $(document).ready(function(){
 	var layer_name = $(this).attr('map-layer');
 
 	$(this).toggleClass('current');
-        layers[layer_name].setMap($(this).hasClass('current') ? map : null)
+        layers[layer_name].setMap($(this).hasClass('current') ? all_map : null)
     })
 
     $('ul.tabs li').click(function(){
