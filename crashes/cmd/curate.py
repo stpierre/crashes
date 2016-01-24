@@ -119,6 +119,11 @@ class Curate(base.Command):
     def _load_data(self):
         self.data = json.load(open(self.options.all_reports))
 
+    def _save_data(self, results):
+        LOG.debug("Dumping curation data to %s" %
+                  getattr(self.options, self.results_file))
+        json.dump(results, open(getattr(self.options, self.results_file), "w"))
+
     def __call__(self):
         self._load_data()
         if os.path.exists(getattr(self.options, self.results_file)):
@@ -150,16 +155,13 @@ class Curate(base.Command):
                 if ans:
                     results[ans].append(case_no)
                     print()
-                    LOG.debug("Dumping curation data to %s" %
-                              getattr(self.options, self.results_file))
-                    json.dump(results,
-                              open(getattr(self.options,
-                                           self.results_file), "w"))
+                    self._save_data(results)
                 LOG.info("%s/%s curated (%.02f%%)" %
                          (complete, len(self.data),
                           100 * complete / float(len(self.data))))
                 LOG.debug(", ".join("%s: %s" % (n, len(d))
                                     for n, d in results.items()))
+        self._save_data(results)
 
     def satisfied(self):
         return os.path.exists(getattr(self.options, self.results_file))

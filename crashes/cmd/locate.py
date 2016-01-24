@@ -89,7 +89,7 @@ def feature_distance(feature1, feature2):
     return min_dist
 
 
-class Locate(curate.Curate):
+class Locate(curate.Curate, geocode.Geocode):
     """Find collisions near certain features."""
 
     highlight_re = re.compile(
@@ -114,16 +114,15 @@ class Locate(curate.Curate):
 
     threshold = 150
 
-    def _load_geojson(self, filename):
-        return json.load(open(os.path.join(self.options.geocoding, filename)))
-
     def _find_collisions(self, collision_types, feature_selector,
                          max_distance):
         for ctype in collision_types:
-            cdata = self._load_geojson("%s.json" % ctype)
+            if ctype not in self.collision_geodata:
+                self.collision_geodata[ctype] = self._load_geojson(
+                    "%s.json" % ctype, create=False)
             for bike_route in self.bike_routes["features"]:
                 if feature_selector(bike_route):
-                    for collision in cdata["features"]:
+                    for collision in self.collision_geodata[ctype]["features"]:
                         dist = feature_distance(collision,
                                                 bike_route)
                         if dist <= max_distance:
@@ -151,6 +150,7 @@ class Locate(curate.Curate):
         self.collisions = {}
         self.bike_routes = json.load(open(self.options.bike_route_geojson))
         self.curation_data = json.load(open(self.options.curation_results))
+        self.collision_geodata = {}
 
         self._find_collisions(
             ["sidewalk", "crosswalk"],
@@ -169,3 +169,14 @@ class Locate(curate.Curate):
         LOG.debug(self.data)
         LOG.debug("Curating %s cases (out of %s total)" % (len(self.data),
                                                            total_cases))
+
+    def _save_data(self, results):
+        super(Locate, self)._save_data(results)
+
+        geojson = geocode.new_geojson()
+        for case_no in results["row"]:
+            for ctype, geodata in self.collision_geodata.items():
+                for collision in geodata["features"]:
+                    if collision["properties"]["case_no"] == case_no:
+                        geojson["features"].append(collision)
+        self._save_geojson(geojson, "lb716.geojson")

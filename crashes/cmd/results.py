@@ -35,6 +35,7 @@ class Results(base.Command):
         super(Results, self).__init__(options)
         self._reports = json.load(open(self.options.all_reports))
         self._curation = json.load(open(self.options.curation_results))
+        self.lb716_results = json.load(open(self.options.lb716_results))
 
     def _relpath(self, path):
         prefix = os.path.commonprefix([path, os.getcwd()])
@@ -70,6 +71,10 @@ class Results(base.Command):
 
         rv['imagedir'] = self._relpath(self.options.imagedir)
         rv['all_reports'] = self._relpath(self.options.all_reports)
+
+        rv['lb716_total'] = len(self.lb716_results["row"] +
+                                self.lb716_results["non-row"])
+        rv['lb716_row'] = len(self.lb716_results["row"])
 
         return rv
 

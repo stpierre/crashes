@@ -21,7 +21,7 @@ from crashes.cmd import curate
 LOG = logging.getLogger(__name__)
 
 
-def _new_geojson():
+def new_geojson():
     return {"type": "FeatureCollection",
             "features": []}
 
@@ -152,14 +152,14 @@ class Geocode(base.Command):
                       termcolor.colored(retval['properties']['address'],
                                         "green", attrs=["bold"]))
 
-    def _load_geojson(self, filename):
+    def _load_geojson(self, filename, create=True):
         fpath = os.path.join(self.options.geocoding, filename)
-        if os.path.exists(fpath):
+        if not create or os.path.exists(fpath):
             retval = json.load(open(fpath))
             LOG.debug("Loaded geocoding data (%s features) from %s" %
                       (len(retval['features']), fpath))
         else:
-            retval = _new_geojson()
+            retval = new_geojson()
             LOG.debug("Created new GeoJSON dataset for %s" % fpath)
         return retval
 
@@ -223,7 +223,7 @@ class Geocode(base.Command):
                     self._fan_out_duplicates(features))
 
         # create categorized GeoJSON files
-        by_loc = {k: _new_geojson() for k in curation_data.keys()}
+        by_loc = {k: new_geojson() for k in curation_data.keys()}
         for feature in all_geojson['features']:
             for loc, cases in curation_data.items():
                 if feature['properties']['case_no'] in cases:
