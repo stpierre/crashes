@@ -89,6 +89,7 @@ function init_maps() {
     });
 }
 
+
 $(document).ready(function(){
     google.maps.event.addDomListener(window, 'load', init_maps);
 
@@ -99,16 +100,11 @@ $(document).ready(function(){
 
 	$(this).toggleClass('current');
         layers[layer_name].setMap($(this).hasClass('current') ? all_map : null)
-    })
+    });
 
-    $('ul.tabs li').click(function(){
-        var tab_group = $(this).attr('tab-group')
-	var tab_id = $(this).attr('data-tab');
-
-	$('ul.tabs li[tab-group='+tab_group+']').removeClass('current');
-	$('.tab-content[tab-group='+tab_group+']').removeClass('current');
-
-	$(this).addClass('current');
-	$("#"+tab_id).addClass('current');
-    })
+    $('[data-toggle="tooltip"]').tooltip({
+        container: 'body',
+        html: true,
+        trigger: 'click'
+    });
 })

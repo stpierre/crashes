@@ -102,7 +102,12 @@ dl {margin: 0 0 1.5em 0;}
 dt {font-weight: bold;}
 dd {margin-left: 1.5em;}
 
-pre{background-color:  rgb(238, 238, 238); padding: 10px; margin: 10px; overflow: auto;}
+pre {
+    background-color: rgb(238, 238, 238);
+    padding: 10px;
+    margin: 10px;
+    overflow: auto;
+}
 
 /* Quotes */
 blockquote {
@@ -146,8 +151,6 @@ aside, nav, article, figure {
 
 /***** Layout *****/
 .body {clear: both; margin: 0 auto; }
-img.right, figure.right {float: right; margin: 0 0 2em 2em;}
-img.left, figure.left {float: left; margin: 0 2em 2em 0;}
 
 /*
 	Header
@@ -362,4 +365,94 @@ button.map-buttons.current{
 #toc .toc-active {
     background: #336699;
     box-shadow: inset -5px 0px 10px -5px #000;
+}
+
+/* positioning */
+
+.ct-chart.left,.ct-chart-container.left {
+    width: 70%;
+    float: left;
+}
+
+.ct-chart.right,.ct-chart-container.right {
+    width: 70%;
+    margin-left: 30%;
+}
+
+div.left {
+    width: 30%;
+    float: left;
+}
+
+div.right {
+    width: 30%;
+    margin-left: 70%;
+}
+
+.section,.section-a,.section-b {
+    clear: both;
+    padding: 2em;
+    overflow: hidden;
+}
+
+.section-a {
+    background: #ededed;
+}
+
+/* graphs and charts */
+
+.ct-chart {
+    margin-left: 20px;
+}
+
+svg.ct-chart-pie g text.ct-label {
+    fill: #fff;
+    font-weight: bold;
+}
+
+.ct-label.ct-horizontal, .ct-label.ct-vertical {
+    color: #333;
+}
+
+#yearly-bar-chart .ct-series-b {
+    opacity: 0.6;
+}
+
+.legend {
+    border: 2px solid #333;
+    padding: 1em;
+}
+.legend div {
+    padding: .5em;
+    margin: .5em 0 .5em 0;
+}
+.legend .ct-series-a {
+    background: #d70206;
+    color: #fff;
+}
+.legend .ct-series-b {
+    background: #f05b4f;
+    color: #fff;
+}
+.legend .ct-series-c {
+    background: #f4c63d;
+    color: #333;
+}
+.legend .ct-series-d {
+    background: #d17905;
+    color: #fff;
+}
+.legend .ct-series-e {
+    background: #453d3f;
+    color: #fff;
+}
+
+.legend {
+    width: 15%;
+    margin-left: 80%;
+}
+
+.has-legend {
+    width: 80%;
+    float: left;
 }

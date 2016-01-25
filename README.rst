@@ -126,29 +126,10 @@ hardcoded to find sidewalk and crosswalk collisions near bike
 paths. Bikeway data is taken from
 https://github.com/stpierre/lincoln-bike-routes
 
-``graph``
+``xform``
 =========
 
-Produce pretty pictures of the data. The following graphs are drawn:
-
-* ``monthly.png``: A histogram of collisions per month.
-* ``monthly_aggregate.png``: A histogram of aggregate collisions in each
-  month.
-* ``yearly.png``: A histogram of collisions per year.
-* ``location_by_age.png``: Plot of collision location by age of cyclist.
-* ``severity_by_age.png``: Accident severities by age of cyclist.
-* ``ages.png``: Histogram of the distribution of ages of injured
-  cyclists.
-* ``collision_times.png``: Histogram of what time of day collisions
-  happen.
-* ``injury_rates.png``: A histogram of the injury rates of each of the
-  four accident types.
-* ``injury_severities.png``: Pie chart of proportions of injury
-  severities.
-* ``injury_regions.png``: Pie chart of the body region with the
-  primary injury.
-* ``proportions.png``: A pie chart of the relative proportions of the
-  four accident types.
+Transform data so that we can produce pretty graphs of the data.
 
 ``results``
 ===========

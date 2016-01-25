@@ -4,11 +4,17 @@
     <meta charset="utf-8" />
     <title>Bicycle Collision Analytics (Lincoln, NE)</title>
 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/chartist.min.css">
     <link rel="stylesheet" href="css/main.css" />
 
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
-    <script src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
     <script src="js/toc.min.js"></script>
+    <script src="js/chartist.min.js"></script>
+    <script src="js/chartist-plugin-axistitle.min.js"></script>
+    <script src="js/graphs.js"></script>
     <script src="js/main.js"></script>
 
     <!--[if IE]>
@@ -109,19 +115,13 @@
           </ul>
         </div>
 
-        <div class="section">
-          <h3>Location</h3>
+        <div class="section-a">
+          <h3>Collision locations</h3>
 
-          <ul class="tabs">
-            <li class="tab-link current" tab-group="location"
-                data-tab="tab-location-pie">Collision locations</li>
-            <li class="tab-link" tab-group="location"
-                data-tab="tab-location-by-age">Locations by age</li>
-          </ul>
+          <div class="ct-chart ct-major-seventh left"
+               id="location-pie-chart"></div>
 
-          <div class="tab-content current" tab-group="location" id="tab-location-pie">
-            <img src="{{imagedir}}/proportions.png"/>
-
+          <div class="right">
             <p>The majority of collisions involving a bicycle
               ({{statuses.crosswalk}}/{{bike_reports}}) happened in a
               crosswalk.</p>
@@ -163,9 +163,11 @@
               bike-pedestrian accidents certainly do occur on the
               off-street bike paths.)</p>
           </div>
-          <div class="tab-content" tab-group="location" id="tab-location-by-age">
-            <img src="{{imagedir}}/location_by_age.png"/>
+        </div>
+        <div class="section-b">
+          <h3>Locations by age</h3>
 
+          <div class="left">
             <p>The location of collisions varies slightly by the age
               of the cyclist.</p>
 
@@ -176,37 +178,37 @@
               set seems to be doing something interesting, though;
               perhaps these cyclists ride on the street more often
               than cyclists of other ages.</p>
-          </div>
+            </div>
+
+          <div class="ct-chart-container right">
+            <div class="ct-chart ct-major-sixth has-legend"
+                 id="location-by-age-bar-chart"></div>
+
+            <div class="legend" id="location-by-age-legend">
+              <div class="ct-series-a">Sidewalk</div>
+              <div class="ct-series-b">Crosswalk</div>
+              <div class="ct-series-c">Intersection</div>
+              <div class="ct-series-d">Road</div>
+              <div class="ct-series-e">Elsewhere</div>
+            </div>
         </div>
 
-        <div class="section">
-          <h3>Timing</h3>
+        <div class="section-a">
+          <h3>Collisions per month</h3>
+          <div class="ct-chart ct-major-twelfth"
+               id="monthly-bar-chart"></div>
 
-          <ul class="tabs">
-            <li class="tab-link current" tab-group="timing"
-              data-tab="tab-timing-monthly">Collisions per month</li>
-            <li class="tab-link" tab-group="timing"
-              data-tab="tab-timing-yearly">Collisions per year</li>
-            <li class="tab-link" tab-group="timing"
-              data-tab="tab-timing-monthly-agg">Aggregate monthly
-              collisions</li>
-            <li class="tab-link" tab-group="timing"
-              data-tab="tab-timing-hourly">Aggregate hourly
-              collisions</li>
-          </ul>
+          <p>Other than a big jump between 2013 and 2014, the apparent
+            trend of increasing collisions in this graph is a bit
+            misleading.</p>
+        </div>
 
-          <div id="tab-timing-monthly" tab-group="timing" class="tab-content current">
-            <img src="{{imagedir}}/monthly.png"/>
+        <div class="section-b">
+          <h3>Collisions per year</h3>
 
-            <p>Other than a big jump between 2013 and 2014, the
-              apparent trend of increasing collisions in this graph is
-              a bit misleading.</p>
-          </div>
-          <div id="tab-timing-yearly" tab-group="timing" class="tab-content">
-            <img src="{{imagedir}}/yearly.png"/>
-
+          <div class="left">
             <p>Happily, collisions decreased slightly from 2014 to
-            2015.
+              2015.
 
             <p>Any notion that collisions are increasing should be
               adopted cautiously, as there are a number of confounding
@@ -216,54 +218,69 @@
               which can't be automatically parsed and so aren't
               included in these data.)</p>
           </div>
-          <div class="tab-content" tab-group="timing" id="tab-timing-monthly-agg">
-            <img src="{{imagedir}}/monthly_aggregate.png"/>
 
+          <div class="ct-chart ct-major-seventh right"
+               id="yearly-bar-chart"></div>
+        </div>
+
+        <div class="section-a">
+          <h3>Aggregate monthly collisions</h3>
+          <div class="ct-chart ct-major-seventh left"
+               id="monthly-aggregate-bar-chart"></div>
+
+          <div class="right">
             <p>Predictably, most accidents happen during the summer
               months. February is the safest month, probably because
               even the hardcores have gotten tired of riding in the
               cold and there are so few cyclists out.</p>
           </div>
-          <div class="tab-content" tab-group="timing" id="tab-timing-hourly">
-            <img src="{{imagedir}}/collision_times.png"/>
+        </div>
 
+        <div class="section-b">
+          <h3>Aggregate hourly collisions</h3>
+
+          <div class="left">
             <p>Commutes are the most dangerous times. It's interesting
               that the evening commute -- not the presumably darker
               morning commute -- is more dangerous.</p>
           </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="hourly-bar-chart"></div>
         </div>
 
-        <div class="section">
-          <h3>Injury Rates and Locations</h3>
+        <div class="section-a">
+          <h3>Collisions by age of cyclist</h3>
 
-          <p>Non-injury collisions are the most likely collisions to
-            not be reported, so all of the injury rates below are
-            hopefully overestimates.</p>
+          <div class="ct-chart ct-major-seventh left"
+               id="ages-bar-chart"></div>
 
-          <ul class="tabs">
-            <li class="tab-link current" tab-group="injuries"
-              data-tab="tab-injury-rates">Injuries by collision
-              location</li>
-            <li class="tab-link" tab-group="injuries"
-              data-tab="tab-injury-severities">Injury severities</li>
-            <li class="tab-link" tab-group="injuries"
-              data-tab="tab-injury-severity-by-age">Injury severity by
-              age</li>
-            <li class="tab-link" tab-group="injuries"
-              data-tab="tab-injury-regions">Injuries by body
-              region</li>
-          </ul>
+          <div class="right">
+            <p>Just so we're clear, that's about 10 children under 11
+              hit by cars every year in Lincoln alone.</p>
 
-          <div id="tab-injury-rates" tab-group="injuries" class="tab-content current">
-            <img src="{{imagedir}}/injury_rates.png"/>
+            <p>I suspect that this may just be a graph of ridership
+              numbers. There's a dropoff at 16, when kids get their
+              driver's license, but it goes back up for the college
+              age crowd; then a slow descent to 40, after which it
+              picks up again, presumably with the MAMIL crowd.</p>
 
+            <p>But seriously, over 40% of people hit on bikes in
+              Lincoln are <i>children</i>.</p>
+          </div>
+        </div>
+
+        <div class="section-b">
+          <h3>Injuries by collision location</h3>
+
+          <div class="left">
             <p>Interestingly, different locations have different
               injury rates.</p>
 
             <p>Sidewalks have the highest injury rate, but also the
-              most non-disabling injuries. Collisions occurring on the
-              road are the least likely to lead to injuries, but when
-              they do, the injuries are more likely to be
+              most non-disabling injuries. Collisions occurring on
+              the road are the least likely to lead to injuries, but
+              when they do, the injuries are more likely to be
               disabling. Intersections also show more disabling
               injuries. Overall, a collision while riding in the
               street (whether in an intersection or not) is about 2%
@@ -274,43 +291,53 @@
               reports, and so do not take into account cyclists who
               are hit and later killed; the "Killed" category only
               represents cyclists who were dead at the scene.</p>
-          </div>
-          <div class="tab-content" tab-group="injuries" id="tab-injury-severities">
-            <img src="{{imagedir}}/injury_severities.png"/>
 
+            <p>Non-injury collisions are the most likely collisions to
+              not be reported, so all of the injury rates are
+              hopefully overestimates.</p>
+          </div>
+
+          <div class="ct-chart-container right">
+            <div class="ct-chart ct-major-sixth has-legend"
+                 id="injury-rates-bar-chart"></div>
+
+            <div class="legend" id="injury-rates-legend">
+              <div class="ct-series-a">Killed</div>
+              <div class="ct-series-b">Disabling</div>
+              <div class="ct-series-c">Visible but not disabling</div>
+              <div class="ct-series-d">Possible but not visible</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-a">
+          <h3>Injury severities</h3>
+
+          <div class="right">
             <p>Overall, while disabling injuries are scary, they
               represent a fairly small percentage of collisions. That
               said, it's still worrisome that a cyclist is about as
               likely to escape a collision unscathed as to suffer
               disabling injury.</p>
           </div>
-          <div class="tab-content" tab-group="injuries" id="tab-injury-severity-by-age">
-            <img src="{{imagedir}}/severity_by_age.png"/>
 
-            <p>Injury severity varies only slightly with the age of
-              the cyclist.</p>
+          <div class="ct-chart ct-major-seventh left"
+               id="injury-severity-pie-chart"></div>
+        </div>
 
-            <p>This graph uses the LPD injury rating scale, where
-              {{1|literal}} is killed and {{5|literal}} is uninjured,
-              so lower numbers are more severe injuries. Teenagers and
-              early twenty-somethings seem to suffer the most severe
-              injuries, but even then the average hovers near "Visible
-              but not disabling."  (The other points on the graph that
-              dip below that line have too few data points to be
-              reliable.)  Unfortunately the age of uninjured cyclists
-              is rarely included in the accident report, and never in
-              a fashion that's trivial to parse automatically, so this
-              graph does not take into account uninjured cyclists.</p>
-          </div>
-          <div class="tab-content" tab-group="injuries" id="tab-injury-regions">
-            <img src="{{imagedir}}/injury_regions.png"/>
+        <div class="section-b">
+          <h3>Body region of injuries</h3>
 
+          <div class="left">
             <p>Predictably, injuries are most common to the
               extremities, particularly the lower legs.</p>
           </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="injury-region-pie-chart"></div>
         </div>
 
-        <div class="section">
+        <div class="section-a">
           <h2>Map of Collisions</h2>
 
           <p>All locations should be considered approximations, and
@@ -366,7 +393,7 @@
             instance, on the Mopac Trail.</p>
         </div>
 
-        <div class="section">
+        <div class="section-b">
           <h2>LB716 map</h2>
 
           <p>In early 2016, five state senators

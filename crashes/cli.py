@@ -30,7 +30,8 @@ DEFAULTS = {
     "imagedir": "images",
     "template": "results.html",
     "results_output": "index.html",
-    "lb716_results": "lb716.json"
+    "lb716_results": "lb716.json",
+    "graph_data": "graph"
 }
 
 
@@ -92,6 +93,8 @@ def parse_args():
                                                        "bike_route_geojson"))
     options.lb716_results = _canonicalize(cfp.get("files", "lb716_results"),
                                           options.datadir)
+    options.graph_data = _canonicalize(cfp.get("files", "graph_data"),
+                                       options.datadir)
 
     options.func = options.command(options)
     return options
