@@ -372,10 +372,10 @@
           <p>In early 2016, five state senators
           introduced <a href="http://www.nebike.org/2016/01/breaking-news-lb-716-introduced/">LB716</a>,
           a bill that would (among other things) give cyclists the
-          right-of-way in a crosswalk with a signal that is part of a
-          bike path. The map below shows where each of the collisions
-          that might have been prevented by LB716 took place. The bike
-          paths have been highlighted.</p>
+          right-of-way in a crosswalk that is part of a bike path. The
+          map below shows where each of the collisions that might have
+          been prevented by LB716 took place. The bike paths have been
+          highlighted.</p>
 
           <div class="map-container">
             <div class="map-canvas" id="lb716-map-canvas"></div>
@@ -384,7 +384,7 @@
           <p>Be careful on Superior and 84th street!</p>
 
           <p>Although LB716 is pretty narrow, it affects {{ lb716_row
-          }} collisions (out of {{ report_count }} total collisions),
+          }} collisions (out of {{ bike_reports }} total collisions),
           which is {{ "%01.f" % (lb716_row / statuses.crosswalk * 100)
           }}% of all crosswalk collisions.</p>
 
