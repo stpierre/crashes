@@ -136,9 +136,7 @@ class Locate(curate.Curate, geocode.Geocode):
     def _print_additional_info(self, case_no):
         for location, cases in self.curation_data.items():
             if case_no in cases:
-                print("Location: %s" % location.title())
                 break
-        print("Bike path: %s" % self.collisions[case_no])
 
     def _get_default(self, case_no):
         if case_no in self.curation_data["sidewalk"]:
