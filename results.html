@@ -27,6 +27,16 @@
       <h1><a href="http://stpierre.github.io/crashes/">Bicycle Collision Analytics (Lincoln, NE) </a></h1>
     </header>
 
+    <div class="alert alert-success fade in">
+      <button type="button" class="close" data-dismiss="alert"
+        aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+
+      Many of the graphs on this page are now clickable to get even
+        more data out of them. Try it out!
+    </div>
+
     <div id="toc"></div>
 
     <aside id="featured" class="body">
@@ -167,9 +177,58 @@
         <div class="section-b">
           <h3>Locations by age</h3>
 
-          <div class="left">
-            <p>The location of collisions varies slightly by the age
-              of the cyclist.</p>
+          <div class="four-columns">
+            <div class="col-a">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-0-10-pie"></div>
+              <h4 class="chart-title"
+                  id="location-by-age-0-10-title"></h4>
+            </div>
+
+            <div class="col-b">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-11-20-pie"></div>
+              <h4 class="chart-title" id="location-by-age-11-20-title"></h4>
+            </div>
+
+            <div class="col-c">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-21-30-pie"></div>
+              <h4 class="chart-title" id="location-by-age-21-30-title"></h4>
+            </div>
+
+            <div class="col-d">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-31-40-pie"></div>
+              <h4 class="chart-title"
+                  id="location-by-age-31-40-title"></h4>
+            </div>
+          </div>
+
+          <div class="three-columns" style="margin: 0 12.5% 0 12.5%">
+            <div class="col-a">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-41-50-pie"></div>
+              <h4 class="chart-title"
+                  id="location-by-age-41-50-title"></h4>
+            </div>
+
+            <div class="col-b">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-51-60-pie"></div>
+              <h4 class="chart-title" id="location-by-age-51-60-title"></h4>
+            </div>
+
+            <div class="col-c">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-61_-pie"></div>
+              <h4 class="chart-title" id="location-by-age-61_-title"></h4>
+            </div>
+          </div>
+
+          <div class="below">
+            <p>The location of collisions varies slightly by the age of
+              the cyclist.</p>
 
             <p>Again, though, without data on the number of miles
               ridden in various scenarios, it's hard to make much
@@ -178,19 +237,7 @@
               set seems to be doing something interesting, though;
               perhaps these cyclists ride on the street more often
               than cyclists of other ages.</p>
-            </div>
-
-          <div class="ct-chart-container right">
-            <div class="ct-chart ct-major-sixth has-legend"
-                 id="location-by-age-bar-chart"></div>
-
-            <div class="legend" id="location-by-age-legend">
-              <div class="ct-series-a">Sidewalk</div>
-              <div class="ct-series-b">Crosswalk</div>
-              <div class="ct-series-c">Intersection</div>
-              <div class="ct-series-d">Road</div>
-              <div class="ct-series-e">Elsewhere</div>
-            </div>
+          </div>
         </div>
 
         <div class="section-a">
@@ -313,6 +360,9 @@
         <div class="section-a">
           <h3>Injury severities</h3>
 
+          <div class="ct-chart ct-major-seventh left"
+               id="injury-severity-pie-chart"></div>
+
           <div class="right">
             <p>Overall, while disabling injuries are scary, they
               represent a fairly small percentage of collisions. That
@@ -320,9 +370,6 @@
               likely to escape a collision unscathed as to suffer
               disabling injury.</p>
           </div>
-
-          <div class="ct-chart ct-major-seventh left"
-               id="injury-severity-pie-chart"></div>
         </div>
 
         <div class="section-b">

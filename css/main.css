@@ -389,6 +389,10 @@ div.right {
     margin-left: 70%;
 }
 
+div.below {
+    clear: both;
+}
+
 .section,.section-a,.section-b {
     clear: both;
     padding: 2em;
@@ -455,4 +459,24 @@ svg.ct-chart-pie g text.ct-label {
 .has-legend {
     width: 80%;
     float: left;
+}
+
+.four-columns > div {
+    display: block;
+    width: 25%;
+    float: left;
+}
+
+.three-columns > div {
+    display: block;
+    width: 33.33333%;
+    float: left;
+}
+
+.col-a,.col-b,.col-c,.col-d {
+    padding: 0 2% 0 2%;
+}
+
+.chart-title {
+    text-align: center;
 }

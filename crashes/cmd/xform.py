@@ -14,9 +14,6 @@ from crashes import log
 
 LOG = log.getLogger(__name__)
 
-SeverityAgePoint = collections.namedtuple("SeverityAgePoint",
-                                          ["severity", "age"])
-
 
 @functools.total_ordering
 class AgeRange(object):
@@ -25,6 +22,8 @@ class AgeRange(object):
         self._max = max
 
     def contains(self, other):
+        if isinstance(other, AgeRange):
+            return self.contains(other._min) and self.contains(other._max)
         return ((self._max is None and other >= self._min) or
                 (self._min <= other <= self._max))
 
@@ -43,6 +42,9 @@ class AgeRange(object):
     def __gt__(self, other):
         return self._min > other._min and self._max > other._max
 
+    def __lt__(self, other):
+        return self._min < other._min and self._max < other._max
+
 
 def auto_percent_with_abs(total):
     return lambda p: "%d (%0.1f%%)" % (round(total * p / 100), p)
@@ -60,19 +62,24 @@ class Xform(base.Command):
         4: "Possible but not visible",
         5: "None"}
 
-    age_ranges = [AgeRange(max=10),
-                  AgeRange(11, 15),
-                  AgeRange(16, 20),
-                  AgeRange(21, 25),
-                  AgeRange(26, 30),
-                  AgeRange(31, 35),
-                  AgeRange(36, 40),
-                  AgeRange(41, 50),
-                  AgeRange(51, 60),
-                  AgeRange(min=61)]
+    narrow_age_ranges = [AgeRange(max=10),
+                         AgeRange(11, 15),
+                         AgeRange(16, 20),
+                         AgeRange(21, 25),
+                         AgeRange(26, 30),
+                         AgeRange(31, 35),
+                         AgeRange(36, 40),
+                         AgeRange(41, 50),
+                         AgeRange(51, 60),
+                         AgeRange(min=61)]
 
-    # we need the locations in a deterministic order for some things.
-    locations = ["Sidewalk", "Crosswalk", "Intersection", "Road", "Elsewhere"]
+    wide_age_ranges = [AgeRange(max=10),
+                       AgeRange(11, 20),
+                       AgeRange(21, 30),
+                       AgeRange(31, 40),
+                       AgeRange(41, 50),
+                       AgeRange(51, 60),
+                       AgeRange(min=61)]
 
     def __init__(self, options):
         super(Xform, self).__init__(options)
@@ -93,14 +100,20 @@ class Xform(base.Command):
         diff = date - dob
         return diff.days / 365.0
 
-    def _get_age_range(self, case_no_or_age):
+    def _get_age_range(self, case_no_or_age, ranges):
         try:
             age = int(case_no_or_age)
         except ValueError:
             age = self._get_age(case_no_or_age)
-        for age_range in self.age_ranges:
+        for age_range in ranges:
             if age_range.contains(age):
                 return age_range
+
+    def _get_wide_age_range(self, case_no_or_age):
+        return self._get_age_range(case_no_or_age, self.wide_age_ranges)
+
+    def _get_narrow_age_range(self, case_no_or_age):
+        return self._get_age_range(case_no_or_age, self.narrow_age_ranges)
 
     def _xform_timings(self):
         """Collect data on crashes per month and year."""
@@ -212,13 +225,11 @@ class Xform(base.Command):
         """Collate three age-related datasets.
 
         * Collision location by age
-        * Injury severity by age
         * A histogram of total number of collisions by age
         """
         LOG.info("Collecting data on ages of cyclists "
                  "and collision locations by age")
 
-        sev_by_age = []
         loc_by_age = {}
         total_by_age = collections.defaultdict(int)
         for name, cases in self._curation.items():
@@ -226,30 +237,48 @@ class Xform(base.Command):
             for case_no in cases:
                 age = self._get_age(case_no)
                 if age:
-                    age_range = self._get_age_range(age)
-                    sev = self._reports[case_no]['injury_severity'] or 5
-                    sev_by_age.append(SeverityAgePoint(sev, age))
+                    narrow_age_range = self._get_narrow_age_range(age)
+                    wide_age_range = self._get_wide_age_range(age)
                     if location not in loc_by_age:
-                        loc_by_age[location] = {r: 0 for r in self.age_ranges}
-                    loc_by_age[location][age_range] += 1
-                    total_by_age[age_range] += 1
+                        loc_by_age[location] = {r: 0
+                                                for r in self.wide_age_ranges}
+                    loc_by_age[location][wide_age_range] += 1
+                    total_by_age[wide_age_range] += 1
+                    if wide_age_range != narrow_age_range:
+                        total_by_age[narrow_age_range] += 1
 
-        loc_by_age_proportions = []
-        for location in self.locations:
-            # the values are absolute numbers of collisions; we want the
-            # Y axis to be the proportion of collisions by people that
-            # age, not number
-            loc_by_age_proportions.append(
-                [loc_by_age[location].get(r, 0) / float(total_by_age[r]) * 100
-                 for r in self.age_ranges])
-
-        self._save_data("location_by_age.json",
-                        {"labels": [str(r) for r in self.age_ranges],
-                         "series": loc_by_age_proportions})
+        locations = loc_by_age.keys()
+        for age_range in self.wide_age_ranges:
+            series = []
+            labels = []
+            tooltips = []
+            for loc in locations:
+                collisions = loc_by_age[loc].get(age_range, 0)
+                if collisions:
+                    # the values are absolute numbers of collisions;
+                    # we want the Y axis to be the proportion of
+                    # collisions by people that age, not number
+                    series.append(
+                        collisions /
+                        float(total_by_age[age_range]) * 100)
+                    labels.append(loc)
+                    tooltips.append("%0.1f%%\n%d collisions" % (
+                        series[-1], collisions))
+                else:
+                    series.append(0)
+                    labels.append("")
+                    tooltips.append("")
+            self._save_data("location_by_age_%s.json" % age_range,
+                            {"labels": labels,
+                             "tooltips": tooltips,
+                             "series": series,
+                             "age_range": str(age_range),
+                             "title": "%s\n%d total collisions" % (
+                                 age_range, total_by_age[age_range])})
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())
-        for age_range in self.age_ranges:
+        for age_range in self.narrow_age_ranges:
             ages_data["labels"].append(str(age_range))
             ages_data["series"][0].append(total_by_age[age_range])
             ages_data["tooltips"][0].append(

@@ -4,6 +4,8 @@ var everyOther = function(value, index) {
 
 var everyOtherLabel = {"labelInterpolationFnc": everyOther}
 
+var ageRanges = ["0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "61+"]
+
 var allColors = ['#d70206',
                  '#f05b4f',
                  '#f4c63d',
@@ -34,20 +36,24 @@ function initChart(cls, defaultData, tooltipElement, url, graphID, options) {
     charts[graphID] = new cls(
         '#' + graphID, defaultData, options
     ).on('data', function(context) {
-        if (context.type == 'update') {
-            if ("tooltips" in context.data) {
-                charts[graphID].tooltips = context.data["tooltips"];
-            }
+        if (context.type == 'update' && "tooltips" in context.data) {
+            charts[graphID].tooltips = context.data["tooltips"];
         }
     }).on('draw', function(context) {
-        if (context.type === 'bar' &&
-            charts[graphID].tooltips.length > context.seriesIndex) {
-            title = charts[graphID].tooltips[context.seriesIndex][context.index]
-            if (title !== null) {
-                context.element.attr(
-                    {"title": title.replace(newline, '<br />'),
-                     "data-toggle": "tooltip"});
+        var title;
+        if (context.type == "bar" || context.type == "line" ||
+            context.type == "slice") {
+            if (typeof(context.seriesIndex) === 'undefined') {
+                title = charts[graphID].tooltips[context.index];
+            } else if (charts[graphID].tooltips.length > context.seriesIndex) {
+                title = charts[graphID].tooltips[
+                    context.seriesIndex][context.index];
             }
+        }
+        if (typeof(title) !== "undefined" && title !== null) {
+            context.element.attr(
+                {"title": title.replace(newline, '<br />'),
+                 "data-toggle": "tooltip"});
         }
         $('#' + graphID + ' ' + tooltipElement).tooltip({
             container: 'body',
@@ -206,6 +212,21 @@ $(document).ready(function(){
         }
     });
 
-    initBarChart("data/graph/location_by_age.json",
-                  "location-by-age-bar-chart", {}, "% of collisions");
+    for (var i = 0; i < ageRanges.length; i++) {
+        var ageRange = ageRanges[i];
+        var graphID = "location-by-age-" + ageRanges[i].replace("+", "_") + "-pie";
+        var dataURL = "data/graph/location_by_age_" + ageRanges[i] + ".json";
+
+        var chart = initPieChart(
+            dataURL, graphID
+        ).on("data", function(context){
+            if (context.type == 'update' && "title" in context.data &&
+                "age_range" in context.data) {
+                var ageRange = context.data["age_range"];
+                var titleID = "#location-by-age-" + ageRange.replace("+", "_") + "-title";
+                $(titleID).html(context.data["title"].replace(newline,
+                                                              '<br />'));
+            }
+        });
+    }
 });
