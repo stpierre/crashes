@@ -39,6 +39,12 @@ function initChart(cls, defaultData, tooltipElement, url, graphID, options) {
         if (context.type == 'update' && "tooltips" in context.data) {
             charts[graphID].tooltips = context.data["tooltips"];
         }
+        if (context.type == 'update' && "title" in context.data) {
+            var titleID = '#' + graphID + "-title";
+            console.log("setting title for " + graphID + " (" + titleID + ") to " + context.data["title"]);
+            $(titleID).html(context.data["title"].replace(newline,
+                                                          '<br />'));
+        }
     }).on('draw', function(context) {
         var title;
         if (context.type == "bar" || context.type == "line" ||
@@ -164,9 +170,11 @@ $(document).ready(function(){
     initPieChart("data/graph/lb716_crosswalk_proportions.json",
                  "lb716-crosswalk-pie");
     initPieChart("data/graph/lb716_proportions.json",
-                 "lb716-all-pie");
+                 "lb716-all-bike-path-pie");
     initPieChart("data/graph/lb716_all_crosswalks.json",
                  "lb716-all-crosswalks-pie");
+    initPieChart("data/graph/lb716_all.json",
+                 "lb716-all-pie");
     initPieChart("data/graph/lb716_severity.json",
                  "lb716-severity-pie");
 
@@ -228,19 +236,10 @@ $(document).ready(function(){
 
     for (var i = 0; i < ageRanges.length; i++) {
         var ageRange = ageRanges[i];
-        var graphID = "location-by-age-" + ageRanges[i].replace("+", "_") + "-pie";
+        var graphID = "location-by-age-" + ageRanges[i].replace("+",
+                                                                "_") + "-pie";
         var dataURL = "data/graph/location_by_age_" + ageRanges[i] + ".json";
 
-        var chart = initPieChart(
-            dataURL, graphID
-        ).on("data", function(context){
-            if (context.type == 'update' && "title" in context.data &&
-                "age_range" in context.data) {
-                var ageRange = context.data["age_range"];
-                var titleID = "#location-by-age-" + ageRange.replace("+", "_") + "-title";
-                $(titleID).html(context.data["title"].replace(newline,
-                                                              '<br />'));
-            }
-        });
+        initPieChart(dataURL, graphID);
     }
 });

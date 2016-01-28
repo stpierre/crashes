@@ -273,7 +273,7 @@ class Xform(base.Command):
                              "tooltips": tooltips,
                              "series": series,
                              "age_range": str(age_range),
-                             "title": "%s\n%d total collisions" % (
+                             "title": "%s years old\n%d total collisions" % (
                                  age_range, total_by_age[age_range])})
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
@@ -434,11 +434,14 @@ class Xform(base.Command):
             "lb716_crosswalk_proportions.json",
             {"series": [row_collisions, non_row_collisions],
              "labels": [
-                 "%0.1f%% affected by LB716 (%d)" % (
+                 "%0.1f%%" % (
                      100 * float(row_collisions) / (
-                         row_collisions + non_row_collisions),
-                     row_collisions),
-                 ""]})
+                         row_collisions + non_row_collisions)),
+                 ""],
+             "title": ("%0.1f%% of collisions in bike path crosswalks "
+                       "could be prevented by LB716" % (
+                           100 * float(row_collisions) / (
+                               row_collisions + non_row_collisions)))})
 
         sidewalk_collisions = len(lb716_data["sidewalk"])
         total_path_collisions = (sidewalk_collisions + row_collisions +
@@ -448,20 +451,35 @@ class Xform(base.Command):
             {"series": [row_collisions,
                         sidewalk_collisions + non_row_collisions],
              "labels": [
-                 "%0.1f%% affected by LB716 (%d)" % (
-                     100 * float(row_collisions) / total_path_collisions,
-                     row_collisions),
-                 ""]})
+                 "%0.1f%%" % (
+                     100 * float(row_collisions) / total_path_collisions),
+                 ""],
+             "title": ("%0.1f%% of all collisions in bike paths could be "
+                       "prevented by LB716" % (
+                           100 * float(row_collisions) / total_path_collisions
+                       ))})
 
         all_crosswalk = len(self._curation["crosswalk"])
         self._save_data(
             "lb716_all_crosswalks.json",
-            {"series": [row_collisions, all_crosswalk],
+            {"series": [row_collisions, all_crosswalk - row_collisions],
              "labels": [
-                 "%0.1f%% affected by LB716 (%d)" % (
-                     100 * float(row_collisions) / all_crosswalk,
-                     row_collisions),
-                 ""]})
+                 "%0.1f%%" % (100 * float(row_collisions) / all_crosswalk),
+                 ""],
+             "title": ("%0.1f%% of all crosswalk collisions could be "
+                       "prevented by LB716" % (
+                           100 * float(row_collisions) / all_crosswalk))})
+
+        total = len(reduce(operator.add, self._curation.values()))
+        self._save_data(
+            "lb716_all.json",
+            {"series": [row_collisions, total - row_collisions],
+             "labels": [
+                 "%0.1f%%" % (100 * float(row_collisions) / total),
+                 ""],
+             "title": ("%0.1f%% of all collisions city-wide could be "
+                       "prevented by LB716" % (
+                           100 * float(row_collisions) / total))})
 
         by_severity = collections.defaultdict(int)
         by_age = collections.defaultdict(int)
@@ -480,14 +498,14 @@ class Xform(base.Command):
             yearly_counts[date.year] += 1
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
-        total = sum(by_age.values())
+        total_with_known_age = sum(by_age.values())
         for age_range in self.wide_age_ranges:
             ages_data["labels"].append(str(age_range))
             ages_data["series"][0].append(by_age[age_range])
             ages_data["tooltips"][0].append(
                 "%s: %d collisions\n%0.1f%% of bike path collisions" % (
                     age_range, by_age[age_range],
-                    100 * float(by_age[age_range]) / total))
+                    100 * float(by_age[age_range]) / total_with_known_age))
 
         self._save_data("lb716_ages.json", ages_data)
 
