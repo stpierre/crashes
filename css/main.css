@@ -473,6 +473,12 @@ svg.ct-chart-pie g text.ct-label {
     float: left;
 }
 
+.two-columns > div {
+    display: block;
+    width: 50%;
+    float: left;
+}
+
 .col-a,.col-b,.col-c,.col-d {
     padding: 0 2% 0 2%;
 }

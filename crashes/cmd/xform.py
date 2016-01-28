@@ -60,7 +60,7 @@ class Xform(base.Command):
         2: "Disabling",
         3: "Visible but not disabling",
         4: "Possible but not visible",
-        5: "None"}
+        5: "Uninjured"}
 
     narrow_age_ranges = [AgeRange(max=10),
                          AgeRange(11, 15),
@@ -424,6 +424,97 @@ class Xform(base.Command):
             data["series"].append(num_cases)
         self._save_data("proportions.json", data)
 
+    def _xform_lb716(self):
+        """Create data for various LB716-related charts."""
+        lb716_data = json.load(open(self.options.lb716_results))
+
+        row_collisions = len(lb716_data["row"])
+        non_row_collisions = len(lb716_data["non-row"])
+        self._save_data(
+            "lb716_crosswalk_proportions.json",
+            {"series": [row_collisions, non_row_collisions],
+             "labels": [
+                 "%0.1f%% affected by LB716 (%d)" % (
+                     100 * float(row_collisions) / (
+                         row_collisions + non_row_collisions),
+                     row_collisions),
+                 ""]})
+
+        sidewalk_collisions = len(lb716_data["sidewalk"])
+        total_path_collisions = (sidewalk_collisions + row_collisions +
+                                 non_row_collisions)
+        self._save_data(
+            "lb716_proportions.json",
+            {"series": [row_collisions,
+                        sidewalk_collisions + non_row_collisions],
+             "labels": [
+                 "%0.1f%% affected by LB716 (%d)" % (
+                     100 * float(row_collisions) / total_path_collisions,
+                     row_collisions),
+                 ""]})
+
+        all_crosswalk = len(self._curation["crosswalk"])
+        self._save_data(
+            "lb716_all_crosswalks.json",
+            {"series": [row_collisions, all_crosswalk],
+             "labels": [
+                 "%0.1f%% affected by LB716 (%d)" % (
+                     100 * float(row_collisions) / all_crosswalk,
+                     row_collisions),
+                 ""]})
+
+        by_severity = collections.defaultdict(int)
+        by_age = collections.defaultdict(int)
+        yearly_counts = collections.defaultdict(int)
+        for case_no in lb716_data["row"]:
+            age = self._get_age(case_no)
+            if age:
+                age_range = self._get_wide_age_range(age)
+                by_age[age_range] += 1
+
+            sev = self._reports[case_no]['injury_severity'] or 5
+            by_severity[sev] += 1
+
+            date_str = self._reports[case_no]['date']
+            date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            yearly_counts[date.year] += 1
+
+        ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
+        total = sum(by_age.values())
+        for age_range in self.wide_age_ranges:
+            ages_data["labels"].append(str(age_range))
+            ages_data["series"][0].append(by_age[age_range])
+            ages_data["tooltips"][0].append(
+                "%s: %d collisions\n%0.1f%% of bike path collisions" % (
+                    age_range, by_age[age_range],
+                    100 * float(by_age[age_range]) / total))
+
+        self._save_data("lb716_ages.json", ages_data)
+
+        severity_data = {"labels": [], "series": [], "tooltips": []}
+        for sevid, severity in self.injury_severities.items():
+            count = by_severity.get(sevid, 0)
+            severity_data["series"].append(count)
+            if count > 0:
+                severity_data["labels"].append(severity)
+                severity_data["tooltips"].append(
+                    "%s: %0.1f%%\n%d collisions" % (
+                        severity,
+                        100 * float(count) / total_path_collisions,
+                        count))
+            else:
+                severity_data["labels"].append("")
+                severity_data["tooltips"].append("")
+
+        self._save_data("lb716_severity.json", severity_data)
+
+        years = sorted(yearly_counts.keys())
+        self._save_data("lb716_years.json", {
+            "labels": years,
+            "tooltips": [["%s: %d" % (year, yearly_counts[year])
+                          for year in years]],
+            "series": [[yearly_counts[k] for k in years]]})
+
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
         path = os.path.join(self.options.graph_data, filename)
@@ -438,6 +529,7 @@ class Xform(base.Command):
         self._xform_timings()
         self._xform_collision_times()
         self._xform_ages()
+        self._xform_lb716()
 
     def satisfied(self):
         return os.path.exists(self.options.collision_graph)
