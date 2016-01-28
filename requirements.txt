@@ -1,7 +1,6 @@
 beautifulsoup4
 requests
 -e git+https://github.com/euske/pdfminer.git#egg=pdfminer
-matplotlib
 six
 termcolor
 jinja2

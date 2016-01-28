@@ -4,6 +4,6 @@
 
 git rebase master
 
-echo "Generating graphs and results"
-crashes graph
+echo "Generating graph data and results"
+crashes xform
 crashes results
