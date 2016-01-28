@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bicycle Collision Analytics (Lincoln, NE)</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/chartist.min.css">
+    <link rel="stylesheet" href="css/main.css" />
+
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
+    <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <script src="js/toc.min.js"></script>
+    <script src="js/chartist.min.js"></script>
+    <script src="js/chartist-plugin-axistitle.min.js"></script>
+    <script src="js/graphs.js"></script>
+    <script src="js/main.js"></script>
+
+    <!--[if IE]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+
+  <body id="index" class="home">
+    <header id="banner" class="body">
+      <h1><a href="http://stpierre.github.io/crashes/">Bicycle Collision Analytics (Lincoln, NE) </a></h1>
+    </header>
+
+    <div class="alert alert-success fade in">
+      <button type="button" class="close" data-dismiss="alert"
+        aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+
+      Many of the graphs on this page are now clickable to get even
+        more data out of them. Try it out!
+    </div>
+
+    <div id="toc"></div>
+
+    <aside id="featured" class="body">
+      <article>
+        <footer class="post-info">
+          <abbr class="published">
+            Last updated: 2016-09-23 13:41 
+          </abbr>
+
+          <address class="vcard author">By Chris St. Pierre</address>
+        </footer>
+
+        <p>In March 2015, I was hit by a car while on my bike in a
+          bike path crosswalk, and was ticketed for failure to yield
+          the right of way. I got interested in bicycle safety and, as
+          a software engineer by trade, I decided to download, parse,
+          and quantify as much collision data as possible from the
+          Lincoln Police Department.</p>
+
+        <div class="section">
+          <h2>Interpreting These Data</h2>
+
+          In the data below, bike-car collisions are categorized based
+          on where they happened. Five locations are tracked:
+
+          <ul class="simple">
+            <li><b>Crosswalk</b>: Collision happened while a person on
+              a bicycle was using a crosswalk; that is, attempting to
+              cross a road or intersection either in a painted
+              crosswalk, or crossing an intersection from one sidewalk
+              to another. This does not include cyclists who are
+              riding on the street and pass through the intersection
+              without using a crosswalk.</li>
+            <li><b>Sidewalk</b>: Collision happened while a person on
+              a bicycle was riding on a sidewalk. For instance, a car
+              entering or leaving a private driveway or, in
+              <a href="http://cjis.lincoln.ne.gov/~ACC/B602/B6022972.PDF" class="reference external">rare situations</a>, a car
+              that jumps the curb.</li>
+            <li><b>Road</b>: Collision happened while a person on a
+              bicycle was riding on the road, excluding
+              intersections.</li>
+            <li><b>Intersection</b>: Collision happened while a person
+              on a bicycle was riding through an intersection on the
+              road, not using a crosswalk.</li>
+            <li><b>Bike lane</b>: Collision happened while a person on
+              a bicycle was riding in a bike lane.</li>
+            <li><b>Elsewhere</b>: Collision happened elsewhere
+              (alleyways, parking lots, etc.). This also includes
+              collisions that happened on the road, but where the
+              cyclist was not riding on the road as such. (E.g., the
+              cyclist was crossing the street away from a
+              crosswalk.)</li>
+          </ul>
+
+          <p>There is some inherent difficulty in categorizing certain
+            types of collisions; for instance, if a cyclist enters a
+            crosswalk from a sidewalk but, midway through the
+            intersection leaves the crosswalk, it's impossible to know
+            if the cyclist was intending to enter the roadway, avoid
+            an obstacle and continue in the crosswalk, or so on.</p>
+        </div>
+
+        <div class="section">
+          <h2>Quantitative Results</h2>
+
+          <p>The current dataset includes 40195 reports,
+            from December  3, 2011 to
+            September 23,
+            2016. 7468 reports could not be parsed,
+            largely because they were handwritten. Of the reports that
+            could be parsed, 548 (1.4%) involved a person on a
+            bicycle.</p>
+
+          <p>This number is almost certainly an underestimate, for
+            several reasons:</p>
+
+          <ul class="simple">
+            <li>Not every accident is reported. Non-injury accidents
+              in particular may not be; anecdotally, I was initially
+              advised not to file an accident report when I was hit,
+              since my injuries were very minor.</li>
+            <li>Some accident reports are not available online.</li>
+            <li>Some accident reports, particularly older ones, are
+              handwritten and thus were not automatically
+              parseable.</li>
+            <li>Accident reports are not written for bicycle-bicycle
+              or bicycle-pedestrian collisions.</li>
+          </ul>
+        </div>
+
+        <div class="section-a">
+          <h3>Collision locations</h3>
+
+          <div class="ct-chart ct-major-seventh left"
+               id="location-pie-chart"></div>
+
+          <div class="right">
+            <p>The majority of collisions involving a bicycle
+              (297/548) happened in a
+              crosswalk.</p>
+
+            <p>Large numbers of collisions also involve people riding
+              in the street, and people riding in sidewalks. (Most
+              sidewalk accidents involve cars turning into private
+              drives, but a few featured cars jumping the curb.) A
+              smattering involves people riding elsewhere, which
+              includes parking lots, or crossing streets in the middle
+              of blocks (i.e., away from crosswalks). Collisions in
+              bike lanes are very rare indeed, but that likely
+              reflects the rarity of bike lanes more than
+              anything.</p>
+
+            <p>Clearly, crosswalks are far and away the most dangerous
+              place for cyclists. No matter what other riding patterns
+              are, cyclists almost certainly spend orders of magnitude
+              more time out of crosswalks, so more than half the
+              accidents happening in crosswalks is pretty clearly
+              damning.</p>
+
+            <p>Unfortunately clear data on the number of miles ridden
+              on streets as compared to sidewalks are not available,
+              so it's not possible to extrapolate from the data shown
+              above to conclude whether it's more dangerous to ride in
+              the street or on the sidewalk. It is worth noting,
+              though, that 71.5% (392) of the collisions
+              indicate a pattern of riding on sidewalks, while merely
+              19.5%
+              (107) indicate a pattern of riding in the
+              street.</p>
+
+            <p>Unsurprisingly, no collisions were reported on
+              off-street bike paths. (Recall that these data only
+              include car-bike accidents; bike-bike and
+              bike-pedestrian accidents certainly do occur on the
+              off-street bike paths.)</p>
+          </div>
+        </div>
+        <div class="section-b">
+          <h3>Locations by age</h3>
+
+          <div class="four-columns">
+            <div class="col-a">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-0-10-pie"></div>
+              <h4 class="chart-title"
+                  id="location-by-age-0-10-pie-title"></h4>
+            </div>
+
+            <div class="col-b">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-11-20-pie"></div>
+              <h4 class="chart-title" id="location-by-age-11-20-pie-title"></h4>
+            </div>
+
+            <div class="col-c">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-21-30-pie"></div>
+              <h4 class="chart-title" id="location-by-age-21-30-pie-title"></h4>
+            </div>
+
+            <div class="col-d">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-31-40-pie"></div>
+              <h4 class="chart-title"
+                  id="location-by-age-31-40-pie-title"></h4>
+            </div>
+          </div>
+
+          <div class="three-columns" style="margin: 0 12.5% 0 12.5%">
+            <div class="col-a">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-41-50-pie"></div>
+              <h4 class="chart-title"
+                  id="location-by-age-41-50-pie-title"></h4>
+            </div>
+
+            <div class="col-b">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-51-60-pie"></div>
+              <h4 class="chart-title" id="location-by-age-51-60-pie-title"></h4>
+            </div>
+
+            <div class="col-c">
+              <div class="ct-chart ct-square"
+                   id="location-by-age-61_-pie"></div>
+              <h4 class="chart-title" id="location-by-age-61_-pie-title"></h4>
+            </div>
+          </div>
+
+          <div class="below">
+            <p>The location of collisions varies slightly by the age of
+              the cyclist.</p>
+
+            <p>Again, though, without data on the number of miles
+              ridden in various scenarios, it's hard to make much
+              sense of these data -- especially with such
+              variable-sized (and often small) data sets. The 51-to-60
+              set seems to be doing something interesting, though;
+              perhaps these cyclists ride on the street more often
+              than cyclists of other ages.</p>
+          </div>
+        </div>
+
+        <div class="section-a">
+          <h3>Collisions per month</h3>
+          <div class="ct-chart ct-major-twelfth"
+               id="monthly-bar-chart"></div>
+
+          <p>Other than a big jump between 2013 and 2014, the apparent
+            trend of increasing collisions in this graph is a bit
+            misleading.</p>
+        </div>
+
+        <div class="section-b">
+          <h3>Collisions per year</h3>
+
+          <div class="left">
+            <p>Happily, collisions decreased slightly from 2014 to
+              2015.
+
+            <p>Any notion that collisions are increasing should be
+              adopted cautiously, as there are a number of confounding
+              variables. (Hopefully, it represents an increase in the
+              number of miles ridden; it almost certainly also
+              represents a decrease in handwritten accident reports,
+              which can't be automatically parsed and so aren't
+              included in these data.)</p>
+          </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="yearly-bar-chart"></div>
+        </div>
+
+        <div class="section-a">
+          <h3>Aggregate monthly collisions</h3>
+          <div class="ct-chart ct-major-seventh left"
+               id="monthly-aggregate-bar-chart"></div>
+
+          <div class="right">
+            <p>Predictably, most accidents happen during the summer
+              months. February is the safest month, probably because
+              even the hardcores have gotten tired of riding in the
+              cold and there are so few cyclists out.</p>
+          </div>
+        </div>
+
+        <div class="section-b">
+          <h3>Aggregate hourly collisions</h3>
+
+          <div class="left">
+            <p>Commutes are the most dangerous times. It's interesting
+              that the evening commute -- not the presumably darker
+              morning commute -- is more dangerous.</p>
+          </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="hourly-bar-chart"></div>
+        </div>
+
+        <div class="section-a">
+          <h3>Collisions by age of cyclist</h3>
+
+          <div class="ct-chart ct-major-seventh left"
+               id="ages-bar-chart"></div>
+
+          <div class="right">
+            <p>Just so we're clear, that's about 10 children under 11
+              hit by cars every year in Lincoln alone.</p>
+
+            <p>I suspect that this may just be a graph of ridership
+              numbers. There's a dropoff at 16, when kids get their
+              driver's license, but it goes back up for the college
+              age crowd; then a slow descent to 40, after which it
+              picks up again, presumably with the MAMIL crowd.</p>
+
+            <p>But seriously, over 40% of people hit on bikes in
+              Lincoln are <i>children</i>.</p>
+          </div>
+        </div>
+
+        <div class="section-b">
+          <h3>Injuries by collision location</h3>
+
+          <div class="left">
+            <p>Interestingly, different locations have different
+              injury rates.</p>
+
+            <p>Sidewalks have the highest injury rate, but also the
+              most non-disabling injuries. Collisions occurring on
+              the road are the least likely to lead to injuries, but
+              when they do, the injuries are more likely to be
+              disabling. Intersections also show more disabling
+              injuries. Overall, a collision while riding in the
+              street (whether in an intersection or not) is about 2%
+              less likely to result in injury, but about 12% more
+              likely to result in disabling injury.</p>
+
+            <p>Note that these data are based entirely on accident
+              reports, and so do not take into account cyclists who
+              are hit and later killed; the "Killed" category only
+              represents cyclists who were dead at the scene.</p>
+
+            <p>Non-injury collisions are the most likely collisions to
+              not be reported, so all of the injury rates are
+              hopefully overestimates.</p>
+
+            <p>Bike lane collisions are so rare that the data here
+              aren't really reliable.</p>
+          </div>
+
+          <div class="ct-chart-container right">
+            <div class="ct-chart ct-major-sixth has-legend"
+                 id="injury-rates-bar-chart"></div>
+
+            <div class="legend" id="injury-rates-legend">
+              <div class="ct-series-a">Killed</div>
+              <div class="ct-series-b">Disabling</div>
+              <div class="ct-series-c">Visible but not disabling</div>
+              <div class="ct-series-d">Possible but not visible</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-a">
+          <h3>Injury severities</h3>
+
+          <div class="ct-chart ct-major-seventh left"
+               id="injury-severity-pie-chart"></div>
+
+          <div class="right">
+            <p>Overall, while disabling injuries are scary, they
+              represent a fairly small percentage of collisions. That
+              said, it's still worrisome that a cyclist is about as
+              likely to escape a collision unscathed as to suffer
+              disabling injury.</p>
+          </div>
+        </div>
+
+        <div class="section-b">
+          <h3>Body region of injuries</h3>
+
+          <div class="left">
+            <p>Predictably, injuries are most common to the
+              extremities, particularly the lower legs.</p>
+          </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="injury-region-pie-chart"></div>
+        </div>
+
+        <div class="section-a">
+          <h2>Map of Collisions</h2>
+
+          <p>All locations should be considered approximations, and
+            there are almost certainly mistakes in places.</p>
+
+          <div class="map-container">
+            <div class="map-canvas" id="all-collisions-map-canvas"></div>
+          </div>
+
+          <button class="map-buttons current" map-layer="crosswalk">
+            <img src="http://www.googlemapsmarkers.com/v1/C/FF9900/"
+                 alt="Crosswalk marker"> Crosswalk</button>
+          <button class="map-buttons current" map-layer="sidewalk">
+            <img src="http://www.googlemapsmarkers.com/v1/S/FFFF66/"
+                 alt="Sidewalk marker"> Sidewalk</button>
+          <button class="map-buttons current" map-layer="road">
+            <img src="http://www.googlemapsmarkers.com/v1/R/009900/"
+                 alt="Road marker"> Road</button>
+          <button class="map-buttons current" map-layer="intersection">
+            <img src="http://www.googlemapsmarkers.com/v1/I/0099FF/"
+                 alt="Intersection marker"> Intersection</button>
+          <button class="map-buttons current" map-layer="bike_lane">
+            <img src="http://www.googlemapsmarkers.com/v1/L/990000/"
+                 alt="Bike lane marker"> Bike Lane</button>
+          <button class="map-buttons current" map-layer="elsewhere">
+            <img src="http://www.googlemapsmarkers.com/v1/E/CC33FF"
+                 alt="Elsewhere marker"> Elsewhere</button>
+
+          <p>Some takeaways:</p>
+
+          <ul class="simple">
+            <li>Some intersections may seem more dangerous solely
+              because they are more heavily trafficked, not because
+              they are actually more dangerous.</li>
+            <li>That said, a few corridors seem particularly
+              dangerous, with Capital Parkway/Normal Blvd. leading the
+              pack. The intersections with 27th, 33rd, and South are
+              all among the most dangerous in the city.</li>
+            <li>The 27th street and Vine street corridors put in
+              strong bids for second-most dangerous, and
+              unsurprisingly 27th and Vine is a hotbed of crosswalk
+              collisions.</li>
+            <li>In general, collisions increase towards downtown and
+              diminish as you get further out. There are two notable
+              exceptions: The entire length of 84th street (with
+              nearly twice as many crosswalk collisions as 70th and
+              56th streets); and Pine Lake near 27th. These two areas
+              have something in common: Bike paths adjacent to
+              streets, where cyclists must still cross many side
+              streets. Superior street, which also has a
+              street-adjacent bike path, has no nearby analogue to
+              compare it to, but it has as many crosswalk collisions
+              as Havelock, Fremont, and Holdrege combined.</li>
+            <li>A significant number of crosswalk and sidewalk
+              collisions occur in the downtown exclusion area. Stop
+              riding on the sidewalks downtown already! It's not even
+              safer! (It also could <a href="http://cjis.lincoln.ne.gov/~ACC/B604/B6045945.PDF" class="reference external">get
+              you a ticket</a>.)</li>
+            <li>Road collisions, predictably, are focused
+              downtown. But at least riding on the streets is
+              legal.</li>
+          </ul>
+
+          <p>This map may actually contain actionable information; many of the
+            most dangerous intersections are at or near bike path underpasses
+            or overpasses, so you can avoid crossing 27th at Vine, for
+            instance, on the Mopac Trail.</p>
+        </div>
+
+        <div class="section">
+          <h2>Qualitative Results</h2>
+
+          <p>A number of interesting trends revealed themselves in
+            reading through the reports. Most disturbingly, at least
+            some members of LPD have a significant misunderstanding of
+            the law, claiming in the
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B306/B3063805.PDF" class="reference external">accident</a>
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B405/B4050934.PDF" class="reference external">report</a> that
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B408/B4085278.PDF" class="reference external">cyclists are required</a> to
+            walk their bike across intersections, and
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B410/B4107448.PDF" class="reference external">in some cases</a> specifically
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B507/B5074595.PDF" class="reference external">noting</a> that they
+            "<a href="http://cjis.lincoln.ne.gov/~ACC/B310/B3104457.PDF" class="reference external">lectured</a>" the cyclist.</p>
+
+          <p>Even after LB716 took effect, cops were still
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B607/B6073532.PDF" class="reference external">lecturing cyclists</a> about
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B608/B6086968.PDF" class="reference external">walking across
+            sidewalks</a>.</p>
+
+          <p>In other (fewer) <a href="http://cjis.lincoln.ne.gov/~ACC/B309/B3096911.PDF" class="reference external">cases</a>,
+            the officer has a <a href="http://cjis.lincoln.ne.gov/~ACC/B406/B4063856.PDF" class="reference external">correct
+            understanding</a> of the law, and
+            "<a href="http://cjis.lincoln.ne.gov/~ACC/B511/B5112375.PDF" class="reference external">educate</a>" the cyclist; and
+            in some cases <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3042103.PDF" class="reference external">the driver of the
+            car was ticketed</a> for
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B206/B2062920.PDF" class="reference external">failure to yield</a> to a
+            cyclist in a crosswalk.</p>
+
+          <p>The law for crossing private drives is less clear, but
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B210/B2106960.PDF" class="reference external">at least one cop</a> thinks
+            that bikes on sidewalks must yield to cars in driveways,
+            while <a href="http://cjis.lincoln.ne.gov/~ACC/B509/B5099464.PDF" class="reference external">another one
+            disagrees</a>. One cop <a href="http://cjis.lincoln.ne.gov/~ACC/B605/B6050106.PDF" class="reference external">lectured
+            a cyclist</a> who collided with a car in a private drive,
+            even though the accident report states that the view was
+            blocked. I guess you should leave the Oakleys at home and
+            wear your X-ray glasses.</p>
+
+          <p>Perhaps ironically, in <a href="http://cjis.lincoln.ne.gov/~ACC/B405/B4055506.PDF" class="reference external">one
+            case</a> a cyclist who had dismounted to walk his bike
+            across the intersection was hit while on foot.</p>
+
+          <p>In some cases, the accident report
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3046597.PDF" class="reference external">mentions</a> that the cyclist
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B403/B4032910.PDF" class="reference external">was not wearing a helmet</a>,
+            despite the fact that this has absolutely no legal
+            bearing, nor does it have any bearing on whether or not a
+            cyclist is hit. It's hard to see this as anything other
+            than editorial victim-blaming. In another case the fact
+            that cyclists *were* <a href="http://cjis.lincoln.ne.gov/~ACC/B510/B5102671.PDF" class="reference external">wearing
+            helmets and reflective clothing</a> is mentioned; although
+            the reflective clothing has a clear bearing on their
+            visibility, helmet use again seems to be mentioned simply
+            as part of a false correlation with "proper" cycling.</p>
+
+          <p>A <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3049103.PDF" class="reference external">number</a> of accident
+            reports reverse the agents, claiming that
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B406/B4065578.PDF" class="reference external">a bike hit a car</a> in cases
+            where the car clearly hit the bike. In some cases, it's
+            described <a href="http://cjis.lincoln.ne.gov/~ACC/B403/B4034454.PDF" class="reference external">both ways</a>. It's
+            not clear why this inversion of causality occurs.</p>
+
+          <p>Some people, upon hitting a ten-year-old child, can think
+            of nothing better to do than
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B604/B6043838.PDF" class="reference external">yell at the kid about
+            right-of-way</a> and drive away.</p>
+
+          <p>In some cases, bicyclists
+            "<a href="http://cjis.lincoln.ne.gov/~ACC/B201/B2019522.PDF" class="reference external">suddenly appear</a>". Stop
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B306/B3063032.PDF" class="reference external">apparating</a> in public or the
+            muggles will catch on! (Strangely, the accident reports
+            where cyclists <a href="http://cjis.lincoln.ne.gov/~ACC/B508/B5081151.PDF" class="reference external">appear</a> show
+            the bike moving through space normally, not
+            teleporting.)</p>
+
+          <p>The only place <a href="http://cjis.lincoln.ne.gov/~ACC/B205/B2057557.PDF" class="reference external">two</a>
+            "elsewhere" <a href="http://cjis.lincoln.ne.gov/~ACC/B302/B3023161.PDF" class="reference external">collisions</a>
+            occurred is on 27th street, just south of Highway 2, where
+            there's a cutout of the median to let train tracks cross
+            27th street. People are crossing a busy arterial street
+            with no crosswalk along train tracks -- with a pedestrian
+            bridge overhead. Please don't be dumb.</p>
+
+          <p>Don't <a href="http://cjis.lincoln.ne.gov/~ACC/B511/B5114253.PDF" class="reference external">ride like a dingus</a>.</p>
+
+          <p><a href="http://cjis.lincoln.ne.gov/~ACC/B207/B2072693.PDF" class="reference external">Please</a>,
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B404/B4049988.PDF" class="reference external">get information</a> from a
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B207/B2072693.PDF" class="reference external">driver</a> who
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B409/B4090913.PDF" class="reference external">hits
+            you</a>. <a href="http://cjis.lincoln.ne.gov/~ACC/B206/B2065976.PDF" class="reference external">Call the police.</a>
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3047233.PDF" class="reference external">File a report.</a></p>
+
+          <p>If you <a href="http://cjis.lincoln.ne.gov/~ACC/B508/B5086728.PDF" class="reference external">don't have brakes on
+            your bike</a>, <b>get some</b>. If you can't afford them,
+            visit the
+            incredible <a href="http://www.lincolnbikekitchen.org/">Lincoln
+            Bike Kitchen</a>. If you can afford an extra pair,
+            please <a href="http://www.lincolnbikekitchen.org/donate.html">donate</a>
+            to the Bike Kitchen.</p>
+        </div>
+
+        <div class="section">
+          <h2>Methodology</h2>
+
+          <p>Accident reports are downloaded automatically from the
+            <a href="https://lincoln.ne.gov/city/police/stats/acc.htm"
+               class="reference external">Lincoln Police Department's
+               website</a>. The reports are parsed automatically and
+               selected data are extracted. The data are available
+               at <a href="data/reports.json" class="reference
+               external">data/reports.json</a>.
+
+          <p>These reports are then curated by hand to determine where
+            the collision happened, as described above. This depends
+            on the accuracy of the accident report; anecdotally,
+            several cyclists have reported to me that their accident
+            reports were not completely accurate. I found one accident
+            report where the <a href="http://cjis.lincoln.ne.gov/~ACC/B307/B3074762.PDF" class="reference external">drawing does
+            not look like the actual intersection</a> where the
+            collision happened, so there are definitely at least some
+            inaccuracies. These inaccuracies are not expected to be
+            significant, but there's no obvious way to test this with
+            the given data set.</p>
+
+          <p>Much of the methodology is described in more detail in the
+            <a href="https://github.com/stpierre/crashes/blob/master/README.rst"
+               class="reference external">README</a>.  All of the code
+               used to generate this report is free and open source
+               under the
+            <a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html"
+               class="reference external">GPLv2</a>.</p>
+
+          <p>I have made no effort at all to determine fault, as that
+            process would be fraught beyond any semblance of
+            reason.</p>
+
+          <p>The Lincoln Police Department deserves special thanks for
+            their open records. In the other two largest cities in
+            Nebraska, the Omaha and Grand Island Police Departments
+            both charge for accident reports ($5 and $6,
+            respectively), and the Omaha Police Department does not
+            allow listing accident reports. Lincoln's open records
+            made this project possible.</p>
+          </div>
+
+        <div class="section">
+          <h2>Further Study</h2>
+
+          <p>There are lots of hit-and-runs, mostly by cars but in
+            some cases by cyclists, too. (The cyclists who run from a
+            collision seem to generally be kids.) It'd be nice to
+            gather data on that.</p>
+
+          <p>Charting the time of day of collisions throughout the
+            calendar year might demonstrate how darkness affects (or
+            doesn't affect) collisions.</p>
+          </div>
+
+        <div class="section">
+          <h2>Links</h2>
+
+          <ul class="simple">
+            <li><a href="http://www.transportation.nebraska.gov/highway-safety/"
+                   class="reference external">Official Nebraska
+                   Department of Roads Crash Data</a>. Monthly and
+                   yearly summaries with lots of aggregate crash data,
+                   but little in the way of bicycyle-specific
+                   data.</li>
+            <li><a href="https://lincoln.ne.gov/city/plan/reports/GapAnalysis.pdf"
+                   class="reference external">Lincoln Complete Streets
+                   Gap Analysis</a>. Information about Lincoln's bike
+                   trail network, including a collision heat map (page
+                   14) of 1,655 bike-car collisions.</li>
+            <li><a href="http://www.nebike.org/laws/" class="reference
+                   external">Nebraska Bike Laws</a>, courtesy of the
+                   Nebraska Bicycling Alliance.</li>
+            <li><a href="http://www.citylab.com/navigator/2015/05/what-to-do-when-youre-hit-by-a-car/393809/"
+                   class="reference external">What to do when you're
+                   hit by a car</a> (and have the time, money, and
+                   presence of mind to handle it the best way).</li>
+            <li><a href="http://grist.org/living/what-to-do-if-youre-hit-by-a-car-while-riding-your-bike/"
+                   class="reference external">What to do if you're hit
+                   by a car while riding your bike</a>. A little more
+                   pragmatic.</li>
+            <li><a href="http://www.peopleforbikes.org/statistics/">People
+                for Bikes' Statistics Library</a></li>
+            <li><a href="http://www.bicyclinglife.com/Library/riskfactors.htm">Risk
+                Factors for Bicycle-Motor Vehicle Collisions at
+                Intersections</a>. A similar (but much larger and more
+                rigorous) study of police reports in Palo Alto.</li>
+            <li><a href="http://www.sharetheroad.ca/what-are-the-dangers-in-terms-of-cycling-safety--p128277">What
+                are the Dangers in Terms of Cycling Safety?</a>
+                Excellent international data on cycling risks.</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h3>Media coverage of this report</h3>
+
+          <ul class="Simple">
+            <li><a href="http://journalstar.com/news/local/cindy-lange-kubick-cars-and-bikes-and-navigating-lincoln-from/article_3a705d1a-cc0c-5df4-b8d1-4b867d26acd0.html">Cars
+                and bikes navigating Lincoln from one computer nerd to
+                the rest of us</a>, Cindy Lange-Kubick, Lincoln
+                Journal-Star</li>
+            <li><a href="http://www.klkntv.com/story/29233856/lincoln-man-creates-website-to-advocate-bike-safety">Lincoln
+                man creates website to advocate bike safety</a>,
+                Marlenia Thornton, KLKN-TV</li>
+            <li><a href="http://www.dailynebraskan.com/news/injured-bicyclist-creates-webpage-on-bike-crash-data/article_ea4db40a-7782-11e5-ad4d-93738956dab0.html">Injured
+                bicyclist creates web page on bike crash data</a>,
+                Marcella Mercer, Daily Nebraskan</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <h3>Local Bicycling Organizations</h3>
+
+          <p>Please consider joining or supporting one or more of
+            these organizations to help advance bicycle advocacy.</p>
+
+          <ul class="simple">
+            <li><a href="http://www.nebike.org/">Nebraska Bicycling
+                Alliance</a></li>
+            <li><a href="http://bicyclincoln.org/">BicycLincoln</a></li>
+            <li><a href="http://greatplainsbikeclub.org/">Great Plains
+                Bicycling Club</a></li>
+          </ul>
+        </div>
+      </article>
+    </aside>
+  </body>
+</html>
