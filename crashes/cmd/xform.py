@@ -62,16 +62,21 @@ class Xform(base.Command):
         4: "Possible but not visible",
         5: "Uninjured"}
 
-    narrow_age_ranges = [AgeRange(max=10),
+    narrow_age_ranges = [AgeRange(max=5),
+                         AgeRange(6, 10),
                          AgeRange(11, 15),
                          AgeRange(16, 20),
                          AgeRange(21, 25),
                          AgeRange(26, 30),
                          AgeRange(31, 35),
                          AgeRange(36, 40),
-                         AgeRange(41, 50),
-                         AgeRange(51, 60),
-                         AgeRange(min=61)]
+                         AgeRange(41, 45),
+                         AgeRange(46, 50),
+                         AgeRange(51, 55),
+                         AgeRange(56, 60),
+                         AgeRange(61, 65),
+                         AgeRange(66, 70),
+                         AgeRange(min=70)]
 
     wide_age_ranges = [AgeRange(max=10),
                        AgeRange(11, 20),
@@ -162,7 +167,10 @@ class Xform(base.Command):
                                          "series": [series],
                                          "tooltips": [tooltips]})
 
-        aggregate_data = {"labels": [], "series": [[]], "tooltips": [[]]}
+        aggregate_data = {"labels": [], "series": [[]], "tooltips": [[]],
+                          "activate_tooltips": [[]]}
+        min_count = min(monthly_aggregate.values())
+        max_count = max(monthly_aggregate.values())
         for i in range(12):
             month = datetime.date(2000, i + 1, 1)
             month_name = month.strftime("%B")
@@ -171,6 +179,16 @@ class Xform(base.Command):
             aggregate_data["series"][0].append(count)
             aggregate_data["tooltips"][0].append("%s: %d\n%0.1f%% of total" % (
                 month_name, count, 100 * float(count) / len(relevant)))
+            if min_count is not None and count == min_count:
+                aggregate_data["activate_tooltips"][0].append(True)
+                min_count = None
+                aggregate_data["tooltips"][0][-1] += "\nLeast collisions per month"
+            elif max_count is not None and count == max_count:
+                aggregate_data["activate_tooltips"][0].append(True)
+                max_count = None
+                aggregate_data["tooltips"][0][-1] += "\nMost collisions per month"
+            else:
+                aggregate_data["activate_tooltips"][0].append(False)
 
         self._save_data("monthly_aggregate.json", aggregate_data)
 
@@ -246,6 +264,8 @@ class Xform(base.Command):
                     total_by_age[wide_age_range] += 1
                     if wide_age_range != narrow_age_range:
                         total_by_age[narrow_age_range] += 1
+                    if narrow_age_range == self.narrow_age_ranges[0]:
+                        print(case_no)
 
         locations = loc_by_age.keys()
         for age_range in self.wide_age_ranges:
@@ -304,15 +324,30 @@ class Xform(base.Command):
 
         labels = []
         tooltips = []
+        activate_tooltips = []
+        min_count = min(times)
+        max_count = max(times)
         for i in range(24):
             end = i + 1 if i < 23 else 0
             labels.append("%d:00 - %d:00" % (i, end))
             tooltips.append("%s: %d\n%0.1f%% of total" % (
                 labels[-1], times[i], 100 * float(times[i]) / len(relevant)))
+            if min_count is not None and times[i] == min_count:
+                activate_tooltips.append(True)
+                min_count = None
+                tooltips[-1] += "\nLeast collisions per hour"
+            elif max_count is not None and times[i] == max_count:
+                activate_tooltips.append(True)
+                max_count = None
+                tooltips[-1] += "\nMost collisions per hour"
+            else:
+                activate_tooltips.append(False)
 
-        self._save_data("hourly.json", {"labels": labels,
-                                        "series": [times],
-                                        "tooltips": [tooltips]})
+        self._save_data("hourly.json",
+                        {"labels": labels,
+                         "series": [times],
+                         "tooltips": [tooltips],
+                         "activate_tooltips": [activate_tooltips]})
 
     def _xform_injury_severities_by_location(self):
         """Collect data on injury rates by collision location."""

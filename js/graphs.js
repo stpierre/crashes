@@ -32,43 +32,68 @@ function getBarWidth(bins) {
 }
 
 
-function initChart(cls, defaultData, tooltipElement, url, graphID, options) {
+function initChart(cls, defaultData, url, graphID, options) {
     charts[graphID] = new cls(
         '#' + graphID, defaultData, options
     ).on('data', function(context) {
-        if (context.type == 'update' && "tooltips" in context.data) {
-            charts[graphID].tooltips = context.data["tooltips"];
-        }
-        if (context.type == 'update' && "title" in context.data) {
-            var titleID = '#' + graphID + "-title";
-            console.log("setting title for " + graphID + " (" + titleID + ") to " + context.data["title"]);
-            $(titleID).html(context.data["title"].replace(newline,
-                                                          '<br />'));
+        if (context.type == 'update') {
+            if ("tooltips" in context.data) {
+                charts[graphID].tooltips = context.data["tooltips"];
+                if ("activate_tooltips" in context.data) {
+                    charts[graphID].activate_tooltips = context.data[
+                        "activate_tooltips"];
+                }
+            }
+            if (context.type == 'update' && "title" in context.data) {
+                var titleID = '#' + graphID + "-title";
+                $(titleID).html(context.data["title"].replace(newline,
+                                                              '<br />'));
+            }
         }
     }).on('draw', function(context) {
         var title;
+        var activate = false;
         if (context.type == "bar" || context.type == "line" ||
             context.type == "slice") {
             if (typeof(context.seriesIndex) === 'undefined') {
                 title = charts[graphID].tooltips[context.index];
+                activate = charts[graphID].activate_tooltips[context.index];
             } else if (charts[graphID].tooltips.length > context.seriesIndex) {
                 title = charts[graphID].tooltips[
                     context.seriesIndex][context.index];
+                if (charts[graphID].activate_tooltips.length >
+                    context.seriesIndex) {
+                    activate = charts[graphID].activate_tooltips[
+                        context.seriesIndex][context.index];
+                }
+            }
+            if (typeof(title) !== "undefined" && title !== null) {
+                var attr = {"title": title.replace(newline, '<br />'),
+                            "data-toggle": "tooltip"};
+                if (activate === true) {
+                    attr["default-tooltip-on"] = "";
+                }
+                context.element.attr(attr);
+            }
+            if ((typeof(context.seriesIndex) !== 'undefined' &&
+                 charts[graphID].tooltips.length == context.seriesIndex + 1 &&
+                 charts[graphID].tooltips[context.seriesIndex].length ==
+                 context.index + 1) ||
+                (typeof(context.seriesIndex) === 'undefined' &&
+                 charts[graphID].tooltips.length ==  context.index + 1)) {
+                $('#' + graphID + ' [data-toggle="tooltip"]').tooltip({
+                    container: 'body',
+                    html: true,
+                    trigger: 'click'
+                });
+
+                $('#' + graphID + ' [default-tooltip-on]').tooltip("show");
             }
         }
-        if (typeof(title) !== "undefined" && title !== null) {
-            context.element.attr(
-                {"title": title.replace(newline, '<br />'),
-                 "data-toggle": "tooltip"});
-        }
-        $('#' + graphID + ' ' + tooltipElement).tooltip({
-            container: 'body',
-            html: true,
-            trigger: 'click'
-        });
     });
 
     charts[graphID].tooltips = [];
+    charts[graphID].activate_tooltips = [];
 
     $.getJSON(url, function(data){
         charts[graphID].update(data)
@@ -79,7 +104,7 @@ function initChart(cls, defaultData, tooltipElement, url, graphID, options) {
 
 
 function initPieChart(url, graphID, options) {
-    return initChart(Chartist.Pie, {"labels": [], "series": []}, "path",
+    return initChart(Chartist.Pie, {"labels": [], "series": []},
                      url, graphID, options);
 }
 
@@ -127,7 +152,7 @@ function initBarChart(url, graphID, options, yLabel) {
             ]};
 
     return initChart(
-        Chartist.Bar, {"labels": [], "series": [[]]}, "line",
+        Chartist.Bar, {"labels": [], "series": [[]]},
         url, graphID, mergeOptions(mergeOptions(defaultBarOptions, options),
                                    labelOpt));
 }
@@ -155,7 +180,7 @@ function initDynamicWidthBarChart(url, graphID, options, yLabel) {
 
 
 function initLineChart(url, graphID, options) {
-    return initChart(Chartist.Line, {"labels": [], "series": [[]]}, "line",
+    return initChart(Chartist.Line, {"labels": [], "series": [[]]},
                      url, graphID, options);
 }
 
