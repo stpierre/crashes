@@ -12,8 +12,8 @@ import textwrap
 import termcolor
 from six.moves import input
 
-from crashes.cmd import base
-from crashes.cmd import jsonify
+from crashes.commands import base
+from crashes.commands import jsonify
 
 
 LOG = logging.getLogger(__name__)

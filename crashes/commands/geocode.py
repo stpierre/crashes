@@ -14,8 +14,8 @@ import geocoder
 import termcolor
 from six.moves import input
 
-from crashes.cmd import base
-from crashes.cmd import curate
+from crashes.commands import base
+from crashes.commands import curate
 
 
 LOG = logging.getLogger(__name__)

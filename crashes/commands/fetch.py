@@ -13,7 +13,7 @@ from time import sleep
 import bs4
 import requests
 
-from crashes.cmd import base
+from crashes.commands import base
 
 LOG = logging.getLogger(__name__)
 

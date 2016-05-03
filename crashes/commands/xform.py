@@ -8,8 +8,8 @@ import json
 import operator
 import os
 
-from crashes.cmd import base
-from crashes.cmd import curate
+from crashes.commands import base
+from crashes.commands import curate
 from crashes import log
 
 LOG = log.getLogger(__name__)

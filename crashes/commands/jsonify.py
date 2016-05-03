@@ -20,8 +20,8 @@ from pdfminer import psparser
 from six.moves import queue
 
 from crashes import log
-from crashes.cmd import base
-from crashes.cmd import fetch
+from crashes.commands import base
+from crashes.commands import fetch
 
 LOG = log.getLogger(__name__)
 

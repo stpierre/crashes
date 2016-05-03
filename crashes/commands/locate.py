@@ -6,8 +6,8 @@ import math
 import os
 import re
 
-from crashes.cmd import curate
-from crashes.cmd import geocode
+from crashes.commands import curate
+from crashes.commands import geocode
 from crashes import log
 
 LOG = log.getLogger(__name__)

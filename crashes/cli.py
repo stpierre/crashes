@@ -3,12 +3,13 @@
 import argparse
 import inspect
 import os
+import pkgutil
 import sys
 
 from six.moves import configparser
 
-from crashes import cmd
-from crashes.cmd import base
+from crashes import commands
+from crashes.commands import base
 from crashes import log
 
 LOG = log.getLogger(__name__)
@@ -53,8 +54,15 @@ def parse_args():
 
     # collect commands
     subparsers = parser.add_subparsers()
-    for name, cls in inspect.getmembers(cmd):
-        if isinstance(cls, type) and issubclass(cls, base.Command):
+    for loader, name, _ in pkgutil.walk_packages(commands.__path__):
+        module = loader.find_module(name).load_module(name)
+
+        for name, cls in inspect.getmembers(module):
+            if (not isinstance(cls, type) or
+                    not issubclass(cls, base.Command) or
+                    name.startswith('__')):
+                continue
+
             cmd_parser = subparsers.add_parser(name.lower(),
                                                help=cls.__doc__)
             cmd_parser.set_defaults(command=cls)
