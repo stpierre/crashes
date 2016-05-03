@@ -59,7 +59,7 @@ class Fetch(base.Command):
         if response.status_code != 200:
             raise Exception("Failed to list reports for %s: %s" %
                             (date.isoformat(), response.status_code))
-        page_data = bs4.BeautifulSoup(response.text)
+        page_data = bs4.BeautifulSoup(response.text, "html.parser")
         crash_table = page_data.find('table', attrs={'width': 800})
         for row in crash_table.find_all('tr'):
             if row.td and row.td.a:
