@@ -192,20 +192,10 @@ $(document).ready(function(){
                  "injury-severity-pie-chart");
     initPieChart("data/graph/injury_regions.json",
                  "injury-region-pie-chart");
-    initPieChart("data/graph/lb716_crosswalk_proportions.json",
-                 "lb716-crosswalk-pie");
-    initPieChart("data/graph/lb716_proportions.json",
-                 "lb716-all-bike-path-pie");
-    initPieChart("data/graph/lb716_all_crosswalks.json",
-                 "lb716-all-crosswalks-pie");
-    initPieChart("data/graph/lb716_all.json",
-                 "lb716-all-pie");
-    initPieChart("data/graph/lb716_severity.json",
-                 "lb716-severity-pie");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
-                             {"stackBars": true},
+                             {"stackBars": false},
                             "Collisions");
     initDynamicWidthBarChart("data/graph/hourly.json",
                              "hourly-bar-chart",
@@ -221,12 +211,6 @@ $(document).ready(function(){
                              "injury-rates-bar-chart",
                              {"stackBars": true, "high": 100},
                              "Injury rate (%)");
-    initBarChart("data/graph/lb716_ages.json",
-                 "lb716-ages-bar", {},
-                 "Collisions");
-    initBarChart("data/graph/lb716_years.json",
-                 "lb716-yearly-bar", {},
-                 "Collisions");
 
     var lastYear = null;
     var availableColors = allColors.slice(0);

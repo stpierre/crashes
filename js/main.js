@@ -3,8 +3,6 @@ var layers = {};
 //var datadir = "http://localhost:8000/data/geojson/";
 var datadir = "http://stpierre.github.io/crashes/data/geojson/";
 var markers = "http://www.googlemapsmarkers.com/v1/";
-//var bike_paths_data = "http://localhost:8000/data/bike-paths.geojson";
-var bike_paths_data = "http://stpierre.github.io/lincoln-bike-routes/data/bike-paths.geojson";
 
 
 function init_maps() {
@@ -55,38 +53,6 @@ function init_maps() {
             all_info_window.open(all_map);
         });
     }
-
-    // LB716 map
-
-    var lb716_map = new google.maps.Map(
-        document.getElementById('lb716-map-canvas'), {
-            zoom: 12,
-            center: {lat: 40.807, lng: -96.69}
-    });
-
-    lb716_collisions = new google.maps.Data();
-    lb716_collisions.loadGeoJson(datadir + "lb716.geojson");
-    lb716_collisions.setMap(lb716_map);
-
-    bike_paths = new google.maps.Data();
-    bike_paths.loadGeoJson(bike_paths_data);
-    bike_paths.setStyle({strokeWeight: 1});
-    bike_paths.setMap(lb716_map);
-
-    // set up event listener for LB716 map
-    var lb716_info_window = new google.maps.InfoWindow();
-
-    google.maps.event.addListener(lb716_map, 'click', function() {
-      lb716_info_window.close();
-    });
-
-    lb716_collisions.addListener('click', function(event) {
-        lb716_info_window.setContent(event.feature.getProperty('case_no'));
-        lb716_info_window.setPosition(event.latLng);
-        lb716_info_window.setOptions(
-            {pixelOffset: new google.maps.Size(0,-34)});
-        lb716_info_window.open(lb716_map);
-    });
 }
 
 

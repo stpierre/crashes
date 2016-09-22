@@ -264,8 +264,6 @@ class Xform(base.Command):
                     total_by_age[wide_age_range] += 1
                     if wide_age_range != narrow_age_range:
                         total_by_age[narrow_age_range] += 1
-                    if narrow_age_range == self.narrow_age_ranges[0]:
-                        print(case_no)
 
         locations = loc_by_age.keys()
         for age_range in self.wide_age_ranges:
@@ -473,7 +471,6 @@ class Xform(base.Command):
         self._xform_timings()
         self._xform_collision_times()
         self._xform_ages()
-        self._xform_lb716()
 
     def satisfied(self):
         return os.path.exists(self.options.collision_graph)
