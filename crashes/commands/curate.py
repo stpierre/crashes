@@ -93,15 +93,20 @@ class Curate(base.Command):
 
     statuses = StatusDict()
     statuses["C"] = CurationStatus("crosswalk",
-                                   "Bicycle in crash in crosswalk")
-    statuses["S"] = CurationStatus("sidewalk", "Bicycle in crash on sidewalk")
+                                   "Bicycle in collision in crosswalk")
+    statuses["S"] = CurationStatus("sidewalk",
+                                   "Bicycle in collision on sidewalk")
     statuses["R"] = CurationStatus("road",
-                                   "Bicycle in crash riding on road")
+                                   "Bicycle in collision riding on road")
     statuses["I"] = CurationStatus(
         "intersection",
-        "Bicycle in crash riding through intersection")
-    statuses["E"] = CurationStatus("elsewhere", "Bicycle in crash elsewhere")
-    statuses["N"] = CurationStatus("not_involved", "Bicycle not in crash")
+        "Bicycle in collision riding through intersection")
+    statuses["L"] = CurationStatus(
+        "bike_lane",
+        "Bicycle in collision while in bike lane")
+    statuses["E"] = CurationStatus("elsewhere",
+                                   "Bicycle in collision elsewhere")
+    statuses["N"] = CurationStatus("not_involved", "Bicycle not in collision")
 
     def __init__(self, options):
         super(Curate, self).__init__(options)
@@ -141,7 +146,7 @@ class Curate(base.Command):
             if self.search_re.search(report['report']):
                 split = self.highlight_re.split(report['report'])
 
-                # manually curate crashes
+                # manually curate collisions
                 print(termcolor.colored("%-10s %50s" % (case_no,
                                                         report['date']),
                                         'red', attrs=['bold']))

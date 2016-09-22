@@ -81,6 +81,8 @@
             <li><b>Intersection</b>: Collision happened while a person
               on a bicycle was riding through an intersection on the
               road, not using a crosswalk.</li>
+            <li><b>Bike lane</b>: Collision happened while a person on
+              a bicycle was riding in a bike lane.</li>
             <li><b>Elsewhere</b>: Collision happened elsewhere
               (alleyways, parking lots, etc.). This also includes
               collisions that happened on the road, but where the
@@ -143,11 +145,10 @@
               drives, but a few featured cars jumping the curb.) A
               smattering involves people riding elsewhere, which
               includes parking lots, or crossing streets in the middle
-              of blocks (i.e., away from crosswalks). For the sake of
-              this analysis, I have counted bike lanes as the road,
-              although I noted only one case of
-              {{"B2-035865"|report_link("an accident involving a bike
-              lane")}}.</p>
+              of blocks (i.e., away from crosswalks). Collisions in
+              bike lanes are very rare indeed, but that likely
+              reflects the rarity of bike lanes more than
+              anything.</p>
 
             <p>Clearly, crosswalks are far and away the most dangerous
               place for cyclists. No matter what other riding patterns
@@ -450,122 +451,6 @@
             most dangerous intersections are at or near bike path underpasses
             or overpasses, so you can avoid crossing 27th at Vine, for
             instance, on the Mopac Trail.</p>
-        </div>
-
-        <div class="section">
-          <h2>LB716</h2>
-
-          <p>In early 2016, five state senators
-            introduced <a href="http://www.nebike.org/2016/01/breaking-news-lb-716-introduced/">LB716</a>,
-            a bill that would (among other things) give cyclists the
-            right-of-way in a crosswalk that is part of a bike
-            path. The data below pertain specifically to that bill,
-            and how it could affect cycling in Lincoln.</p>
-
-          <div class="section-b">
-            <h3>Proportion of affected collisions</h3>
-
-            <div class="four-columns">
-              <div class="col-a">
-                <div class="ct-chart ct-square"
-                     id="lb716-crosswalk-pie"></div>
-                <h4 class="chart-title" id="lb716-crosswalk-pie-title"></h4>
-              </div>
-
-              <div class="col-b">
-                <div class="ct-chart ct-square"
-                     id="lb716-all-bike-path-pie"></div>
-                <h4 class="chart-title" id="lb716-all-bike-path-pie-title"></h4>
-              </div>
-
-              <div class="col-c">
-                <div class="ct-chart ct-square"
-                     id="lb716-all-crosswalks-pie"></div>
-                <h4 class="chart-title" id="lb716-all-crosswalks-pie-title"></h4>
-              </div>
-
-              <div class="col-d">
-                <div class="ct-chart ct-square"
-                     id="lb716-all-pie"></div>
-                <h4 class="chart-title" id="lb716-all-pie-title"></h4>
-              </div>
-            </div>
-
-            <div class="below">
-              <p>LB716 would affect a <b>huge</b> proportion of
-                collisions in bike paths -- {{ "%0.1f" % (lb716_row /
-                lb716_total * 100) }}% of all crosswalk collisions on
-                bike paths. Although the bill itself is an incremental
-                improvement, it could have a massive effect on the
-                safety of bike paths.</p>
-
-              <p>Even in general, if would affect a surprising {{
-                "%0.1f" % (lb716_row / statuses.crosswalk * 100) }}%
-                of all crosswalk collisions.</p>
-            </div>
-          </div>
-
-          <div class="section-a">
-            <h3>Other LB716 data</h3>
-
-            <div class="three-columns">
-              <div class="col-a">
-                <div class="ct-chart ct-square"
-                     id="lb716-ages-bar"></div>
-                <h4 class="chart-title">Age distribution of people<br />
-                  hit riding in bike paths</h4>
-              </div>
-
-              <div class="col-b">
-                <div class="ct-chart ct-square"
-                     id="lb716-severity-pie"></div>
-                <h4 class="chart-title">Injury severities in collisions<br/>
-                  affected by LB716</h4>
-              </div>
-
-              <div class="col-c">
-                <div class="ct-chart ct-square"
-                     id="lb716-yearly-bar"></div>
-                <h4 class="chart-title">Yearly incidence of collisions<br/>
-                  affected by LB716</h4>
-              </div>
-            </div>
-
-            <div class="below">
-              <p>These sorts of collisions affect people from just
-                {{"B2-024814"|report_link("six years old")}} to
-                {{"B3-074182"|report_link("seventy-one")}} -- both of
-                which, incidentally, were hit-and-runs.</p>
-
-              <p>The only person in our entire dataset who was
-                {{"B5-075494"|report_link("reported killed in the
-                accident report")}} was hit in a crosswalk where he
-                may have been protected by LB716.</p>
-
-              <p>Unlike other data in this report, the types of
-                collisions affected by LB716 show a clear and consistent
-                increasing trend.</p>
-            </div>
-          </div>
-
-          <div class="section-b">
-            <h3>Map</h3>
-
-            <p>The map below shows where each of the collisions that
-              might have been prevented by LB716 took place. The bike
-              paths have been highlighted.</p>
-
-            <div class="map-container">
-              <div class="map-canvas" id="lb716-map-canvas"></div>
-            </div>
-
-            <p>Be careful on Superior and 84th street!</p>
-
-            <p>The bike path data is
-              from <a href="https://github.com/stpierre/lincoln-bike-routes">a
-              related project</a> I undertook as part of this
-              analysis.</p>
-          </div>
         </div>
 
         <div class="section">

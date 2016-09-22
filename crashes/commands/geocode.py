@@ -147,7 +147,8 @@ class Geocode(base.Command):
                 for key in ('status', 'confidence', 'ok', 'encoding',
                             'geometry', 'provider', 'bbox', 'location', 'lat',
                             'lng', 'accuracy', 'quality', 'method'):
-                    del retval['properties'][key]
+                    if key in retval["properties"]:
+                        del retval['properties'][key]
                 print("Address: %s" %
                       termcolor.colored(retval['properties']['address'],
                                         "green", attrs=["bold"]))
