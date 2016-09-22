@@ -8,8 +8,6 @@ import os
 import random
 import time
 
-from time import sleep
-
 import bs4
 import requests
 
@@ -18,7 +16,7 @@ from crashes.commands import base
 LOG = logging.getLogger(__name__)
 
 
-def retry(func, args=(), kwargs=None, exceptions=None, times=1, wait=3):
+def retry(func, args=(), kwargs=None, exceptions=None, times=1, wait=5):
     tries = 0
     if kwargs is None:
         kwargs = {}
