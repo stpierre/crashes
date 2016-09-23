@@ -251,7 +251,7 @@ class Xform(base.Command):
         loc_by_age = {}
         total_by_age = collections.defaultdict(int)
         for name, cases in self._curation.items():
-            location = name.title()
+            location = self.title(name)
             for case_no in cases:
                 age = self._get_age(case_no)
                 if age:
@@ -357,7 +357,7 @@ class Xform(base.Command):
         cases_by_loc = {}
         rates_by_loc = {}
         for name, cases in self._curation.items():
-            loc = name.title()
+            loc = self.title(name)
             counts = [0 for _ in range(5)]
             for case_no in cases:
                 sev = self._reports[case_no]['injury_severity'] or 5
@@ -453,7 +453,7 @@ class Xform(base.Command):
                                            key=lambda d: len(d[1]))):
             num_cases = len(cases)
             data["labels"].append("%s: %d (%0.1f%%)" % (
-                name.title(), num_cases, float(num_cases) / total * 100))
+                self.title(name), num_cases, float(num_cases) / total * 100))
             data["series"].append(num_cases)
         self._save_data("proportions.json", data)
 
@@ -462,6 +462,10 @@ class Xform(base.Command):
         path = os.path.join(self.options.graph_data, filename)
         LOG.info("Writing graph data to %s" % path)
         json.dump(data, open(path, "w"))
+
+    @staticmethod
+    def title(name):
+        return name.title().replace("_", " ")
 
     def __call__(self):
         self._xform_proportions()
