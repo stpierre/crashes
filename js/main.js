@@ -32,10 +32,10 @@ function init_maps() {
     layers['intersection'].setStyle({icon: markers + "I/0099FF/"})
     layers['intersection'].setMap(all_map)
 
-    layers['bike lane'] = new google.maps.Data()
-    layers['bike lane'].loadGeoJson(datadir + "bike_lane.json");
-    layers['bike lane'].setStyle({icon: markers + "L/990000/"})
-    layers['bike lane'].setMap(all_map)
+    layers['bike_lane'] = new google.maps.Data()
+    layers['bike_lane'].loadGeoJson(datadir + "bike_lane.json");
+    layers['bike_lane'].setStyle({icon: markers + "L/990000/"})
+    layers['bike_lane'].setMap(all_map)
 
     layers['elsewhere'] = new google.maps.Data()
     layers['elsewhere'].loadGeoJson(datadir + "elsewhere.json");
