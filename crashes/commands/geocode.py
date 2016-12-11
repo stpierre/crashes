@@ -7,6 +7,7 @@ import json
 import logging
 import operator
 import os
+import random
 import re
 import textwrap
 
@@ -40,26 +41,27 @@ class Geocode(base.Command):
     quote_re = re.compile(r'[\'"]([A-Z])[\'"]')
     no_space_re = re.compile(r'([NS])(\d+)')
 
-    def _fan_out_duplicates(self, features):
+    jitter_max = 0.00015
+    jitter_min = 0.00001
+
+    def _random_jitter(self):
+        val = (random.random() * (self.jitter_max - self.jitter_min) +
+               self.jitter_min)
+        if random.choice((True, False)):
+            val *= -1
+        return val
+
+    def _jitter_duplicates(self, features):
         retval = []
-        shift = 0.0001
-        adj = [-shift, -shift]
         for feature in features:
             new = copy.copy(feature)
+            adj = (self._random_jitter(), self._random_jitter())
             LOG.debug("Adjusting coordinates for %s by %s" %
                       (new['properties']['case_no'], adj))
             new['geometry']['coordinates'] = map(
                 lambda c: operator.add(*c),
                 zip(new['geometry']['coordinates'], adj))
             retval.append(new)
-
-            adj[0] += shift
-            if adj[0] > shift:
-                adj[0] = -shift
-                adj[1] += shift
-                if adj[1] > shift:
-                    shift += shift
-                    adj = [-shift, -shift]
         return retval
 
     def _parse_location(self, location):
@@ -208,8 +210,7 @@ class Geocode(base.Command):
                      (len(coded), len(all_curated),
                       100.0 * len(coded) / len(all_curated)))
 
-        # introduce very small variations in cases with identical
-        # coordinates.
+        # introduce jitter in cases with identical coordinates.
         duplicates = {}
         for feature in all_geojson['features']:
             key = (round(feature['geometry']['coordinates'][0], 6),
@@ -221,7 +222,7 @@ class Geocode(base.Command):
                 for feature in features:
                     all_geojson['features'].remove(feature)
                 all_geojson['features'].extend(
-                    self._fan_out_duplicates(features))
+                    self._jitter_duplicates(features))
 
         # create categorized GeoJSON files
         by_loc = {k: new_geojson() for k in curation_data.keys()}
