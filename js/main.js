@@ -58,6 +58,25 @@ function init_maps() {
             all_info_window.open(all_map);
         });
     }
+
+    var heatmap_base = new google.maps.Map(
+        document.getElementById('heatmap-canvas'), {
+            zoom: 12,
+            center: {lat: 40.807, lng: -96.69}
+        });
+
+    $.getJSON(datadir + "all.json", function(data) {
+        var coords = [];
+        for (var i = 0; i < data.features.length; i++) {
+            coords.push(new google.maps.LatLng(
+                data.features[i].geometry.coordinates[1],
+                data.features[i].geometry.coordinates[0]));
+        }
+
+        var heatmap = new google.maps.visualization.HeatmapLayer({
+            data: coords,
+            map: heatmap_base});
+    });
 }
 
 

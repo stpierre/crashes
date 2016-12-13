@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/chartist.min.css">
     <link rel="stylesheet" href="css/main.css" />
 
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyDpyFz8qiDpmPqe8BakGx6L8Gcwqb1DfJU&libraries=visualization"></script>
     <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
     <script src="js/toc.min.js"></script>
@@ -358,6 +358,33 @@
         </div>
 
         <div class="section-a">
+          <h2>Heatmap of Collisions</h2>
+
+          <div class="map-container">
+            <div class="map-canvas" id="heatmap-canvas"></div>
+          </div>
+
+          <p>Luckily, there's not <i>too much</i> red on this
+            map. While we're unlikely to avoid any particular
+            intersection based simply on the number of collisions
+            there, we can be more careful at the more dangerous
+            intersections. Some of the most dangerous intersections
+            are at or near bike path underpasses or overpasses, so you
+            can avoid crossing 27th at Vine, for instance, on the
+            Mopac Trail.</p>
+
+          <p>Some intersections may seem more dangerous solely because
+              they are more heavily trafficked, not because they are
+              actually more dangerous. That said, a few corridors seem
+              particularly dangerous, with 27th street from Vine to
+              Holdrege leading the pack. Capital Parkway/Normal
+              Blvd. is a close second; the intersections with 27th,
+              33rd, and South are all among the most dangerous in the
+              city.</p>
+
+        </div>
+
+        <div class="section-b">
           <h2>Map of Collisions</h2>
 
           <p>All locations should be considered approximations, and
@@ -386,45 +413,29 @@
             <img src="http://www.googlemapsmarkers.com/v1/E/CC33FF"
                  alt="Elsewhere marker"> Elsewhere</button>
 
-          <p>Some takeaways:</p>
+          <p>This gives us some granular detail to see where
+            collisions are happening around town. For instance, we
+            knew Capitol Parkway and 27th had lots collisions, but
+            here we can see that they were all in crosswalks.</p>
 
-          <ul class="simple">
-            <li>Some intersections may seem more dangerous solely
-              because they are more heavily trafficked, not because
-              they are actually more dangerous.</li>
-            <li>That said, a few corridors seem particularly
-              dangerous, with Capital Parkway/Normal Blvd. leading the
-              pack. The intersections with 27th, 33rd, and South are
-              all among the most dangerous in the city.</li>
-            <li>The 27th street and Vine street corridors put in
-              strong bids for second-most dangerous, and
-              unsurprisingly 27th and Vine is a hotbed of crosswalk
-              collisions.</li>
-            <li>In general, collisions increase towards downtown and
-              diminish as you get further out. There are two notable
-              exceptions: The entire length of 84th street (with
-              nearly twice as many crosswalk collisions as 70th and
-              56th streets); and Pine Lake near 27th. These two areas
-              have something in common: Bike paths adjacent to
-              streets, where cyclists must still cross many side
-              streets. Superior street, which also has a
-              street-adjacent bike path, has no nearby analogue to
-              compare it to, but it has as many crosswalk collisions
-              as Havelock, Fremont, and Holdrege combined.</li>
-            <li>A significant number of crosswalk and sidewalk
-              collisions occur in the downtown exclusion area. Stop
-              riding on the sidewalks downtown already! It's not even
-              safer! (It also could {{"B6-045945"|report_link("get
-              you a ticket")}}.)</li>
-            <li>Road collisions, predictably, are focused
-              downtown. But at least riding on the streets is
-              legal.</li>
-          </ul>
+          <p>In general, collisions increase towards downtown and
+            diminish as you get further out. There are two notable
+            exceptions: The entire length of 84th street (with nearly
+            twice as many crosswalk collisions as 70th and 56th
+            streets); and Pine Lake near 27th. These two areas have
+            something in common: Bike paths adjacent to streets, where
+            cyclists must still cross many side streets. Superior
+            street, which also has a street-adjacent bike path, has no
+            nearby analogue to compare it to, but it has as many
+            crosswalk collisions as Havelock, Fremont, and Holdrege
+            combined.</p>
 
-          <p>This map may actually contain actionable information; many of the
-            most dangerous intersections are at or near bike path underpasses
-            or overpasses, so you can avoid crossing 27th at Vine, for
-            instance, on the Mopac Trail.</p>
+          <p>A significant number of crosswalk and sidewalk collisions
+            occur in the downtown exclusion area. Stop riding on the
+            sidewalks downtown already! It's not even safer! (It also
+            could {{"B6-045945"|report_link("get you a ticket")}}.)
+            Road collisions, predictably, are focused downtown. But at
+            least riding on the streets is legal.</p>
         </div>
 
         <div class="section">
