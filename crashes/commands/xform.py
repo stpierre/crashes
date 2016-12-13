@@ -261,6 +261,8 @@ class Xform(base.Command):
                             r: 0 for r in self.narrow_age_ranges}
                     loc_by_age[location][age_range] += 1
                     total_by_age[age_range] += 1
+                else:
+                    total_by_age["Unknown"] += 1
 
         labels = [str(a) for a in self.narrow_age_ranges]
         series = []
@@ -302,7 +304,7 @@ class Xform(base.Command):
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())
-        for age_range in self.narrow_age_ranges:
+        for age_range in self.narrow_age_ranges + ["Unknown"]:
             ages_data["labels"].append(str(age_range))
             ages_data["series"][0].append(total_by_age[age_range])
             ages_data["tooltips"][0].append(
