@@ -418,6 +418,10 @@ svg.ct-chart-pie g text.ct-label {
     color: #333;
 }
 
+.ct-area {
+    fill-opacity: 1;
+}
+
 #yearly-bar-chart .ct-series-b {
     opacity: 0.6;
 }
@@ -448,6 +452,10 @@ svg.ct-chart-pie g text.ct-label {
 }
 .legend .ct-series-e {
     background: #453d3f;
+    color: #fff;
+}
+.legend .ct-series-f {
+    background: #59922b;
     color: #fff;
 }
 

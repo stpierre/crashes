@@ -240,7 +240,7 @@ class Xform(base.Command):
         self._save_data("yearly.json", yearly_data)
 
     def _xform_ages(self):
-        """Collate three age-related datasets.
+        """Collate two age-related datasets.
 
         * Collision location by age
         * A histogram of total number of collisions by age
@@ -255,44 +255,50 @@ class Xform(base.Command):
             for case_no in cases:
                 age = self._get_age(case_no)
                 if age:
-                    narrow_age_range = self._get_narrow_age_range(age)
-                    wide_age_range = self._get_wide_age_range(age)
+                    age_range = self._get_narrow_age_range(age)
                     if location not in loc_by_age:
-                        loc_by_age[location] = {r: 0
-                                                for r in self.wide_age_ranges}
-                    loc_by_age[location][wide_age_range] += 1
-                    total_by_age[wide_age_range] += 1
-                    if wide_age_range != narrow_age_range:
-                        total_by_age[narrow_age_range] += 1
+                        loc_by_age[location] = {
+                            r: 0 for r in self.narrow_age_ranges}
+                    loc_by_age[location][age_range] += 1
+                    total_by_age[age_range] += 1
 
-        locations = loc_by_age.keys()
-        for age_range in self.wide_age_ranges:
-            series = []
-            labels = []
-            tooltips = []
-            for loc in locations:
-                collisions = loc_by_age[loc].get(age_range, 0)
+        labels = [str(a) for a in self.narrow_age_ranges]
+        series = []
+        tooltips = []
+        for loc, loc_collisions in loc_by_age.items():
+            loc_series = []
+            loc_tooltips = []
+            for age_range in self.narrow_age_ranges:
+                collisions = loc_collisions.get(age_range, 0)
                 if collisions:
                     # the values are absolute numbers of collisions;
                     # we want the Y axis to be the proportion of
-                    # collisions by people that age, not number
-                    series.append(
-                        collisions /
-                        float(total_by_age[age_range]) * 100)
-                    labels.append(loc)
-                    tooltips.append("%0.1f%%\n%d collisions" % (
-                        series[-1], collisions))
+                    # collisions by people that age, not number. in
+                    # order to stack the lines, we need to add the
+                    # previous number to it.
+                    abs_proportion = (collisions /
+                                      float(total_by_age[age_range]) * 100)
                 else:
-                    series.append(0)
-                    labels.append("")
-                    tooltips.append("")
-            self._save_data("location_by_age_%s.json" % age_range,
-                            {"labels": labels,
-                             "tooltips": tooltips,
-                             "series": series,
-                             "age_range": str(age_range),
-                             "title": "%s years old\n%d total collisions" % (
-                                 age_range, total_by_age[age_range])})
+                    abs_proportion = 0
+                proportion = abs_proportion
+                if len(series):
+                    proportion += series[-1][len(loc_series)]
+                loc_series.append(proportion)
+                loc_tooltips.append("%s: %0.1f%%\n%d collisions" %
+                                    (loc, abs_proportion, collisions))
+            series.append(loc_series)
+            tooltips.append(loc_tooltips)
+        # reverse the data so that the smallest data are on the "top"
+        # of the stack when rendered by Chartist.js. This lets us set
+        # the fill-opacity to 1 and it looks stacked, rather than
+        # having the big (100%) line blot everything else out.
+        series.reverse()
+        self._save_data(
+            "location_by_age.json",
+            {"labels": labels,
+             "tooltips": tooltips,
+             "series": series,
+             "title": "Proportion of collisions in each location by age"})
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())

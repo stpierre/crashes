@@ -109,7 +109,7 @@ function initPieChart(url, graphID, options) {
 }
 
 
-var defaultBarOptions = {"axisY": {"onlyInteger": true}}
+var defaultAxisOptions = {"axisY": {"onlyInteger": true}}
 
 
 function mergeOptions(defaults, user) {
@@ -124,7 +124,7 @@ function mergeOptions(defaults, user) {
 }
 
 
-function initBarChart(url, graphID, options, yLabel) {
+function initAxialChart(cls, url, graphID, options, yLabel) {
     var labelOpt = {
         chartPadding: {
             left: 20
@@ -152,15 +152,15 @@ function initBarChart(url, graphID, options, yLabel) {
             ]};
 
     return initChart(
-        Chartist.Bar, {"labels": [], "series": [[]]},
-        url, graphID, mergeOptions(mergeOptions(defaultBarOptions, options),
+        cls, {"labels": [], "series": [[]]},
+        url, graphID, mergeOptions(mergeOptions(defaultAxisOptions, options),
                                    labelOpt));
 }
 
 
 function initDynamicWidthBarChart(url, graphID, options, yLabel) {
-    initBarChart(
-        url, graphID, options, yLabel
+    initAxialChart(
+        Chartist.Bar, url, graphID, options, yLabel
     ).on('data', function(context) {
         if (context.type == 'update') {
             charts[graphID].barWidth = getBarWidth(
@@ -179,9 +179,8 @@ function initDynamicWidthBarChart(url, graphID, options, yLabel) {
 }
 
 
-function initLineChart(url, graphID, options) {
-    return initChart(Chartist.Line, {"labels": [], "series": [[]]},
-                     url, graphID, options);
+function initLineChart(url, graphID, options, yLabel) {
+    return initAxialChart(Chartist.Line, url, graphID, options, yLabel);
 }
 
 
@@ -192,6 +191,18 @@ $(document).ready(function(){
                  "injury-severity-pie-chart");
     initPieChart("data/graph/injury_regions.json",
                  "injury-region-pie-chart");
+
+    //initDynamicWidthBarChart("data/graph/location_by_age.json",
+    //                         "location-by-age-bar-chart",
+    //                         {"stackBars": true, "high": 100},
+    //                         "Percentage of collisions");
+    initLineChart("data/graph/location_by_age.json",
+                  "location-by-age-bar-chart",
+                  {"showArea": true,
+                   "high": 100,
+                   "lineSmooth": Chartist.Interpolation.none(),
+                   "showPoint": false},
+                  "Percentage of collisions");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
@@ -216,7 +227,8 @@ $(document).ready(function(){
     var availableColors = allColors.slice(0);
     var curColor;
     chartColors['monthly-bar-chart'] = [];
-    initBarChart(
+    initAxialChart(
+        Chartist.Bar,
         "data/graph/monthly.json",
         'monthly-bar-chart', {}, "Collisions"
     ).on('data', function(context){
@@ -242,13 +254,4 @@ $(document).ready(function(){
             context.element.attr({"style": "stroke: " + color});
         }
     });
-
-    for (var i = 0; i < ageRanges.length; i++) {
-        var ageRange = ageRanges[i];
-        var graphID = "location-by-age-" + ageRanges[i].replace("+",
-                                                                "_") + "-pie";
-        var dataURL = "data/graph/location_by_age_" + ageRanges[i] + ".json";
-
-        initPieChart(dataURL, graphID);
-    }
 });

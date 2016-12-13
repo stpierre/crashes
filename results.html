@@ -179,52 +179,18 @@
         <div class="section-b">
           <h3>Locations by age</h3>
 
-          <div class="four-columns">
-            <div class="col-a">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-0-10-pie"></div>
-              <h4 class="chart-title"
-                  id="location-by-age-0-10-pie-title"></h4>
-            </div>
+          <div class="ct-chart-container right">
+            <div class="ct-chart ct-major-sixth has-legend"
+                 id="location-by-age-bar-chart"></div>
 
-            <div class="col-b">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-11-20-pie"></div>
-              <h4 class="chart-title" id="location-by-age-11-20-pie-title"></h4>
-            </div>
-
-            <div class="col-c">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-21-30-pie"></div>
-              <h4 class="chart-title" id="location-by-age-21-30-pie-title"></h4>
-            </div>
-
-            <div class="col-d">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-31-40-pie"></div>
-              <h4 class="chart-title"
-                  id="location-by-age-31-40-pie-title"></h4>
-            </div>
-          </div>
-
-          <div class="three-columns" style="margin: 0 12.5% 0 12.5%">
-            <div class="col-a">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-41-50-pie"></div>
-              <h4 class="chart-title"
-                  id="location-by-age-41-50-pie-title"></h4>
-            </div>
-
-            <div class="col-b">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-51-60-pie"></div>
-              <h4 class="chart-title" id="location-by-age-51-60-pie-title"></h4>
-            </div>
-
-            <div class="col-c">
-              <div class="ct-chart ct-square"
-                   id="location-by-age-61_-pie"></div>
-              <h4 class="chart-title" id="location-by-age-61_-pie-title"></h4>
+            <!-- TODO: autogenerate this legend -->
+            <div class="legend" id="location-by-age-legend">
+              <div class="ct-series-a">Road</div>
+              <div class="ct-series-b">Crosswalk</div>
+              <div class="ct-series-c">Intersection</div>
+              <div class="ct-series-d">Sidewalk</div>
+              <div class="ct-series-e">Bike lane</div>
+              <div class="ct-series-f">Elsewhere</div>
             </div>
           </div>
 
@@ -236,9 +202,11 @@
               ridden in various scenarios, it's hard to make much
               sense of these data -- especially with such
               variable-sized (and often small) data sets. The 51-to-60
-              set seems to be doing something interesting, though;
-              perhaps these cyclists ride on the street more often
-              than cyclists of other ages.</p>
+              set seems to be doing something interesting, though,
+              with relatively more collisions in intersections and
+              fewer in crosswalks than most other groups. Perhaps
+              these cyclists ride on the street more often than
+              cyclists of other ages.</p>
           </div>
         </div>
 
