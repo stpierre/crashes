@@ -103,7 +103,7 @@ class Xform(base.Command):
             return None
 
         diff = date - dob
-        return diff.days / 365.0
+        return diff.days / 365.25
 
     def _get_age_range(self, case_no_or_age, ranges):
         try:

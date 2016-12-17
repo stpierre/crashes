@@ -50,6 +50,9 @@ class Results(base.Command):
         rv['last_report'] = None
         rv['unparseable_count'] = 0
 
+        rv['num_children'] = 0
+        rv['under_11'] = 0
+
         for report in self._reports.values():
             if report['date'] is None:
                 rv['unparseable_count'] += 1
@@ -59,6 +62,15 @@ class Results(base.Command):
                 rv['first_report'] = date
             if rv['last_report'] is None or date > rv['last_report']:
                 rv['last_report'] = date
+            if report.get('cyclist_dob') is None:
+                continue
+            dob = datetime.datetime.strptime(report['cyclist_dob'], "%Y-%m-%d")
+            diff = date - dob
+            age_at_collision = diff.days / 365.25
+            if age_at_collision < 20:
+                rv['num_children'] += 1
+                if age_at_collision < 11:
+                    rv['under_11'] += 1
 
         rv['bike_reports'] = sum(len(d) for n, d in self._curation.items()
                                  if n != "not_involved")
@@ -70,6 +82,14 @@ class Results(base.Command):
 
         rv['imagedir'] = self._relpath(self.options.imagedir)
         rv['all_reports'] = self._relpath(self.options.all_reports)
+
+        rv['pct_children'] = float(rv['num_children'] * 100) / rv['bike_reports']
+
+        report_time_period = datetime.datetime.now() - rv['first_report']
+        report_years = report_time_period.days / 365.25
+        rv['under_11_per_year'] = rv['under_11'] / report_years
+
+        LOG.debug("Using template variables: %r" % rv)
 
         return rv
 
