@@ -27,6 +27,7 @@ DEFAULTS = {
     "pdfdir": "pdfs",
     "all_reports": "reports.json",
     "curation_results": "curation.json",
+    "metadata": "metadata.json",
     "geocoding": "geojson",
     "imagedir": "images",
     "template": "results.html",
@@ -103,6 +104,8 @@ def parse_args():
                                           options.datadir)
     options.graph_data = _canonicalize(cfp.get("files", "graph_data"),
                                        options.datadir)
+    options.metadata = _canonicalize(cfp.get("files", "metadata"),
+                                     options.datadir)
 
     options.func = options.command(options)
     return options

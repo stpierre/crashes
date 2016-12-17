@@ -386,7 +386,7 @@ class PDFFinder(object):
         by page, and each PDFFinder can be update()'d to collect the
         first value, or all values for multi-valued PDFFinders.
         """
-        LOG.debug("update field %s" % self.name)
+        LOG.debug("Updating field %s" % self.name)
         try:
             if self.multiple:
                 newval = self.get(layout, page=page)
@@ -585,6 +585,8 @@ class JSONifyChildProcess(multiprocessing.Process):
         "12": "Unknown",
         "13": None}
 
+    _injured_name_re = re.compile(r'^\s*(?P<name>[^\d]*?)\s+\d')
+
     def __init__(self, terminate, work_queue, result_queue, options,
                  name=None):
         super(JSONifyChildProcess, self).__init__(name=name)
@@ -592,6 +594,19 @@ class JSONifyChildProcess(multiprocessing.Process):
         self._work_queue = work_queue
         self._result_queue = result_queue
         self.options = options
+
+    def _munge_name(self, name):
+        """Anonymize a name so that it can be compared but not read.
+
+        Even though all of this is public data, I don't want to be
+        "leaking" it myself. So we munge names to include just
+        initials, which should be enough to uniquely identify the
+        people in a collision without storing their names.
+        """
+        match = self._injured_name_re.match(name)
+        if match:
+            name = match.group("name")
+        return "".join(w[0] for w in name.split())
 
     def _get_fields(self):
         """Get a list of PDFFinders representing the fields to find.
@@ -654,12 +669,21 @@ class JSONifyChildProcess(multiprocessing.Process):
              VAlignedWith(r'Region', fuzz=10),
              AlignedWith("^19$", fuzz=20)],
             minpage=1, maxpage=1, type=self.injury_regions.get)
+        cyclist_initials = PDFFinder(
+            "cyclist_initials",
+            [Below(complete_str),
+             Below(r"^\s*NAME\s*$", fuzz=2),
+             VAlignedWith(complete_str, fuzz=75),
+             AlignedWith("^19$", fuzz=20),
+             Above(r"MEDICAL\s+FACILITY\s+NAME")],
+            minpage=1, maxpage=1, type=self._munge_name)
 
         return [location,
                 date,
                 time,
                 report,
                 cyclist_dob,
+                cyclist_initials,
                 injury_sev,
                 injury_region]
 

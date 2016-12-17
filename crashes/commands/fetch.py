@@ -28,12 +28,13 @@ def retry(func, args=(), kwargs=None, exceptions=None, times=1, wait=5):
             return func(*args, **kwargs)
         except exceptions as err:
             if tries == times:
-                LOG.error("Retried %s %s times, failed: %s" %
-                          (func, tries, err))
+                LOG.error("Retried %s %s times, failed: %s",
+                          func, tries, err)
                 raise
             else:
-                LOG.info("%s failed, retrying (%s/%s): %s" %
-                         (func, tries, times, err))
+                LOG.info(
+                    "%s failed, waiting %s seconds and retrying (%s/%s): %s",
+                    func, wait, tries, times, err)
             time.sleep(wait)
 
 
@@ -44,6 +45,58 @@ class Fetch(base.Command):
         base.Argument("--start",
                       type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d"))
     ]
+
+    def __init__(self, options):
+        super(Fetch, self).__init__(options)
+        self._metadata = {}
+        if os.path.exists(self.options.metadata):
+            self._metadata = json.load(open(self.options.metadata))
+
+    @staticmethod
+    def _munge_name(name):
+        """Anonymize a name so that it can be compared but not read.
+
+        Even though all of this is public data, I don't want to be
+        "leaking" it myself. So we munge names to include just
+        initials, which should be enough to uniquely identify the
+        people in a collision without storing their names.
+        """
+        parts = name.split(" (dob) ")
+        return " ".join([
+            "".join(w[0] for w in parts[0].split()),
+            parts[1]])
+
+    def _parse_tickets(self, case_no, url, post_data):
+        time.sleep(random.randint(self.options.sleep_min,
+                                  self.options.sleep_max))
+        LOG.info("Fetching tickets for %s", case_no)
+        response = retry(requests.post, args=(url,),
+                         kwargs={"data": post_data},
+                         exceptions=(requests.exceptions.ConnectionError,),
+                         times=self.options.fetch_retries)
+        if response.status_code != 200:
+            LOG.warning("Failed to fetch tickets for %s: %s" %
+                        (case_no, response.status_code))
+            return None
+
+        page_data = bs4.BeautifulSoup(response.text, "html.parser")
+        ticket_table = page_data.find('table', attrs={'width': 800})
+
+        tickets = {}
+        current_person = None
+        for row in ticket_table.find_all("tr"):
+            if "person cited" in row.text.lower():
+                headers = row.find_all("th")
+                current_person = self._munge_name(headers[1].string)
+                LOG.debug("Found tickets for %s" % current_person)
+                tickets[current_person] = []
+            elif "cited for" in row.text.lower():
+                data = row.find_all("td")
+                charge = data[3].b.text.strip()
+                LOG.debug("Found ticket for %s: %s" % (current_person,
+                                                       charge))
+                tickets[current_person].append(charge)
+        return tickets
 
     def _list_reports_for_date(self, date):
         """Get a list of URLs for reports from a given date."""
@@ -59,9 +112,29 @@ class Fetch(base.Command):
                             (date.isoformat(), response.status_code))
         page_data = bs4.BeautifulSoup(response.text, "html.parser")
         crash_table = page_data.find('table', attrs={'width': 800})
+
+        ticket_url = crash_table.tbody.form["action"]
+        ticket_token = crash_table.tbody.input["value"]
+
         for row in crash_table.find_all('tr'):
             if row.td and row.td.a:
-                yield row.td.a['href'].strip()
+                cols = row.find_all("td")
+                case_no = cols[0].a.string.strip()
+                self._metadata[case_no] = {
+                    "date": datetime.datetime.strptime(
+                        cols[2].string.strip(),
+                        "%m-%d-%Y").strftime("%Y-%m-%d"),
+                    "hit_and_run": "H&R" in cols[4].string
+                }
+                submit = cols[5].input
+                if submit:
+                    ticket_post_data = {
+                        "CGI": ticket_token,
+                        submit["name"]: submit["value"]}
+                    self._metadata[case_no]["tickets"] = self._parse_tickets(
+                        case_no, ticket_url, ticket_post_data)
+
+                yield cols[0].a['href'].strip()
 
     def _dates_in_range(self):
         """Generate all dates in the desired range, not including today."""
@@ -114,6 +187,7 @@ class Fetch(base.Command):
             LOG.info("Fetching reports from %s" % date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url)
+                json.dump(self._metadata, open(self.options.metadata, 'w'))
 
     def satisfied(self):
         # consider it success if any reports have ever been downloaded
