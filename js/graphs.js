@@ -191,11 +191,9 @@ $(document).ready(function(){
                  "injury-severity-pie-chart");
     initPieChart("data/graph/injury_regions.json",
                  "injury-region-pie-chart");
+    initPieChart("data/graph/hit_and_runs.json",
+                 "hit-and-run-pie-chart");
 
-    //initDynamicWidthBarChart("data/graph/location_by_age.json",
-    //                         "location-by-age-bar-chart",
-    //                         {"stackBars": true, "high": 100},
-    //                         "Percentage of collisions");
     initLineChart("data/graph/location_by_age.json",
                   "location-by-age-bar-chart",
                   {"showArea": true,

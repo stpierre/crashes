@@ -35,6 +35,8 @@ class Results(base.Command):
         super(Results, self).__init__(options)
         self._reports = json.load(open(self.options.all_reports))
         self._curation = json.load(open(self.options.curation_results))
+        self._metadata = json.load(open(self.options.metadata))
+        self._hitnrun_data = json.load(open(self.options.hitnrun_data))
 
     def _relpath(self, path):
         prefix = os.path.commonprefix([path, os.getcwd()])
@@ -83,7 +85,12 @@ class Results(base.Command):
         rv['imagedir'] = self._relpath(self.options.imagedir)
         rv['all_reports'] = self._relpath(self.options.all_reports)
 
-        rv['pct_children'] = float(rv['num_children'] * 100) / rv['bike_reports']
+        rv['pct_children'] = (
+            float(rv['num_children'] * 100) / rv['bike_reports'])
+
+        rv['hit_and_run_counts'] = {t: len(c)
+                                    for t, c in self._hitnrun_data.items()}
+        rv['hit_and_run_total'] = sum(rv['hit_and_run_counts'].values())
 
         report_time_period = datetime.datetime.now() - rv['first_report']
         report_years = report_time_period.days / 365.25

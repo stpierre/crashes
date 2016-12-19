@@ -453,7 +453,7 @@ class Xform(base.Command):
 
     def _xform_proportions(self):
         """Create data for pie chart of collisions by location."""
-        LOG.info("Collecting data on proportions of collision locations")
+        LOG.info("Transforming data on proportions of collision locations")
 
         data = {"labels": [], "series": []}
         total = len(reduce(operator.add, self._curation.values()))
@@ -464,6 +464,31 @@ class Xform(base.Command):
                 self.title(name), num_cases, float(num_cases) / total * 100))
             data["series"].append(num_cases)
         self._save_data("proportions.json", data)
+
+    def _xform_hit_and_runs(self):
+        """Create data for pie chart of hit-and-runs."""
+        LOG.info("Transforming data on hit-and-runs")
+        hitnrun_data = json.load(open(self.options.hitnrun_data))
+        total_hnrs = len(reduce(operator.add, hitnrun_data.values()))
+
+        data = {"labels": [], "series": []}
+        num_driver = len(hitnrun_data["driver"])
+        data["series"].append(num_driver)
+        data["labels"].append("Driver only left scene: %s (%0.1f%%)" %
+                              (num_driver, 100.0 * num_driver / total_hnrs))
+
+        num_cyclist = len(hitnrun_data["cyclist"])
+        data["series"].append(num_cyclist)
+        data["labels"].append("Cyclist only left scene: %s (%0.1f%%)" %
+                              (num_cyclist, 100.0 * num_cyclist / total_hnrs))
+
+        num_both = len(hitnrun_data["both"]) + len(hitnrun_data["unclear"])
+        data["series"].append(num_both)
+        data["labels"].append(
+            "Both parties left scene or unclear: %s (%0.1f%%)" %
+            (num_both, 100.0 * num_both / total_hnrs))
+
+        self._save_data("hit_and_runs.json", data)
 
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
@@ -483,6 +508,7 @@ class Xform(base.Command):
         self._xform_timings()
         self._xform_collision_times()
         self._xform_ages()
+        self._xform_hit_and_runs()
 
     def satisfied(self):
         return os.path.exists(self.options.collision_graph)
