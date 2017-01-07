@@ -153,13 +153,16 @@ class Xform(base.Command):
                 float(monthly_aggregate[month.month]) /
                 len(months[month.strftime("%b")]))
 
-            tooltips.append(
-                "%s: %d\n%0.1f%% of total\n%0.1f%% of %s\n%s average: %0.1f" %
-                (month.strftime("%b %Y"), count,
-                 100 * (float(count) / len(relevant)),
-                 100 * (float(count) / yearly_counts[month.year]),
-                 month.strftime("%Y"), month_name,
-                 avg_per_month[month.month]))
+            if yearly_counts[month.year]:
+                tooltips.append(
+                    "%s: %d\n%0.1f%% of total\n%0.1f%% of %s\n%s average: %0.1f" %
+                    (month.strftime("%b %Y"), count,
+                     100 * (float(count) / len(relevant)),
+                     100 * (float(count) / yearly_counts[month.year]),
+                     month.strftime("%Y"), month_name,
+                     avg_per_month[month.month]))
+            else:
+                tooltips.append("%s: %d" % (month.strftime("%b %Y"), count))
             next_month = month + datetime.timedelta(31)
             month = datetime.date(next_month.year, next_month.month, 1)
 
