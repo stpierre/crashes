@@ -120,19 +120,21 @@ class Fetch(base.Command):
             if row.td and row.td.a:
                 cols = row.find_all("td")
                 case_no = cols[0].a.string.strip()
-                self._metadata[case_no] = {
-                    "date": datetime.datetime.strptime(
-                        cols[2].string.strip(),
-                        "%m-%d-%Y").strftime("%Y-%m-%d"),
-                    "hit_and_run": "H&R" in cols[4].string
-                }
-                submit = cols[5].input
-                if submit:
-                    ticket_post_data = {
-                        "CGI": ticket_token,
-                        submit["name"]: submit["value"]}
-                    self._metadata[case_no]["tickets"] = self._parse_tickets(
-                        case_no, ticket_url, ticket_post_data)
+                if case_no not in self._metadata:
+                    self._metadata[case_no] = {
+                        "date": datetime.datetime.strptime(
+                            cols[2].string.strip(),
+                            "%m-%d-%Y").strftime("%Y-%m-%d"),
+                        "hit_and_run": "H&R" in cols[4].string
+                    }
+                    submit = cols[5].input
+                    if submit:
+                        ticket_post_data = {
+                            "CGI": ticket_token,
+                            submit["name"]: submit["value"]}
+                        self._metadata[case_no]["tickets"] = (
+                            self._parse_tickets(case_no, ticket_url,
+                                                ticket_post_data))
 
                 yield cols[0].a['href'].strip()
 
