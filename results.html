@@ -60,7 +60,7 @@
           <h2>Interpreting These Data</h2>
 
           In the data below, bike-car collisions are categorized based
-          on where they happened. Five locations are tracked:
+          on where they happened. The following locations are tracked:
 
           <ul class="simple">
             <li><b>Crosswalk</b>: Collision happened while a person on
@@ -89,6 +89,10 @@
               cyclist was not riding on the road as such. (E.g., the
               cyclist was crossing the street away from a
               crosswalk.)</li>
+            <li><b>Unknown</b>: The police report contained
+              insufficient information to determine where the
+              collision happened; or the collision record came from
+              NDOR and no police report could be located.</li>
           </ul>
 
           <p>There is some inherent difficulty in categorizing certain
@@ -126,6 +130,12 @@
             <li>Accident reports are not written for bicycle-bicycle
               or bicycle-pedestrian collisions.</li>
           </ul>
+
+          <p>Nearly all of the reports are from LPD, but
+            {{ndor_count}} reports came from the Nebraska Department
+            of Roads <i>[sic]</i>
+            via <a href="http://www.arcgis.com/home/webmap/viewer.html?webmap=76d544b5646645dcaa8e9ba5c5543d0a">Lacey
+            Matney's 2014 study</a>.</p>
         </div>
 
         <div class="section-a">
@@ -211,37 +221,6 @@
         </div>
 
         <div class="section-a">
-          <h3>Collisions per month</h3>
-          <div class="ct-chart ct-major-twelfth"
-               id="monthly-bar-chart"></div>
-
-          <p>Other than a big jump between 2013 and 2014, the apparent
-            trend of increasing collisions in this graph is a bit
-            misleading.</p>
-        </div>
-
-        <div class="section-b">
-          <h3>Collisions per year</h3>
-
-          <div class="left">
-            <p>Happily, collisions decreased slightly from 2014 to
-              2015. They're way up in 2016, though, due in part to an
-              exceedingly dangerous November.</p>
-
-            <p>Any notion that collisions are increasing should be
-              adopted cautiously, as there are a number of confounding
-              variables. (Hopefully, it represents an increase in the
-              number of miles ridden; it almost certainly also
-              represents a decrease in handwritten accident reports,
-              which can't be automatically parsed and so aren't
-              included in these data.)</p>
-          </div>
-
-          <div class="ct-chart ct-major-seventh right"
-               id="yearly-bar-chart"></div>
-        </div>
-
-        <div class="section-a">
           <h3>Aggregate monthly collisions</h3>
           <div class="ct-chart ct-major-seventh left"
                id="monthly-aggregate-bar-chart"></div>
@@ -252,6 +231,32 @@
               even the hardcores have gotten tired of riding in the
               cold and there are so few cyclists out.</p>
           </div>
+        </div>
+
+        <div class="section-b">
+          <h3>Collisions per year</h3>
+
+          <div class="left">
+            <p>The decrease from 2012 to 2013 is real, and very good
+              news -- it's a <i>huge</i> drop. Since then things have
+              been mostly flat; the decrease in 2015 is likely
+              illusory, since LPD was still using some handwritten
+              reports that year, but I don't have NDOR data to
+              cross-check. (In other words, there are some reported
+              collisions in 2015 that I don't know about yet.)</p>
+          </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="yearly-bar-chart"></div>
+        </div>
+
+        <div class="section-a">
+          <h3>Collisions per month</h3>
+          <div class="ct-chart ct-major-twelfth"
+               id="monthly-bar-chart"></div>
+
+          <p>February 2015 is the only month without a recorded
+            collision, although January 2017 is looking promising.</p>
         </div>
 
         <div class="section-b">
@@ -287,6 +292,11 @@
             <p>But seriously, over {{pct_children|round(0,
               "floor")|int}}% of people hit on bikes in Lincoln
               are <i>children</i>.</p>
+
+            <p>We only have age data for injured cyclists, but given
+              that {{ (100.0 * injured_count / bike_reports) |
+              round(1) }}% of cyclists in collisions are injured, it's
+              still a pretty broad sample.</p>
           </div>
         </div>
 
@@ -451,6 +461,9 @@
           <button class="map-buttons current" map-layer="elsewhere">
             <img src="http://www.googlemapsmarkers.com/v1/E/CC33FF"
                  alt="Elsewhere marker"> Elsewhere</button>
+          <button class="map-buttons current" map-layer="unknown">
+            <img src="http://www.googlemapsmarkers.com/v1/U/33FFCC"
+                 alt="Unknown marker"> Unknown</button>
 
           <p>This gives us some granular detail to see where
             collisions are happening around town. For instance, we
@@ -498,7 +511,7 @@
             {{"B6-093266"|report_link("sidewalks")}}.</p>
 
           <p>In other (fewer) {{"B3-096911"|report_link("cases")}},
-            the officer has a {{"B4-063856"|report_link("correct
+            the officer had a {{"B4-063856"|report_link("correct
             understanding")}} of the law, and
             "{{"B5-112375"|report_link("educate")}}" the cyclist; and
             in some cases {{"B3-042103"|report_link("the driver of the
@@ -519,6 +532,12 @@
           <p>Perhaps ironically, in {{"B4-055506"|report_link("one
             case")}} a cyclist who had dismounted to walk his bike
             across the intersection was hit while on foot.</p>
+
+          <p>If you get right-hooked by a driver who just can't wait
+            three seconds for a parking space, you might just
+            {{"B2-092954"|report_link("wind up with a ticket
+            yourself")}} for "violating general traffic laws." Which
+            laws? Well, general ones, of course.</p>
 
           <p>In some cases, the accident report
             {{"B3-046597"|report_link("mentions")}} that the cyclist
@@ -643,8 +662,8 @@
                 masters thesis. The data in this study came from the
                 Nebraska Department of Roads, and is incomplete
                 compared to the LPD accident reports, but it covers
-                the entire state. Eventually the data will be merged
-                into this page.</li>
+                the entire state. The NDOR data from this study has
+                been merged into the data used on this page.</li>
             <li><a href="http://www.transportation.nebraska.gov/highway-safety/"
                    class="reference external">Official Nebraska
                    Department of Roads Crash Data</a>. Monthly and

@@ -368,6 +368,8 @@ class Xform(base.Command):
         cases_by_loc = {}
         rates_by_loc = {}
         for name, cases in self._curation.items():
+            if name == "unknown":
+                continue
             loc = self.title(name)
             counts = [0 for _ in range(5)]
             for case_no in cases:

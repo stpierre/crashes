@@ -43,7 +43,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2017-01-19 10:12 
+            Last updated: 2017-01-26 10:08 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -60,7 +60,7 @@
           <h2>Interpreting These Data</h2>
 
           In the data below, bike-car collisions are categorized based
-          on where they happened. Five locations are tracked:
+          on where they happened. The following locations are tracked:
 
           <ul class="simple">
             <li><b>Crosswalk</b>: Collision happened while a person on
@@ -89,6 +89,10 @@
               cyclist was not riding on the road as such. (E.g., the
               cyclist was crossing the street away from a
               crosswalk.)</li>
+            <li><b>Unknown</b>: The police report contained
+              insufficient information to determine where the
+              collision happened; or the collision record came from
+              NDOR and no police report could be located.</li>
           </ul>
 
           <p>There is some inherent difficulty in categorizing certain
@@ -102,12 +106,12 @@
         <div class="section">
           <h2>Quantitative Results</h2>
 
-          <p>The current dataset includes 43201 reports,
+          <p>The current dataset includes 43213 reports,
             from December  3, 2011 to
             January 19,
-            2017. 7468 reports could not be parsed,
+            2017. 7368 reports could not be parsed,
             largely because they were handwritten. Of the reports that
-            could be parsed, 577 (1.3%) involved a person on a
+            could be parsed, 696 (1.6%) involved a person on a
             bicycle.</p>
 
           <p>This number is almost certainly an underestimate, for
@@ -125,6 +129,12 @@
             <li>Accident reports are not written for bicycle-bicycle
               or bicycle-pedestrian collisions.</li>
           </ul>
+
+          <p>Nearly all of the reports are from LPD, but
+            0 reports came from the Nebraska Department
+            of Roads <i>[sic]</i>
+            via <a href="http://www.arcgis.com/home/webmap/viewer.html?webmap=76d544b5646645dcaa8e9ba5c5543d0a">Lacey
+            Matney's 2014 study</a>.</p>
         </div>
 
         <div class="section-a">
@@ -135,7 +145,7 @@
 
           <div class="right">
             <p>The majority of collisions involving a bicycle
-              (311/577) happened in a
+              (366/696) happened in a
               crosswalk.</p>
 
             <p>Large numbers of collisions also involve people riding
@@ -161,10 +171,10 @@
               so it's not possible to extrapolate from the data shown
               above to conclude whether it's more dangerous to ride in
               the street or on the sidewalk. It is worth noting,
-              though, that 70.9% (409) of the collisions
+              though, that 69.1% (481) of the collisions
               indicate a pattern of riding on sidewalks, while merely
-              19.6%
-              (113) indicate a pattern of riding in the
+              20.0%
+              (139) indicate a pattern of riding in the
               street.</p>
 
             <p>Unsurprisingly, no collisions were reported on
@@ -209,37 +219,6 @@
         </div>
 
         <div class="section-a">
-          <h3>Collisions per month</h3>
-          <div class="ct-chart ct-major-twelfth"
-               id="monthly-bar-chart"></div>
-
-          <p>Other than a big jump between 2013 and 2014, the apparent
-            trend of increasing collisions in this graph is a bit
-            misleading.</p>
-        </div>
-
-        <div class="section-b">
-          <h3>Collisions per year</h3>
-
-          <div class="left">
-            <p>Happily, collisions decreased slightly from 2014 to
-              2015. They're way up in 2016, though, due in part to an
-              exceedingly dangerous November.</p>
-
-            <p>Any notion that collisions are increasing should be
-              adopted cautiously, as there are a number of confounding
-              variables. (Hopefully, it represents an increase in the
-              number of miles ridden; it almost certainly also
-              represents a decrease in handwritten accident reports,
-              which can't be automatically parsed and so aren't
-              included in these data.)</p>
-          </div>
-
-          <div class="ct-chart ct-major-seventh right"
-               id="yearly-bar-chart"></div>
-        </div>
-
-        <div class="section-a">
           <h3>Aggregate monthly collisions</h3>
           <div class="ct-chart ct-major-seventh left"
                id="monthly-aggregate-bar-chart"></div>
@@ -250,6 +229,32 @@
               even the hardcores have gotten tired of riding in the
               cold and there are so few cyclists out.</p>
           </div>
+        </div>
+
+        <div class="section-b">
+          <h3>Collisions per year</h3>
+
+          <div class="left">
+            <p>The decrease from 2012 to 2013 is real, and very good
+              news -- it's a <i>huge</i> drop. Since then things have
+              been mostly flat; the decrease in 2015 is likely
+              illusory, since LPD was still using some handwritten
+              reports that year, but I don't have NDOR data to
+              cross-check. (In other words, there are some reported
+              collisions in 2015 that I don't know about yet.)</p>
+          </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="yearly-bar-chart"></div>
+        </div>
+
+        <div class="section-a">
+          <h3>Collisions per month</h3>
+          <div class="ct-chart ct-major-twelfth"
+               id="monthly-bar-chart"></div>
+
+          <p>February 2015 is the only month without a recorded
+            collision, although January 2017 is looking promising.</p>
         </div>
 
         <div class="section-b">
@@ -273,7 +278,7 @@
 
           <div class="right">
             <p>Just so we're clear, that's about
-              10 children under 11 hit by
+              12 children under 11 hit by
               cars every year in Lincoln alone.</p>
 
             <p>I suspect that this may just be a graph of ridership
@@ -284,6 +289,10 @@
 
             <p>But seriously, over 33% of people hit on bikes in Lincoln
               are <i>children</i>.</p>
+
+            <p>We only have age data for injured cyclists, but given
+              that 88.1% of cyclists in collisions are injured, it's
+              still a pretty broad sample.</p>
           </div>
         </div>
 
@@ -366,8 +375,8 @@
                id="hit-and-run-pie-chart"></div>
 
           <div class="right">
-            <p>Of the 577 collisions,
-              106 (18.4%) were categorized as
+            <p>Of the 696 collisions,
+              106 (15.2%) were categorized as
               hit-and-runs by LPD. In 7 cases, either both the
               driver and cyclist left the scene, or it couldn't be
               easily determined who left the scene. In the remaining
@@ -375,7 +384,7 @@
               majority of times -- 85
               times, or 85.9% of remaining cases.</p>
 
-            <p>Overall, in 14.7% of <i>all</i> bike-car
+            <p>Overall, in 12.2% of <i>all</i> bike-car
               collisions the driver fled the scene. If you are hit,
               make sure to immediately get license plate numbers!</p>
 
@@ -443,6 +452,9 @@
           <button class="map-buttons current" map-layer="elsewhere">
             <img src="http://www.googlemapsmarkers.com/v1/E/CC33FF"
                  alt="Elsewhere marker"> Elsewhere</button>
+          <button class="map-buttons current" map-layer="unknown">
+            <img src="http://www.googlemapsmarkers.com/v1/U/33FFCC"
+                 alt="Unknown marker"> Unknown</button>
 
           <p>This gives us some granular detail to see where
             collisions are happening around town. For instance, we
@@ -490,7 +502,7 @@
             <a href="http://cjis.lincoln.ne.gov/~ACC/B609/B6093266.PDF" class="reference external">sidewalks</a>.</p>
 
           <p>In other (fewer) <a href="http://cjis.lincoln.ne.gov/~ACC/B309/B3096911.PDF" class="reference external">cases</a>,
-            the officer has a <a href="http://cjis.lincoln.ne.gov/~ACC/B406/B4063856.PDF" class="reference external">correct
+            the officer had a <a href="http://cjis.lincoln.ne.gov/~ACC/B406/B4063856.PDF" class="reference external">correct
             understanding</a> of the law, and
             "<a href="http://cjis.lincoln.ne.gov/~ACC/B511/B5112375.PDF" class="reference external">educate</a>" the cyclist; and
             in some cases <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3042103.PDF" class="reference external">the driver of the
@@ -511,6 +523,12 @@
           <p>Perhaps ironically, in <a href="http://cjis.lincoln.ne.gov/~ACC/B405/B4055506.PDF" class="reference external">one
             case</a> a cyclist who had dismounted to walk his bike
             across the intersection was hit while on foot.</p>
+
+          <p>If you get right-hooked by a driver who just can't wait
+            three seconds for a parking space, you might just
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B209/B2092954.PDF" class="reference external">wind up with a ticket
+            yourself</a> for "violating general traffic laws." Which
+            laws? Well, general ones, of course.</p>
 
           <p>In some cases, the accident report
             <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3046597.PDF" class="reference external">mentions</a> that the cyclist
@@ -635,8 +653,8 @@
                 masters thesis. The data in this study came from the
                 Nebraska Department of Roads, and is incomplete
                 compared to the LPD accident reports, but it covers
-                the entire state. Eventually the data will be merged
-                into this page.</li>
+                the entire state. The NDOR data from this study has
+                been merged into the data used on this page.</li>
             <li><a href="http://www.transportation.nebraska.gov/highway-safety/"
                    class="reference external">Official Nebraska
                    Department of Roads Crash Data</a>. Monthly and

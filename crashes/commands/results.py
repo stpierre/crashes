@@ -51,9 +51,12 @@ class Results(base.Command):
         rv['first_report'] = None
         rv['last_report'] = None
         rv['unparseable_count'] = 0
+        rv['ndor_count'] = 0
 
         rv['num_children'] = 0
         rv['under_11'] = 0
+
+        rv['injured_count'] = 0
 
         for report in self._reports.values():
             if report['date'] is None:
@@ -66,6 +69,9 @@ class Results(base.Command):
                 rv['last_report'] = date
             if report.get('cyclist_dob') is None:
                 continue
+            if report['case_number'].startswith("NDOR"):
+                rv['ndor_count'] += 1
+                continue
             dob = datetime.datetime.strptime(report['cyclist_dob'], "%Y-%m-%d")
             diff = date - dob
             age_at_collision = diff.days / 365.25
@@ -73,6 +79,8 @@ class Results(base.Command):
                 rv['num_children'] += 1
                 if age_at_collision < 11:
                     rv['under_11'] += 1
+            if report.get('injury_severity', 5) < 5:
+                rv['injured_count'] += 1
 
         rv['bike_reports'] = sum(len(d) for n, d in self._curation.items()
                                  if n != "not_involved")

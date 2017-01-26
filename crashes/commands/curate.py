@@ -106,6 +106,9 @@ class Curate(base.Command):
         "Bicycle in collision while in bike lane")
     statuses["E"] = CurationStatus("elsewhere",
                                    "Bicycle in collision elsewhere")
+    statuses["U"] = CurationStatus(
+        "unknown",
+        "Collision location unknown or could not be determined")
     statuses["N"] = CurationStatus("not_involved", "Bicycle not in collision")
 
     def __init__(self, options):

@@ -31,6 +31,7 @@ class Hitnrun(curate.Curate):
 
         curation_data = json.load(open(self.options.curation_results))
         del curation_data["not_involved"]
+        del curation_data["unknown"]
         relevant = reduce(operator.add, curation_data.values())
 
         metadata = json.load(open(self.options.metadata))

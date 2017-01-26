@@ -17,14 +17,49 @@ from six.moves import input
 
 from crashes.commands import base
 from crashes.commands import curate
+from crashes import log
 
 
-LOG = logging.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 
 def new_geojson():
     return {"type": "FeatureCollection",
             "features": []}
+
+
+def cleanup_geojson(geojson, case_no):
+    retval = copy.deepcopy(geojson)
+    retval['properties']['case_no'] = case_no
+    # remove some of the extraneous junk from the geojson properties
+    for key in ('status', 'confidence', 'ok', 'encoding',
+                'geometry', 'provider', 'bbox', 'location', 'lat',
+                'lng', 'accuracy', 'quality', 'method'):
+        if key in retval["properties"]:
+            del retval['properties'][key]
+    return retval
+
+
+def _save_geojson(data, filepath):
+    LOG.debug("Saving geocoding data (%s features) to %s" %
+              (len(data['features']), filepath))
+    return json.dump(data, open(filepath, 'w'))
+
+
+def save_categorized_geojson(all_geojson, curation_data, geocoding_dir):
+    """create categorized GeoJSON files."""
+    by_loc = {k: new_geojson() for k in curation_data.keys()}
+    for feature in all_geojson['features']:
+        for loc, cases in curation_data.items():
+            if feature['properties']['case_no'] in cases:
+                by_loc[loc]['features'].append(feature)
+                break
+        else:
+            LOG.warning("Unable to determine crash location for %s" %
+                        feature['properties']['case_no'])
+    for loc, data in by_loc.items():
+        fpath = os.path.join(geocoding_dir, "%s.json" % loc)
+        _save_geojson(data, fpath)
 
 
 class Geocode(base.Command):
@@ -140,17 +175,10 @@ class Geocode(base.Command):
             loc = geocoder.google(address)
             retval = loc.geojson
             if not retval['properties']['ok']:
-                print("Error finding %s: %s" %
-                      (address, retval['properties']['status']))
+                LOG.error("Error finding %s: %s" %
+                          (address, retval['properties']['status']))
             else:
-                retval['properties']['case_no'] = case_no
-                # remove some of the extraneous junk from the geojson
-                # properties
-                for key in ('status', 'confidence', 'ok', 'encoding',
-                            'geometry', 'provider', 'bbox', 'location', 'lat',
-                            'lng', 'accuracy', 'quality', 'method'):
-                    if key in retval["properties"]:
-                        del retval['properties'][key]
+                retval = cleanup_geojson(retval, case_no)
                 print("Address: %s" %
                       termcolor.colored(retval['properties']['address'],
                                         "green", attrs=["bold"]))
@@ -165,12 +193,6 @@ class Geocode(base.Command):
             retval = new_geojson()
             LOG.debug("Created new GeoJSON dataset for %s" % fpath)
         return retval
-
-    def _save_geojson(self, data, filename):
-        fpath = os.path.join(self.options.geocoding, filename)
-        LOG.debug("Saving geocoding data (%s features) to %s" %
-                  (len(data['features']), fpath))
-        return json.dump(data, open(fpath, 'w'))
 
     def __call__(self):
         data = json.load(open(self.options.all_reports))
@@ -204,7 +226,8 @@ class Geocode(base.Command):
             print()
             coded.append(case_no)
 
-            self._save_geojson(all_geojson, "all.json")
+            _save_geojson(all_geojson,
+                          os.path.join(self.options.geocoding, "all.json"))
             json.dump(skips, open(skipfile, "w"))
             LOG.info("%s/%s coded (%.02f%%)" %
                      (len(coded), len(all_curated),
@@ -224,18 +247,8 @@ class Geocode(base.Command):
                 all_geojson['features'].extend(
                     self._jitter_duplicates(features))
 
-        # create categorized GeoJSON files
-        by_loc = {k: new_geojson() for k in curation_data.keys()}
-        for feature in all_geojson['features']:
-            for loc, cases in curation_data.items():
-                if feature['properties']['case_no'] in cases:
-                    by_loc[loc]['features'].append(feature)
-                    break
-            else:
-                LOG.warning("Unable to determine crash location for %s" %
-                            feature['properties']['case_no'])
-        for loc, data in by_loc.items():
-            self._save_geojson(data, "%s.json" % loc)
+        save_categorized_geojson(all_geojson, curation_data,
+                                 self.options.geocoding)
 
     def satisfied(self):
         return os.path.exists(self.options.geocoding)

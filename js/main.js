@@ -42,6 +42,11 @@ function init_maps() {
     layers['elsewhere'].setStyle({icon: markers + "E/CC33FF"})
     layers['elsewhere'].setMap(all_map)
 
+    layers['unknown'] = new google.maps.Data()
+    layers['unknown'].loadGeoJson(datadir + "unknown.json");
+    layers['unknown'].setStyle({icon: markers + "U/33FFCC"})
+    layers['unknown'].setMap(all_map)
+
     // set up event listeners for main map
     var all_info_window = new google.maps.InfoWindow();
 
