@@ -124,6 +124,11 @@ function mergeOptions(defaults, user) {
 }
 
 
+function skipLabels(value, index, labels) {
+    return index % 2 === 0 ? value : null;
+}
+
+
 function initAxialChart(cls, url, graphID, options, yLabel) {
     var labelOpt = {
         chartPadding: {
@@ -195,12 +200,17 @@ $(document).ready(function(){
                  "hit-and-run-pie-chart");
 
     initLineChart("data/graph/location_by_age.json",
-                  "location-by-age-bar-chart",
+                  "location-by-age-line-chart",
                   {"showArea": true,
                    "high": 100,
                    "lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false},
                   "Percentage of collisions");
+    initLineChart("data/graph/monthly.json",
+                  "monthly-line-chart",
+                  {"lineSmooth": Chartist.Interpolation.none(),
+                   "showPoint": false,
+                   "axisX": {"labelInterpolationFnc": skipLabels}});
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
@@ -220,36 +230,4 @@ $(document).ready(function(){
                              "injury-rates-bar-chart",
                              {"stackBars": true, "high": 100},
                              "Injury rate (%)");
-
-    var lastYear = null;
-    var availableColors = allColors.slice(0);
-    var curColor;
-    chartColors['monthly-bar-chart'] = [];
-    initAxialChart(
-        Chartist.Bar,
-        "data/graph/monthly.json",
-        'monthly-bar-chart', {}, "Collisions"
-    ).on('data', function(context){
-        if (context.type == 'update') {
-            for (var i = 0; i <= context.data['labels'].length; i++) {
-                label = context.data['labels'][i]
-                if (typeof(label) !== 'undefined') {
-                    var space = label.indexOf(" ")
-                    if (space != -1) {
-                        year = parseInt(label.substr(space + 1))
-                        if (year != lastYear) {
-                            lastYear = year;
-                            curColor = availableColors.shift()
-                        }
-                        chartColors['monthly-bar-chart'].push(curColor);
-                    }
-                }
-            }
-        }
-    }).on('draw', function(context) {
-        if (context.type === 'bar') {
-            color = chartColors['monthly-bar-chart'][context.index];
-            context.element.attr({"style": "stroke: " + color});
-        }
-    });
 });
