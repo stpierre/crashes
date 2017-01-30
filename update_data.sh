@@ -15,4 +15,5 @@ if [ -t 1 ]; then
     # stdout is a tty, so we can curate what we downloaded
     crashes curate
     crashes geocode
+    crashes hitnrun
 fi
