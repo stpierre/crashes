@@ -210,7 +210,8 @@ $(document).ready(function(){
                   "monthly-line-chart",
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false,
-                   "axisX": {"labelInterpolationFnc": skipLabels}});
+                   "axisX": {"labelInterpolationFnc": skipLabels}},
+                  "Collisions");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
