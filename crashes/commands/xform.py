@@ -8,6 +8,9 @@ import json
 import operator
 import os
 
+import astral
+import pytz
+
 from crashes.commands import base
 from crashes.commands import curate
 from crashes import log
@@ -141,7 +144,6 @@ class Xform(base.Command):
         avg_per_month = {}
         labels = []
         series = []
-        tooltips = []
         month = min(collision_counts.keys())
 
         while month <= datetime.date.today():
@@ -152,23 +154,11 @@ class Xform(base.Command):
             avg_per_month[month.month] = (
                 float(monthly_aggregate[month.month]) /
                 len(months[month.strftime("%b")]))
-
-            if yearly_counts[month.year]:
-                tooltips.append(
-                    "%s: %d\n%0.1f%% of total\n%0.1f%% of %s\n%s average: %0.1f" %
-                    (month.strftime("%b %Y"), count,
-                     100 * (float(count) / len(relevant)),
-                     100 * (float(count) / yearly_counts[month.year]),
-                     month.strftime("%Y"), month_name,
-                     avg_per_month[month.month]))
-            else:
-                tooltips.append("%s: %d" % (month.strftime("%b %Y"), count))
             next_month = month + datetime.timedelta(31)
             month = datetime.date(next_month.year, next_month.month, 1)
 
         self._save_data("monthly.json", {"labels": labels,
-                                         "series": [series],
-                                         "tooltips": [tooltips]})
+                                         "series": [series]})
 
         aggregate_data = {"labels": [], "series": [[]], "tooltips": [[]],
                           "activate_tooltips": [[]]}
@@ -269,7 +259,6 @@ class Xform(base.Command):
 
         labels = [str(a) for a in self.narrow_age_ranges]
         series = []
-        tooltips = []
         for loc, loc_collisions in loc_by_age.items():
             loc_series = []
             loc_tooltips = []
@@ -292,7 +281,6 @@ class Xform(base.Command):
                 loc_tooltips.append("%s: %0.1f%%\n%d collisions" %
                                     (loc, abs_proportion, collisions))
             series.append(loc_series)
-            tooltips.append(loc_tooltips)
         # reverse the data so that the smallest data are on the "top"
         # of the stack when rendered by Chartist.js. This lets us set
         # the fill-opacity to 1 and it looks stacked, rather than
@@ -301,9 +289,7 @@ class Xform(base.Command):
         self._save_data(
             "location_by_age.json",
             {"labels": labels,
-             "tooltips": tooltips,
-             "series": series,
-             "title": "Proportion of collisions in each location by age"})
+             "series": series})
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())
@@ -470,6 +456,28 @@ class Xform(base.Command):
             data["series"].append(num_cases)
         self._save_data("proportions.json", data)
 
+    def _xform_genders(self):
+        """Create data for pie chart of collisions by gender."""
+        LOG.info("Transforming data on collisions by gender")
+
+        total = len(reduce(operator.add, self._curation.values()))
+        by_gender = collections.Counter(r['cyclist_gender']
+                                        for c, r in self._reports.items()
+                                        if r.get('cyclist_gender') is not None)
+
+        data = {"labels": [], "series": []}
+
+        def _record(label, count):
+            data["labels"].append("%s: %s (%0.1f%%)" %
+                                  (label, count, 100.0 * count / total))
+            data["series"].append(count)
+
+        _record("Male", by_gender["M"])
+        _record("Female", by_gender["F"])
+        _record("Unknown", total - by_gender["M"] - by_gender["F"])
+
+        self._save_data("by_gender.json", data)
+
     def _xform_hit_and_runs(self):
         """Create data for pie chart of hit-and-runs."""
         LOG.info("Transforming data on hit-and-runs")
@@ -495,6 +503,68 @@ class Xform(base.Command):
 
         self._save_data("hit_and_runs.json", data)
 
+    def _xform_daylight(self):
+        """Create graphs for daylight/nighttime collision data."""
+        tz = pytz.timezone("US/Central")
+        city = astral.Astral()["Lincoln"]
+
+        by_month = {}
+
+        relevant = reduce(operator.add, self._curation.values())
+        for case_no in relevant:
+            try:
+                crashtime = datetime.datetime.strptime(
+                    "%s %s" % (self._reports[case_no]['date'],
+                               self._reports[case_no]['time']),
+                    "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+            except ValueError:
+                continue
+
+            sun = city.sun(date=crashtime, local=True)
+            if crashtime.month not in by_month:
+                by_month[crashtime.month] = collections.defaultdict(int)
+
+            if crashtime < sun["dawn"] or crashtime > sun["dusk"]:
+                by_month[crashtime.month]["night"] += 1
+            elif crashtime < sun["sunrise"]:
+                by_month[crashtime.month]["dawn"] += 1
+            elif crashtime > sun["sunset"]:
+                by_month[crashtime.month]["dusk"] += 1
+            else:
+                by_month[crashtime.month]["day"] += 1
+
+        totals = collections.defaultdict(int)
+        for data in by_month.values():
+            for phase, count in data.items():
+                totals[phase] += count
+        total = sum(totals.values())
+
+        pie_data = {"labels": [],
+                    "series": [],
+                    "tooltips": []}
+        line_data = {"labels": [datetime.date(2017, m, 1).strftime("%B")
+                                for m in range(1, 13)],
+                     "series": []}
+        for phase in ("night", "dawn", "dusk", "day"):
+            pie_data["labels"].append("%s: %d" % (phase.title(),
+                                                  totals[phase]))
+            pie_data["series"].append(totals[phase])
+            pie_data["tooltips"].append("%0.1f%% of total" %
+                                        (100 * float(totals[phase]) / total))
+
+            line_data["series"].append([[] for m in range(12)])
+            for month in range(12):
+                month_total = sum(by_month[month + 1].values())
+                line_data["series"][-1][month] = 100 * float(
+                    by_month[month + 1].get(phase, 0)) / month_total
+
+        line_data["series"].append([
+            100 * operator.sub(*reversed(
+                city.daylight(date=datetime.date(2017, m, 1)))).seconds / 60.0 / 60 / 24
+            for m in range(1, 13)])
+        self._save_data("daylight_totals.json", pie_data)
+        self._save_data("daylight_by_month.json", line_data)
+
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
         path = os.path.join(self.options.graph_data, filename)
@@ -513,7 +583,9 @@ class Xform(base.Command):
         self._xform_timings()
         self._xform_collision_times()
         self._xform_ages()
+        self._xform_genders()
         self._xform_hit_and_runs()
+        self._xform_daylight()
 
     def satisfied(self):
         return os.path.exists(self.options.collision_graph)

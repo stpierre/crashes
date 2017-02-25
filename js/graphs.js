@@ -198,6 +198,10 @@ $(document).ready(function(){
                  "injury-region-pie-chart");
     initPieChart("data/graph/hit_and_runs.json",
                  "hit-and-run-pie-chart");
+    initPieChart("data/graph/by_gender.json",
+                 "gender-pie-chart");
+    initPieChart("data/graph/daylight_totals.json",
+                 "daylight-pie-chart");
 
     initLineChart("data/graph/location_by_age.json",
                   "location-by-age-line-chart",
@@ -212,6 +216,11 @@ $(document).ready(function(){
                    "showPoint": false,
                    "axisX": {"labelInterpolationFnc": skipLabels}},
                   "Collisions");
+    initLineChart("data/graph/daylight_by_month.json",
+                  "daylight-line-chart",
+                  {"lineSmooth": Chartist.Interpolation.none(),
+                   "showPoint": false},
+                  "Percentage of Collisions");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",

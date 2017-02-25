@@ -17,6 +17,7 @@ LOG = log.getLogger(__name__)
 # config defaults
 DEFAULTS = {
     "url": "HTTP://CJIS.LINCOLN.NE.GOV/HTBIN/CGI.COM",
+    "direct_base_url": "http://cjis.lincoln.ne.gov/~ACC",
     "token": "DISK0:[020020.WWW]ACCDESK.COM",
     "sleep_min": "5",
     "sleep_max": "30",
@@ -83,6 +84,7 @@ def parse_args():
     options.fetch_days = int(cfp.get("fetch", "days"))
     options.fetch_start = cfp.get("fetch", "start")
     options.fetch_retries = int(cfp.get("fetch", "retries"))
+    options.fetch_direct_base_url = cfp.get("fetch", "direct_base_url")
     options.datadir = _canonicalize(cfp.get("files", "datadir"), os.getcwd())
     options.pdfdir = _canonicalize(cfp.get("files", "pdfdir"),
                                    options.datadir)

@@ -5,3 +5,5 @@ six
 termcolor
 jinja2
 geocoder
+astral
+pytz

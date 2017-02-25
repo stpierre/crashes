@@ -435,6 +435,14 @@ def _parse_time(text):
     return datetime.time(int(hours), int(minutes))
 
 
+def _parse_gender(text):
+    value = text.upper().strip()
+    if value not in ("M", "F"):
+        raise ValueError("%r is not either M or F" % value)
+    else:
+        return value
+
+
 def _case_number_from_filename(fpath):
     """Get the case number from a report filename."""
     case_id = os.path.splitext(os.path.basename(fpath))[0]
@@ -465,6 +473,19 @@ class JSONify(base.Command):
         if not self.options.files and os.path.exists(self.options.all_reports):
             self._data = json.load(open(self.options.all_reports))
 
+    def _merge_result(self, result):
+        case_no = result["case_number"]
+        if case_no in self._data:
+            for key, val in result.items():
+                # only write actual data; if the record on disk
+                # already has a piece of data, but we couldn't parse
+                # it for some reason, don't overwrite good data with
+                # None. Just add new good data
+                if val is not None:
+                    self._data[case_no][key] = val
+        else:
+            self._data[case_no] = result
+
     def _handle_results(self, timeout=1):
         results = []
         while True:
@@ -481,7 +502,7 @@ class JSONify(base.Command):
                 print(json.dumps(results))
             else:
                 for result in results:
-                    self._data[result['case_number']] = result
+                    self._merge_result(result)
                 LOG.debug("Dumping case data to %s" %
                           self.options.all_reports)
                 json.dump(self._data, open(self.options.all_reports, "w"))
@@ -494,7 +515,8 @@ class JSONify(base.Command):
             curation = json.load(open(self.options.curation_results))
             filelist = [os.path.join(self.options.pdfdir,
                                      self._data[case_no]['filename'])
-                        for case_no in reduce(operator.add, curation.values())]
+                        for case_no in reduce(operator.add, curation.values())
+                        if not case_no.startswith("NDOR")]
         else:
             filelist = [
                 fpath
@@ -653,7 +675,7 @@ class JSONifyChildProcess(multiprocessing.Process):
             [VAlignedWith(r'DATE\s+OF\s+BIRTH', fuzz=25),
              Below(complete_str),
              RightOf(complete_str),
-             AlignedWith("^19$", fuzz=3)],
+             AlignedWith("^19$", fuzz=20)],
             minpage=1, maxpage=1, type=_parse_date,
             serialize=lambda d: d.strftime("%Y-%m-%d"))
         injury_sev = PDFFinder(
@@ -677,6 +699,12 @@ class JSONifyChildProcess(multiprocessing.Process):
              AlignedWith("^19$", fuzz=20),
              Above(r"MEDICAL\s+FACILITY\s+NAME")],
             minpage=1, maxpage=1, type=self._munge_name)
+        cyclist_gender = PDFFinder(
+            "cyclist_gender",
+            [Below(complete_str),
+             VAlignedWith(r'M\s+F', fuzz=10),
+             AlignedWith("^19$", fuzz=20)],
+            minpage=1, maxpage=1, type=_parse_gender)
 
         return [location,
                 date,
@@ -684,6 +712,7 @@ class JSONifyChildProcess(multiprocessing.Process):
                 report,
                 cyclist_dob,
                 cyclist_initials,
+                cyclist_gender,
                 injury_sev,
                 injury_region]
 

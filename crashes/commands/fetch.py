@@ -4,6 +4,7 @@ import datetime
 import glob
 import json
 import logging
+import operator
 import os
 import random
 import time
@@ -43,7 +44,8 @@ class Fetch(base.Command):
 
     arguments = [
         base.Argument("--start",
-                      type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d"))
+                      type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
+        base.Argument("--refetch-curated", action="store_true")
     ]
 
     def __init__(self, options):
@@ -51,6 +53,7 @@ class Fetch(base.Command):
         self._metadata = {}
         if os.path.exists(self.options.metadata):
             self._metadata = json.load(open(self.options.metadata))
+        self.report_data = json.load(open(self.options.all_reports))
 
     @staticmethod
     def _munge_name(name):
@@ -154,12 +157,12 @@ class Fetch(base.Command):
 
             current += datetime.timedelta(1)
 
-    def _download_report(self, url):
+    def _download_report(self, url, force=False):
         """Download the report at the URL to the pdfdir."""
         filename = os.path.split(url)[1]
         filepath = os.path.join(self.options.pdfdir, filename)
         case_no = "-".join((filename[0:2], filename[2:8]))
-        if case_no in self.report_data:
+        if not force and case_no in self.report_data:
             LOG.debug("Already parsed %s, skipping" % case_no)
         else:
             LOG.debug("Downloading %s to %s" % (url, filepath))
@@ -169,7 +172,8 @@ class Fetch(base.Command):
                 response = retry(
                     requests.get, args=(url,),
                     kwargs={"stream": True},
-                    exceptions=(requests.exceptions.ConnectionError,),
+                    exceptions=(requests.exceptions.ConnectionError,
+                                requests.exceptions.ChunkedEncodingError),
                     times=self.options.fetch_retries)
                 if response.status_code != 200:
                     raise Exception("Failed to download report %s: %s" %
@@ -182,7 +186,23 @@ class Fetch(base.Command):
                                           self.options.sleep_max))
 
     def __call__(self):
-        self.report_data = json.load(open(self.options.all_reports))
+        if self.options.refetch_curated:
+            self._fetch_curated()
+        else:
+            self._fetch_by_date()
+
+    def _fetch_curated(self):
+        curation = json.load(open(self.options.curation_results))
+        for case_no in reduce(operator.add, curation.values()):
+            if case_no.startswith("NDOR"):
+                continue
+            filename = self.report_data[case_no]["filename"]
+            prefix = filename[0:4]
+            url = "%s/%s/%s" % (self.options.fetch_direct_base_url,
+                              prefix, filename)
+            self._download_report(url, force=True)
+
+    def _fetch_by_date(self):
         for date in self._dates_in_range():
             time.sleep(random.randint(self.options.sleep_min,
                                       self.options.sleep_max))

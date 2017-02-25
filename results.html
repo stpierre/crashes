@@ -1,3 +1,4 @@
+{% set section_class = cycler("section-a", "section-b") %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -139,7 +140,7 @@
             parsed.</p>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
           <h3>Collision locations</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -187,11 +188,11 @@
               off-street bike paths.)</p>
           </div>
         </div>
-        <div class="section-b">
+        <div class="{{ section_class.next() }}">
           <h3>Locations by age</h3>
 
-          <div class="ct-chart-container right">
-            <div class="ct-chart ct-major-sixth has-legend"
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-major-twelfth has-legend"
                  id="location-by-age-line-chart"></div>
 
             <!-- TODO: autogenerate this legend -->
@@ -221,7 +222,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
           <h3>Aggregate monthly collisions</h3>
           <div class="ct-chart ct-major-seventh left"
                id="monthly-aggregate-bar-chart"></div>
@@ -234,7 +235,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="{{ section_class.next() }}">
           <h3>Collisions per year</h3>
 
           <div class="left">
@@ -256,7 +257,7 @@
                id="yearly-bar-chart"></div>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
           <h3>Collisions per month</h3>
           <div class="ct-chart ct-major-twelfth"
                id="monthly-line-chart"></div>
@@ -266,7 +267,7 @@
             most dangerous month in the data set.</p>
         </div>
 
-        <div class="section-b">
+        <div class="{{ section_class.next() }}">
           <h3>Aggregate hourly collisions</h3>
 
           <div class="left">
@@ -279,7 +280,54 @@
                id="hourly-bar-chart"></div>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
+          <h3>Collisions by position of sun</h3>
+
+          <div class="ct-chart ct-major-tenth left"
+               id="daylight-pie-chart"></div>
+
+          <div class="right">
+            <p>The vast majority of collisions happen during the day,
+            although nighttime has its fair share. Without ridership
+            numbers, it's impossible to know if these just reflect
+            numbers of riders, or if more cyclists are hit at certain
+            times of the day.</p>
+          </div>
+        </div>
+
+        <div class="{{ section_class.next() }}">
+          <h3>Collisions by position of sun and by month</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-major-twelfth has-legend"
+                 id="daylight-line-chart"></div>
+
+            <!-- TODO: autogenerate this legend -->
+            <div class="legend" id="daylight-line-chart-legend">
+              <div class="ct-series-a">Night</div>
+              <div class="ct-series-b">Dawn</div>
+              <div class="ct-series-c">Dusk</div>
+              <div class="ct-series-d">Day</div>
+              <div class="ct-series-e">Hours of daylight</div>
+            </div>
+          </div>
+
+          <div class="below">
+            <p>More collisions happen at night during the winter
+              months, but that's probably because there's just more
+              night. In fact, the rate of daytime collisions very
+              closely tracks the hours of daylight per day, which
+              leads me to suspect that there's no statistically
+              significant relationship between darkness and
+              collisions.</p>
+
+            <p>Put more crassly, drivers are just as good at not
+              seeing people on bikes in the middle of the day as they
+              are in the darkest night.</p>
+          </div>
+        </div>
+
+        <div class="{{ section_class.next() }}">
           <h3>Collisions by age of cyclist</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -307,7 +355,27 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="{{ section_class.next() }}">
+          <h3>Collisions by gender of cyclist</h3>
+
+          <div class="left">
+            <p>Men are apparently over-represented, but this again
+              might just be a graph of ridership numbers.</p>
+
+            <p>This uses LPD's reporting of the gender of injured
+              cyclists; the gender of uninjured cyclists is not
+              reliably recorded. The "Unknown" category represents
+              only those cyclists who were uninjured. LPD uses a
+              purely bivalent gendering system, so trans and nonbinary
+              people may be misgendered in this graph.</p>
+          </div>
+
+          <div class="ct-chart ct-major-seventh right"
+               id="gender-pie-chart"></div>
+
+        </div>
+
+        <div class="{{ section_class.next() }}">
           <h3>Injuries by collision location</h3>
 
           <div class="left">
@@ -350,7 +418,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
           <h3>Injury severities</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -365,7 +433,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="{{ section_class.next() }}">
           <h3>Body region of injuries</h3>
 
           <div class="left">
@@ -377,7 +445,7 @@
                id="injury-region-pie-chart"></div>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
           <h3>Hit-and-runs</h3>
 
           {% set real_hnrs = hit_and_run_total -
@@ -415,7 +483,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="{{ section_class.next() }}">
           <h2>Heatmap of Collisions</h2>
 
           <div class="map-container">
@@ -440,7 +508,7 @@
             South are all among the most dangerous in the city.</p>
         </div>
 
-        <div class="section-a">
+        <div class="{{ section_class.next() }}">
           <h2>Map of Collisions</h2>
 
           <p>All locations should be considered approximations, and
@@ -652,12 +720,19 @@
         <div class="section">
           <h2>Further Study</h2>
 
-          <p></p>
+          <p>Classifying each collision according to the U.S. DOT
+            classification system would let us compare data with other
+            cities that have published their data, and see how Lincoln
+            stacks up.</p>
 
-          <p>Charting the time of day of collisions throughout the
-            calendar year might demonstrate how darkness affects (or
-            doesn't affect) collisions.</p>
-          </div>
+          <p>Data from bike traffic counters would revolutionize this
+            report. I've pestered folks at the city to no avail
+            (yet).</p>
+
+          <p>It could be interesting to look at how tickets are
+            assigned during collisions and see how likely drivers
+            and/or cyclists are likely to be ticketed.</p>
+        </div>
 
         <div class="section">
           <h2>Links</h2>
@@ -718,7 +793,10 @@
                 Marlenia Thornton, KLKN-TV</li>
             <li><a href="http://www.dailynebraskan.com/news/injured-bicyclist-creates-webpage-on-bike-crash-data/article_ea4db40a-7782-11e5-ad4d-93738956dab0.html">Injured
                 bicyclist creates web page on bike crash data</a>,
-                Marcella Mercer, Daily Nebraskan</li>
+              Marcella Mercer, Daily Nebraskan</li>
+            <li><a href="http://journalstar.com/news/local/govt-and-politics/city-to-offer-more-data-online-in-more-easily-accessible/article_eb6d6e09-63fa-584c-a569-4e04439caceb.html">City
+                to offer more data online in more easily accessible
+                formats</a>, Nancy Hicks, Lincoln Journal-Star</li>
           </ul>
         </div>
 
