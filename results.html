@@ -44,7 +44,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: {{now.strftime("%Y-%m-%d %H:%M %Z")}}
+            Last updated: {{now}}
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -108,8 +108,7 @@
           <h2>Quantitative Results</h2>
 
           <p>The current dataset includes {{report_count}} reports,
-            from {{first_report.strftime("%B %e, %Y")}} to
-            {{last_report.strftime("%B %e, %Y")}}. {{bike_reports}}
+            from {{first_report}} to {{last_report}}. {{bike_reports}}
             ({{ '%0.1f' % (100.0 * bike_reports / report_count) }}%)
             involved a person on a bicycle.</p>
 
@@ -316,10 +315,10 @@
             <p>More collisions happen at night during the winter
               months, but that's probably because there's just more
               night. In fact, the rate of daytime collisions very
-              closely tracks the hours of daylight per day, which
-              leads me to suspect that there's no statistically
-              significant relationship between darkness and
-              collisions.</p>
+              closely correlates with the hours of daylight per day
+              (r={{ '%0.2f' % daylight_correlation }}), which leads me
+              to suspect that there's no statistically significant
+              relationship between darkness and collisions.</p>
 
             <p>Put more crassly, drivers are just as good at not
               seeing people on bikes in the middle of the day as they

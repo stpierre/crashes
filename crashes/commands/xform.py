@@ -9,6 +9,7 @@ import operator
 import os
 
 import astral
+import numpy
 import pytz
 
 from crashes.commands import base
@@ -16,6 +17,11 @@ from crashes.commands import curate
 from crashes import log
 
 LOG = log.getLogger(__name__)
+
+
+def _relpath(path):
+    prefix = os.path.commonprefix([path, os.getcwd()])
+    return os.path.relpath(path, prefix)
 
 
 @functools.total_ordering
@@ -94,6 +100,14 @@ class Xform(base.Command):
         self._reports = json.load(open(self.options.all_reports))
         self._curation = json.load(open(self.options.curation_results))
         del self._curation['not_involved']
+        self._template_data = {
+            "now": datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z"),
+            "report_count": len(self._reports),
+            "num_children": 0,
+            "under_11": 0,
+            "injured_count": 0,
+            "imagedir": _relpath(self.options.imagedir),
+            "all_reports": _relpath(self.options.all_reports)}
 
     def _get_age(self, case_no):
         """Get the age of the cyclist in years for the given collision."""
@@ -254,6 +268,12 @@ class Xform(base.Command):
                             r: 0 for r in self.narrow_age_ranges}
                     loc_by_age[location][age_range] += 1
                     total_by_age[age_range] += 1
+
+                    # record some template data while we're at it
+                    if age < 20:
+                        self._template_data['num_children'] += 1
+                        if age < 11:
+                            self._template_data['under_11'] += 1
                 else:
                     total_by_age["Unknown"] += 1
 
@@ -362,6 +382,7 @@ class Xform(base.Command):
                 sev = self._reports[case_no]['injury_severity'] or 5
                 if sev != 5:
                     counts[sev] += 1
+                    self._template_data['injured_count'] += 1
                 injuries_by_sev[sev] += 1
             injuries_by_loc[loc] = sum(counts)
             injuries[loc] = counts
@@ -503,6 +524,12 @@ class Xform(base.Command):
 
         self._save_data("hit_and_runs.json", data)
 
+        self._template_data['hit_and_run_counts'] = {
+            t: len(c) for t, c in hitnrun_data.items()}
+        self._template_data['hit_and_run_total'] = sum(
+            self._template_data['hit_and_run_counts'].values())
+
+
     def _xform_daylight(self):
         """Create graphs for daylight/nighttime collision data."""
         tz = pytz.timezone("US/Central")
@@ -565,6 +592,51 @@ class Xform(base.Command):
         self._save_data("daylight_totals.json", pie_data)
         self._save_data("daylight_by_month.json", line_data)
 
+        self._template_data["daylight_correlation"] = numpy.corrcoef(
+            line_data["series"][-1], line_data["series"][-2])[1][0]
+
+    def _xform_template_data(self):
+        """Create template data for rendering index.html."""
+        self._template_data.update({"unparseable_count": 0,
+                                    "ndor_count": 0})
+        first_report = None
+        last_report = None
+        for report in self._reports.values():
+            if report['date'] is None:
+                self._template_data['unparseable_count'] += 1
+                continue
+            date = datetime.datetime.strptime(report['date'], "%Y-%m-%d")
+            if first_report is None or date < first_report:
+                first_report = date
+            if last_report is None or date > last_report:
+                last_report = date
+            if report['case_number'].startswith("NDOR"):
+                self._template_data['ndor_count'] += 1
+
+        self._template_data["first_report"] = first_report.strftime("%B %e, %Y")
+        self._template_data["last_report"] = last_report.strftime("%B %e, %Y")
+
+        self._template_data['bike_reports'] = sum(map(len,
+                                                      self._curation.values()))
+        self._template_data["bike_pct"] = (
+            100.0 * self._template_data["bike_reports"] /
+            self._template_data["report_count"])
+        self._template_data['statuses'] = {n: len(d)
+                                           for n, d in self._curation.items()}
+        self._template_data['total_road'] = (
+            len(self._curation['road']) + len(self._curation['intersection']))
+        self._template_data['total_sidewalk'] = (
+            len(self._curation['sidewalk']) + len(self._curation['crosswalk']))
+
+        self._template_data['pct_children'] = (
+            float(self._template_data['num_children'] * 100) /
+            self._template_data['bike_reports'])
+
+        report_time_period = datetime.datetime.now() - first_report
+        report_years = report_time_period.days / 365.25
+        self._template_data['under_11_per_year'] = (
+            self._template_data['under_11'] / report_years)
+
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
         path = os.path.join(self.options.graph_data, filename)
@@ -586,6 +658,12 @@ class Xform(base.Command):
         self._xform_genders()
         self._xform_hit_and_runs()
         self._xform_daylight()
+
+        self._xform_template_data()
+
+        tmpl_path = os.path.join(self.options.datadir, "template_data.json")
+        LOG.info("Writing template data to %s" % tmpl_path)
+        json.dump(self._template_data, open(tmpl_path, "w"))
 
     def satisfied(self):
         return os.path.exists(self.options.collision_graph)
