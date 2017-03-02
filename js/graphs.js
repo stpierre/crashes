@@ -130,65 +130,52 @@ function skipLabels(value, index, labels) {
 
 
 (function (window, document, Chartist) {
-	'use strict';
+    'use strict';
 
+    function LogAxis(axisUnit, data, chartRect, options) {
+	// Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
+	var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
+	this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
 
-	function AutoScaleAxis(axisUnit, data, chartRect, options) {
-		// Usually we calculate highLow based on the data but this can be overriden by a highLow object in the options
-		var highLow = options.highLow || Chartist.getHighLow(data.normalized, options, axisUnit.pos);
-		this.bounds = Chartist.getBounds(chartRect[axisUnit.rectEnd] - chartRect[axisUnit.rectStart], highLow, options.scaleMinSpace || 20, options.onlyInteger);
+        this.base = options.base || 10;
 
-		var scale = options.scale || 'linear';
-		var match = scale.match(/^([a-z]+)(\d+)?$/);
-		this.scale = {
-			type: match[1],
-			base: Number(match[2]) || 10
-		}
-
-		if (this.scale.type === 'log') {
-			if (highLow.low * highLow.high <= 0) {
-				if (data.normalized.length > 0)
-					throw new Error('Negative or zero values are not supported on logarithmic axes.');
-				highLow.low = 1;
-				highLow.high = 1000;
-			}
-			var base = this.scale.base;
-			var minDecade = Math.floor(baseLog(highLow.low, base));
-			var maxDecade = Math.ceil(baseLog(highLow.high, base));
-			this.bounds.min = Math.pow(base, minDecade);
-			this.bounds.max = Math.pow(base, maxDecade);
-			this.bounds.values = [];
-			for (var decade = minDecade; decade <= maxDecade; ++decade) {
-				this.bounds.values.push(Math.pow(base, decade));
-			}
-		}
-
-		Chartist.AutoScaleAxis.super.constructor.call(this,
-			axisUnit,
-			chartRect,
-			this.bounds.values,
-			options);
+	if (highLow.low * highLow.high <= 0) {
+	    if (data.normalized.length > 0)
+		throw new Error('Negative or zero values are not supported on logarithmic axes.');
+	    highLow.low = 1;
+	    highLow.high = 1000;
+	}
+	var minDecade = Math.floor(baseLog(highLow.low, this.base));
+	var maxDecade = Math.ceil(baseLog(highLow.high, this.base));
+	this.bounds.min = Math.pow(this.base, minDecade);
+	this.bounds.max = Math.pow(this.base, maxDecade);
+	this.bounds.values = [];
+	for (var decade = minDecade; decade <= maxDecade; ++decade) {
+	    this.bounds.values.push(Math.pow(this.base, decade));
 	}
 
-	function baseLog(val, base) {
-		return Math.log(val) / Math.log(base);
-	}
+	Chartist.LogAxis.super.constructor.call(this,
+			                        axisUnit,
+			                        chartRect,
+			                        this.bounds.values,
+			                        options);
+    }
 
-	function projectValue(value) {
-		value = +Chartist.getMultiValue(value, this.units.pos);
-		var max = this.bounds.max;
-		var min = this.bounds.min;
-		if (this.scale.type === 'log') {
-			var base = this.scale.base;
-			return this.axisLength / baseLog(max / min, base) * baseLog(value / min, base);
-		}
-		return this.axisLength * (value - min) / this.bounds.range;
-	}
+    function baseLog(val, base) {
+	return Math.log(val) / Math.log(base);
+    }
 
-	Chartist.AutoScaleAxis = Chartist.Axis.extend({
-		constructor: AutoScaleAxis,
-		projectValue: projectValue
-	});
+    function projectValue(value) {
+	value = +Chartist.getMultiValue(value, this.units.pos);
+	var max = this.bounds.max;
+	var min = this.bounds.min;
+	return this.axisLength / baseLog(max / min, this.base) * baseLog(value / min, this.base);
+    }
+
+    Chartist.LogAxis = Chartist.Axis.extend({
+	constructor: LogAxis,
+	projectValue: projectValue
+    });
 
 } (window, document, Chartist));
 
@@ -218,7 +205,7 @@ function initAxialChart(cls, url, graphID, options, yLabel) {
                     },
                     textAnchor: 'middle'
                 }})
-            ]};
+        ]};
 
     return initChart(
         cls, {"labels": [], "series": [[]]},
@@ -291,15 +278,15 @@ $(document).ready(function(){
                    "showPoint": false,
                    "axisX": {"labelInterpolationFnc": skipLabels},
                    "axisY": {
-                       "type": Chartist.AutoScaleAxis,
-                       "scale": "log2"},
+                       "type": Chartist.LogAxis,
+                       "base": 2},
                   },
                   "AACPH, AHRIRs, AACPHRIR");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
                              {"stackBars": false},
-                            "Collisions");
+                             "Collisions");
     initDynamicWidthBarChart("data/graph/ages.json",
                              "ages-bar-chart", {},
                              "Collisions");
