@@ -352,9 +352,6 @@ class Xform(base.Command):
 
         rates = []
         labels = []
-        count_tooltips = []
-        count_activate_tooltips = []
-        rate_tooltips = []
         min_count = min(times)
         max_count = max(times)
         min_rate = None
@@ -364,43 +361,17 @@ class Xform(base.Command):
             labels.append("%d:00 - %d:00" % (i, end))
 
             rates.append(float(times[i]) / traffic_counts[i])
-            rate_tooltips.append("%s: %0.1f CPHRIR" % (labels[-1], rates[-1]))
             if min_rate is None or rates[-1] < rates[min_rate]:
                 min_rate = i
             if max_rate is None or rates[-1] < rates[max_rate]:
                 max_rate = i
 
-            count_tooltips.append("%s: %d\n%0.1f%% of total" % (
-                labels[-1], times[i], 100 * float(times[i]) / len(relevant)))
-            if min_count is not None and times[i] == min_count:
-                count_activate_tooltips.append(True)
-                min_count = None
-                count_tooltips[-1] += "\nLeast collisions per hour"
-            elif max_count is not None and times[i] == max_count:
-                count_activate_tooltips.append(True)
-                max_count = None
-                count_tooltips[-1] += "\nMost collisions per hour"
-            else:
-                count_activate_tooltips.append(False)
-
-        rate_activate_tooltips = []
-        for i in range(24):
-            if i in (min_rate, max_rate):
-                rate_activate_tooltips.append(True)
-            else:
-                rate_activate_tooltips.append(False)
-
         self._save_data("hourly.json",
                         {"labels": labels,
-                         "series": [times, [], traffic_counts],
-                         "tooltips": [count_tooltips],
-                         "activate_tooltips": [count_activate_tooltips]})
+                         "series": [times, [], traffic_counts]})
 
         self._save_data("hourly_rates.json",
-                        {"labels": labels,
-                         "series": [rates],
-                         "tooltips": [count_tooltips],
-                         "activate_tooltips": [rate_activate_tooltips]})
+                        {"labels": labels, "series": [rates]})
 
         self._template_data["hourly_ahrir_correlation"] = numpy.corrcoef(
             times, traffic_counts)[1][0]
