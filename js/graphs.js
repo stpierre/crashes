@@ -289,11 +289,12 @@ $(document).ready(function(){
                   "hourly-chart",
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false,
+                   "axisX": {"labelInterpolationFnc": skipLabels},
                    "axisY": {
                        "type": Chartist.AutoScaleAxis,
                        "scale": "log2"},
                   },
-                  "Collisions, AHRIRs, AACPH");
+                  "AACPH, AHRIRs, AACPHRIR");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
