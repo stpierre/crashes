@@ -35,7 +35,8 @@ DEFAULTS = {
     "results_output": "index.html",
     "lb716_results": "lb716.json",
     "graph_data": "graph",
-    "hitnrun_data": "hit-and-run.json"
+    "hitnrun_data": "hit-and-run.json",
+    "traffic_counts": "traffic_counts.json",
 }
 
 
@@ -110,7 +111,9 @@ def parse_args():
     options.metadata = _canonicalize(cfp.get("files", "metadata"),
                                      options.datadir)
     options.hitnrun_data = _canonicalize(cfp.get("files", "hitnrun_data"),
-                                     options.datadir)
+                                         options.datadir)
+    options.traffic_counts = _canonicalize(cfp.get("files", "traffic_counts"),
+                                           options.datadir)
 
     options.func = options.command(options)
     return options

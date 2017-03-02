@@ -44,7 +44,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2017-02-25 21:08 
+            Last updated: 2017-03-02 12:08 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -266,19 +266,77 @@
         </div>
 
         <div class="section-b">
-          <h3>Aggregate hourly collisions</h3>
+          <h3>Hourly collision rate</h3>
 
           <div class="left">
-            <p>Commutes are the most dangerous times. It's interesting
-              that the evening commute -- not the presumably darker
-              morning commute -- is more dangerous.</p>
+            <p>For this chart I've invented a metric I call the
+            "Average Hourly Rock Island Rider" or AHRIR. The city has
+            had a bike traffic counter installed on the Rock Island
+            Trail since July 2014, and it provides our best estimates
+            of how many people are out riding at any given time. In
+            other words, we expect that the number of riders on the
+            Rock Island Trail roughly mirrors the total number of
+            riders in Lincoln during each hour-long period.</p>
+
+            <p>From this, we can see that the most dangerous times in
+            terms of Collisions Per Hourly Rock Island Rider (CPAHRIR)
+            are the dark hours, followed distantly by the morning
+            commute. In particular, the hours between midnight and 4
+            am are incredibly dangerous, possibly because the
+            extremely low ridership numbers then make even the small
+              numbers of collisions inflate the CPAHRIR.</p>
+
+            <p>These numbers seem high because we're
+            comparing <i>aggregate</i> collisions with <i>Average</i>
+            Hourly Rock Island Riders -- in other words, a given hour
+            might average 15 riders per hour on the Rock Island Trail,
+            but there have been a total of 30 collisions during that
+            hour since 2012, giving a CPAHRIR of 2. This doesn't mean
+            that twice as many cyclists hit as leave their house, it's
+            just an arbitrary measure of the likelihood of getting hit
+            at any given time.</p>
           </div>
 
           <div class="ct-chart ct-major-seventh right"
-               id="hourly-bar-chart"></div>
+               id="hourly-rates-chart"></div>
         </div>
 
         <div class="section-a">
+          <h3>Aggregate hourly collisions</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-major-seventh has-legend"
+                 id="hourly-chart"></div>
+
+            <div class="legend" id="hourly-rates-legend">
+              <div class="ct-series-a">Aggregate Hourly Collisions</div>
+              <div class="ct-series-c">Average Hourly Rock Island Riders</div>
+            </div>
+          </div>
+
+          <div class="below">
+            <p>Most collisions happen during commutes. It's
+              interesting that more people are hit during the evening
+              commute -- not the presumably darker morning commute,
+              but, as we saw in the previous chart, the morning
+              commute is actually more dangerous because so
+              many more people are out riding in the evening -- nearly
+              twice as many as in the morning.</p>
+
+            <p>It's also interesting that we see a steady stream of
+              cyclists all day long, but collisions drop off sharply
+              outside of commutes. It seems likely that this is due to
+              the number of drivers out (and possibly their perceived
+              urgency). Initial results (below) indicate that darkness
+              has a limited effect on the number of collisions.</p>
+
+            <p>These two lines correlate quite poorly (r=0.90), so the number of cyclists
+              out only has a modest effect on the number of
+              collisions.</p>
+          </div>
+        </div>
+
+        <div class="section-b">
           <h3>Collisions by position of sun</h3>
 
           <div class="ct-chart ct-major-tenth left"
@@ -293,7 +351,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Collisions by position of sun and by month</h3>
 
           <div class="ct-chart-container">
@@ -325,7 +383,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Collisions by age of cyclist</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -351,7 +409,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Collisions by gender of cyclist</h3>
 
           <div class="left">
@@ -371,7 +429,7 @@
 
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Injuries by collision location</h3>
 
           <div class="left">
@@ -414,7 +472,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Injury severities</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -429,7 +487,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Body region of injuries</h3>
 
           <div class="left">
@@ -441,7 +499,7 @@
                id="injury-region-pie-chart"></div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Hit-and-runs</h3>
 
           
@@ -474,7 +532,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h2>Heatmap of Collisions</h2>
 
           <div class="map-container">
@@ -499,7 +557,7 @@
             South are all among the most dangerous in the city.</p>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h2>Map of Collisions</h2>
 
           <p>All locations should be considered approximations, and

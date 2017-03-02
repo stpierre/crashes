@@ -99,6 +99,7 @@ class Xform(base.Command):
         super(Xform, self).__init__(options)
         self._reports = json.load(open(self.options.all_reports))
         self._curation = json.load(open(self.options.curation_results))
+        self._traffic_counts = json.load(open(self.options.traffic_counts))
         del self._curation['not_involved']
         self._template_data = {
             "now": datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z"),
@@ -324,8 +325,20 @@ class Xform(base.Command):
         self._save_data("ages.json", ages_data)
 
     def _xform_collision_times(self):
-        """Collect data for collision time of day."""
+        """Collect data for collision time of day and rates per hour."""
         LOG.info("Collecting data on collision times")
+
+        traffic_raw_counts = [0] * 24
+        traffic_num_readings = [0] * 24
+        for record in self._traffic_counts:
+            time = datetime.datetime.strptime(record['time'], "%H:%M")
+            traffic_raw_counts[time.hour] += (record["northbound"] +
+                                              record["southbound"])
+            traffic_num_readings[time.hour] += 1
+        traffic_counts = [0] * 24
+        for i in range(24):
+            traffic_counts[i] = (float(traffic_raw_counts[i]) /
+                                 (traffic_num_readings[i] / 4))
 
         relevant = reduce(operator.add, self._curation.values())
         times = [0] * 24
@@ -337,32 +350,60 @@ class Xform(base.Command):
                 continue
             times[time.hour] += 1
 
+        rates = []
         labels = []
-        tooltips = []
-        activate_tooltips = []
+        count_tooltips = []
+        count_activate_tooltips = []
+        rate_tooltips = []
         min_count = min(times)
         max_count = max(times)
+        min_rate = None
+        max_rate = None
         for i in range(24):
             end = i + 1 if i < 23 else 0
             labels.append("%d:00 - %d:00" % (i, end))
-            tooltips.append("%s: %d\n%0.1f%% of total" % (
+
+            rates.append(float(times[i]) / traffic_counts[i])
+            rate_tooltips.append("%s: %0.1f CPHRIR" % (labels[-1], rates[-1]))
+            if min_rate is None or rates[-1] < rates[min_rate]:
+                min_rate = i
+            if max_rate is None or rates[-1] < rates[max_rate]:
+                max_rate = i
+
+            count_tooltips.append("%s: %d\n%0.1f%% of total" % (
                 labels[-1], times[i], 100 * float(times[i]) / len(relevant)))
             if min_count is not None and times[i] == min_count:
-                activate_tooltips.append(True)
+                count_activate_tooltips.append(True)
                 min_count = None
-                tooltips[-1] += "\nLeast collisions per hour"
+                count_tooltips[-1] += "\nLeast collisions per hour"
             elif max_count is not None and times[i] == max_count:
-                activate_tooltips.append(True)
+                count_activate_tooltips.append(True)
                 max_count = None
-                tooltips[-1] += "\nMost collisions per hour"
+                count_tooltips[-1] += "\nMost collisions per hour"
             else:
-                activate_tooltips.append(False)
+                count_activate_tooltips.append(False)
+
+        rate_activate_tooltips = []
+        for i in range(24):
+            if i in (min_rate, max_rate):
+                rate_activate_tooltips.append(True)
+            else:
+                rate_activate_tooltips.append(False)
 
         self._save_data("hourly.json",
                         {"labels": labels,
-                         "series": [times],
-                         "tooltips": [tooltips],
-                         "activate_tooltips": [activate_tooltips]})
+                         "series": [times, [], traffic_counts],
+                         "tooltips": [count_tooltips],
+                         "activate_tooltips": [count_activate_tooltips]})
+
+        self._save_data("hourly_rates.json",
+                        {"labels": labels,
+                         "series": [rates],
+                         "tooltips": [count_tooltips],
+                         "activate_tooltips": [rate_activate_tooltips]})
+
+        self._template_data["hourly_ahrir_correlation"] = numpy.corrcoef(
+            times, traffic_counts)[1][0]
 
     def _xform_injury_severities_by_location(self):
         """Collect data on injury rates by collision location."""
@@ -528,7 +569,6 @@ class Xform(base.Command):
             t: len(c) for t, c in hitnrun_data.items()}
         self._template_data['hit_and_run_total'] = sum(
             self._template_data['hit_and_run_counts'].values())
-
 
     def _xform_daylight(self):
         """Create graphs for daylight/nighttime collision data."""

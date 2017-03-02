@@ -221,15 +221,21 @@ $(document).ready(function(){
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false},
                   "Percentage of Collisions");
+    initLineChart("data/graph/hourly_rates.json",
+                  "hourly-rates-chart",
+                  {"lineSmooth": Chartist.Interpolation.none(),
+                   "showPoint": false},
+                  "Collisions Per Average Hourly Rock Island Rider");
+    initLineChart("data/graph/hourly.json",
+                  "hourly-chart",
+                  {"lineSmooth": Chartist.Interpolation.none(),
+                   "showPoint": false},
+                  "Collisions, AHRIRs");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",
                              {"stackBars": false},
                             "Collisions");
-    initDynamicWidthBarChart("data/graph/hourly.json",
-                             "hourly-bar-chart",
-                             {"axisX": everyOtherLabel},
-                             "Collisions");
     initDynamicWidthBarChart("data/graph/ages.json",
                              "ages-bar-chart", {},
                              "Collisions");
