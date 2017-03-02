@@ -335,10 +335,6 @@ class Xform(base.Command):
             traffic_raw_counts[time.hour] += (record["northbound"] +
                                               record["southbound"])
             traffic_num_readings[time.hour] += 1
-        traffic_counts = [0] * 24
-        for i in range(24):
-            traffic_counts[i] = (float(traffic_raw_counts[i]) /
-                                 (traffic_num_readings[i] / 4))
 
         relevant = reduce(operator.add, self._curation.values())
         times = [0] * 24
@@ -348,30 +344,21 @@ class Xform(base.Command):
                     self._reports[case_no]['time'], "%H:%M")
             except TypeError:
                 continue
-            times[time.hour] += 1
+            times[time.hour] += 1 / self._template_data['report_years']
 
         rates = []
         labels = []
-        min_count = min(times)
-        max_count = max(times)
-        min_rate = None
-        max_rate = None
+        traffic_counts = [0] * 24
         for i in range(24):
             end = i + 1 if i < 23 else 0
             labels.append("%d:00 - %d:00" % (i, end))
-
+            traffic_counts[i] = (float(traffic_raw_counts[i]) /
+                                 (traffic_num_readings[i] / 4))
             rates.append(float(times[i]) / traffic_counts[i])
-            if min_rate is None or rates[-1] < rates[min_rate]:
-                min_rate = i
-            if max_rate is None or rates[-1] < rates[max_rate]:
-                max_rate = i
 
         self._save_data("hourly.json",
                         {"labels": labels,
-                         "series": [times, [], traffic_counts]})
-
-        self._save_data("hourly_rates.json",
-                        {"labels": labels, "series": [rates]})
+                         "series": [times, [], traffic_counts, [], rates]})
 
         self._template_data["hourly_ahrir_correlation"] = numpy.corrcoef(
             times, traffic_counts)[1][0]
@@ -644,9 +631,10 @@ class Xform(base.Command):
             self._template_data['bike_reports'])
 
         report_time_period = datetime.datetime.now() - first_report
-        report_years = report_time_period.days / 365.25
+        self._template_data['report_years'] = report_time_period.days / 365.25
         self._template_data['under_11_per_year'] = (
-            self._template_data['under_11'] / report_years)
+            self._template_data['under_11'] /
+            self._template_data['report_years'])
 
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
@@ -659,6 +647,8 @@ class Xform(base.Command):
         return name.title().replace("_", " ")
 
     def __call__(self):
+        self._xform_template_data()
+
         self._xform_proportions()
         self._xform_injury_severities()
         self._xform_injury_severities_by_location()
@@ -669,8 +659,6 @@ class Xform(base.Command):
         self._xform_genders()
         self._xform_hit_and_runs()
         self._xform_daylight()
-
-        self._xform_template_data()
 
         tmpl_path = os.path.join(self.options.datadir, "template_data.json")
         LOG.info("Writing template data to %s" % tmpl_path)
