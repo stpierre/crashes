@@ -140,8 +140,6 @@ function skipLabels(value, index, labels) {
         this.base = options.base || 10;
 
 	if (highLow.low * highLow.high <= 0) {
-	    if (data.normalized.length > 0)
-		throw new Error('Negative or zero values are not supported on logarithmic axes.');
 	    highLow.low = 1;
 	    highLow.high = 1000;
 	}
