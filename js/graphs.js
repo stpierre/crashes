@@ -96,6 +96,10 @@ function initChart(cls, defaultData, url, graphID, options) {
     charts[graphID].activate_tooltips = [];
 
     $.getJSON(url, function(data){
+        if (graphID == "hourly-chart") {
+            console.log("hourly-chart")
+            console.log(data);
+        }
         charts[graphID].update(data)
     });
 
@@ -126,6 +130,10 @@ function mergeOptions(defaults, user) {
 
 function skipLabels(value, index, labels) {
     return index % 2 === 0 ? value : null;
+}
+
+function skip4Labels(value, index, labels) {
+    return index % 4 === 0 ? value : null;
 }
 
 
@@ -263,14 +271,15 @@ $(document).ready(function(){
                   "monthly-line-chart",
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false,
-                   "axisX": {"labelInterpolationFnc": skipLabels}},
+                   "axisX": {"labelInterpolationFnc": skip4Labels}},
                   "Collisions");
     initLineChart("data/graph/daylight_by_month.json",
                   "daylight-line-chart",
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false},
                   "Percentage of Collisions");
-    initLineChart("data/graph/hourly.json",
+    initLineChart("http://stpierre.github.io/crashes/data/graph/hourly.json",
+    //initLineChart("data/graph/hourly.json",
                   "hourly-chart",
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false,

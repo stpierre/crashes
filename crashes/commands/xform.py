@@ -275,8 +275,6 @@ class Xform(base.Command):
                         self._template_data['num_children'] += 1
                         if age < 11:
                             self._template_data['under_11'] += 1
-                else:
-                    total_by_age["Unknown"] += 1
 
         labels = [str(a) for a in self.narrow_age_ranges]
         series = []
@@ -314,7 +312,7 @@ class Xform(base.Command):
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())
-        for age_range in self.narrow_age_ranges + ["Unknown"]:
+        for age_range in self.narrow_age_ranges:
             ages_data["labels"].append(str(age_range))
             ages_data["series"][0].append(total_by_age[age_range])
             ages_data["tooltips"][0].append(
@@ -436,6 +434,8 @@ class Xform(base.Command):
 
         regions = collections.defaultdict(int)
         for case_no in reduce(operator.add, self._curation.values()):
+            if case_no.startswith("NDOR"):
+                continue
             region = self._reports[case_no]['injury_region']
             sev = self._reports[case_no]['injury_severity'] or 5
             if region:
@@ -480,10 +480,10 @@ class Xform(base.Command):
         """Create data for pie chart of collisions by gender."""
         LOG.info("Transforming data on collisions by gender")
 
-        total = len(reduce(operator.add, self._curation.values()))
         by_gender = collections.Counter(r['cyclist_gender']
                                         for c, r in self._reports.items()
                                         if r.get('cyclist_gender') is not None)
+        total = sum(by_gender.values())
 
         data = {"labels": [], "series": []}
 
@@ -494,7 +494,6 @@ class Xform(base.Command):
 
         _record("Male", by_gender["M"])
         _record("Female", by_gender["F"])
-        _record("Unknown", total - by_gender["M"] - by_gender["F"])
 
         self._save_data("by_gender.json", data)
 
@@ -593,12 +592,15 @@ class Xform(base.Command):
         self._template_data["daylight_correlation"] = numpy.corrcoef(
             line_data["series"][-1], line_data["series"][-2])[1][0]
 
-    def _xform_template_data(self):
+    def _pre_xform_template_data(self):
         """Create template data for rendering index.html."""
         self._template_data.update({"unparseable_count": 0,
                                     "ndor_count": 0})
         first_report = None
         last_report = None
+        bike_reports = reduce(operator.add, self._curation.values())
+        post_2011_reports = 0
+        bike_report_count = 0
         for report in self._reports.values():
             if report['date'] is None:
                 self._template_data['unparseable_count'] += 1
@@ -610,15 +612,20 @@ class Xform(base.Command):
                 last_report = date
             if report['case_number'].startswith("NDOR"):
                 self._template_data['ndor_count'] += 1
+            if date.year > 2011:
+                post_2011_reports += 1
+                if report['case_number'] in bike_reports:
+                    bike_report_count += 1
 
-        self._template_data["first_report"] = first_report.strftime("%B %e, %Y")
+        self._template_data["first_report"] = first_report.strftime(
+            "%B %e, %Y")
         self._template_data["last_report"] = last_report.strftime("%B %e, %Y")
+        self._template_data["bike_reports"] = bike_report_count
+        self._template_data["post_2011_reports"] = post_2011_reports
 
-        self._template_data['bike_reports'] = sum(map(len,
-                                                      self._curation.values()))
         self._template_data["bike_pct"] = (
             100.0 * self._template_data["bike_reports"] /
-            self._template_data["report_count"])
+            self._template_data["post_2011_reports"])
         self._template_data['statuses'] = {n: len(d)
                                            for n, d in self._curation.items()}
         self._template_data['total_road'] = (
@@ -626,15 +633,21 @@ class Xform(base.Command):
         self._template_data['total_sidewalk'] = (
             len(self._curation['sidewalk']) + len(self._curation['crosswalk']))
 
+        report_time_period = datetime.datetime.now() - first_report
+        self._template_data['report_years'] = report_time_period.days / 365.25
+
+    def _post_xform_template_data(self):
         self._template_data['pct_children'] = (
             float(self._template_data['num_children'] * 100) /
             self._template_data['bike_reports'])
 
-        report_time_period = datetime.datetime.now() - first_report
-        self._template_data['report_years'] = report_time_period.days / 365.25
+        full_data_time_period = (
+            datetime.date.today() - datetime.date(2012, 1, 1))
+        full_data_years = full_data_time_period.days / 365.25
+
         self._template_data['under_11_per_year'] = (
             self._template_data['under_11'] /
-            self._template_data['report_years'])
+            full_data_years)
 
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
@@ -647,7 +660,7 @@ class Xform(base.Command):
         return name.title().replace("_", " ")
 
     def __call__(self):
-        self._xform_template_data()
+        self._pre_xform_template_data()
 
         self._xform_proportions()
         self._xform_injury_severities()
@@ -659,6 +672,8 @@ class Xform(base.Command):
         self._xform_genders()
         self._xform_hit_and_runs()
         self._xform_daylight()
+
+        self._post_xform_template_data()
 
         tmpl_path = os.path.join(self.options.datadir, "template_data.json")
         LOG.info("Writing template data to %s" % tmpl_path)

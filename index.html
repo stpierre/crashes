@@ -44,7 +44,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2017-03-02 13:30 
+            Last updated: 2017-03-03 15:51 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -107,10 +107,10 @@
         <div class="section">
           <h2>Quantitative Results</h2>
 
-          <p>The current dataset includes 44030 reports,
-            from December  3, 2011 to February 25, 2017. 698
-            (1.6%)
-            involved a person on a bicycle.</p>
+          <p>The current dataset includes 44512 reports,
+            from January 15, 2008 to February 25, 2017. Since 2012,
+            when LPD started widespread use of computer-written
+            accident reports, the dataset includes 36660, 698 (1.9%) of which involved a person on a bicycle.</p>
 
           <p>This number is almost certainly an underestimate, for
             several reasons:</p>
@@ -120,16 +120,22 @@
               in particular may not be; anecdotally, I was initially
               advised not to file an accident report when I was hit,
               since my injuries were very minor.</li>
-            <li>Some accident reports are not available online.</li>
             <li>Accident reports are not written for bicycle-bicycle
               or bicycle-pedestrian collisions.</li>
           </ul>
 
-          <p>Nearly all of the reports are from LPD, but
-            12 reports came from the Nebraska Department
+          <p>Nearly all of the post-2011 reports are from LPD, but
+            494 reports came from the Nebraska Department
             of Roads <i>[sic]</i>
             via <a href="http://www.arcgis.com/home/webmap/viewer.html?webmap=76d544b5646645dcaa8e9ba5c5543d0a">Lacey
-            Matney's 2014 study</a>.</p>
+            Matney's 2014 study</a>. All of the data from 2008-2011
+            is from NDOR.</p>
+
+          <p>Because the first four years of data in this dataset is
+            from NDOR, and includes less data, some of the reports
+            below only include data from 2012 onward, while others
+            include data from 2008. I've noted this where it's
+            relevant.</p>
 
           <p>7368 reports could not be parsed
             automatically, largely because they were handwritten. The
@@ -227,7 +233,7 @@
 
           <div class="right">
             <p>Predictably, most accidents happen during the summer
-              months. February is the safest month, probably because
+              months. January is the safest month, probably because
               even the hardcores have gotten tired of riding in the
               cold and there are so few cyclists out.</p>
           </div>
@@ -240,15 +246,14 @@
             <p>The decrease from 2012 to 2013 is real, and very good
               news -- it's a <i>huge</i> drop. Since then things have
               been mostly flat, with the exception of a small decrease
-              in 2015. We don't know if 2012 was a particularly
-              dangerous year, or if that's a permanent drop due to
-              some outside stimulus.</p>
+              in 2015. Unfortunately it looks like 2012 was just an
+              exceedingly dangerous year, and we're on a very slow
+              upward trend in general.</p>
 
-            <p>Unlike previous versions of this data, this is
-              considered reasonably accurate thanks to the additional
-              NDOR data that I was able to use to cross-check the
-              years with significant numbers of handwritten
-              reports.</p>
+            <p>We only have bike traffic count data from 2014 onward,
+              so it's too soon to tell if that upward trend is due to
+              increased ridership, or to other factors, or (hopefully)
+              if ridership increases outpace collision increases.</p>
           </div>
 
           <div class="ct-chart ct-major-seventh right"
@@ -260,9 +265,9 @@
           <div class="ct-chart ct-major-twelfth"
                id="monthly-line-chart"></div>
 
-          <p>February 2015 and January 2017 are the only months
-            without a recorded collision. August 2012 is still the
-            most dangerous month in the data set.</p>
+          <p>January 2010, February 2015 and January 2017 are the only
+            months without a recorded collision. August 2012 is still
+            the most dangerous month in the data set.</p>
         </div>
 
         <div class="section-b">
@@ -293,7 +298,7 @@
             <p>The other new metric is "Average Annual Collisions Per
               Hour," or AACPH. That's the average number of collisions
               in a given one-hour time slot that have happened per
-              year since December  3, 2011.</p>
+              year since January 15, 2008.</p>
 
             <p>From these two metrics, we can see that the most
               dangerous times in terms of Average Annual Collisions
@@ -365,15 +370,17 @@
           <div class="below">
             <p>More collisions happen at night during the winter
               months, but that's probably because there's just more
-              night. In fact, the rate of daytime collisions very
-              closely correlates with the hours of daylight per day
-              (r=0.79), which leads me
-              to suspect that there's no statistically significant
-              relationship between darkness and collisions.</p>
+              night. The rate of daytime collisions loosely correlates
+              with the hours of daylight per day (r=0.79), but not as strongly as with
+              the number of cyclists out.</p>
 
-            <p>Put more crassly, drivers are just as good at not
+            <p>In other words, lack of visibility is a factor in the
+              collision rate, but a much greater factor is the simple
+              presence of bikes. Drivers are almost as good at not
               seeing people on bikes in the middle of the day as they
-              are in the darkest night.</p>
+              are in the darkest night. (Or maybe our transportation
+              systems are designed to make collisions inevitable,
+              regardless of whether it's day or night.)</p>
           </div>
         </div>
 
@@ -385,7 +392,7 @@
 
           <div class="right">
             <p>Just so we're clear, that's about
-              0 children under 11 hit by
+              11 children under 11 hit by
               cars every year in Lincoln alone.</p>
 
             <p>I suspect that this may just be a graph of ridership
@@ -394,12 +401,12 @@
               age crowd; then a slow descent to 40, after which it
               picks up again, presumably with the MAMIL crowd.</p>
 
-            <p>But seriously, over 0% of people hit on bikes in Lincoln
+            <p>But seriously, over 32% of people hit on bikes in Lincoln
               are <i>children</i>.</p>
 
-            <p>We only have age data for injured cyclists, but given
-              that 88.3% of cyclists in collisions are injured, it's
-              still a pretty broad sample.</p>
+            <p>We only have age data for cyclists injured since 2011,
+              but given that 88.3% of cyclists in collisions are injured,
+              it's still a pretty broad sample.</p>
           </div>
         </div>
 

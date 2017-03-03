@@ -66,7 +66,7 @@ class Merge(base.Command):
                                                        "all.json"), "w"))
 
     def _get_duplicates(self, row):
-        date = datetime.datetime.strptime(row["AccidentDate"], "%m/%d/%Y")
+        date = datetime.datetime.strptime(row["AccidentDate"], "%m/%d/%Y 0:00")
         candidates = []
         for collision in self._by_date.get(date.strftime("%Y-%m-%d"), []):
 
@@ -114,18 +114,20 @@ class Merge(base.Command):
                                         candidates))
         return candidates
 
-    def _get_report_record(self, row, loc):
+    def _base_report_record(self, row, loc):
         record = {
             "location": loc.address,
             "date": datetime.datetime.strptime(
-                row["AccidentDate"], "%m/%d/%Y").strftime("%Y-%m-%d"),
+                row["AccidentDate"], "%m/%d/%Y 0:00").strftime("%Y-%m-%d"),
             "report": "From NDOR %s" % row["AccidentKey_FromNDOR"],
             "cyclist_dob": None,
             "injury_severity": int(row["AccidentSeverity_CodeFromNDOR"]),
             "injury_region": None,
             "cyclist_initials": None,
+            "case_number": "NDOR%s" % row["AccidentKey_FromNDOR"],
+            "filename": None,
         }
-        record["cyclist_injured"] = record["injury_sev"] != 5
+        record["cyclist_injured"] = record["injury_severity"] != 5
 
         try:
             record["time"] = datetime.datetime.strptime(
@@ -133,10 +135,16 @@ class Merge(base.Command):
         except (TypeError, ValueError):
             record["time"] = None
 
+        return record
+
+    def _get_report_record(self, row, loc):
+        record = self._base_report_record(row, loc)
+
         print("Collision on %(date)s, %(time)s, at %(location)s" % record)
-        case_no = input("LPD case number: ")
-        record["case_number"] = case_no
-        record["filename"] = "%s.PDF" % case_no.replace("-", "").upper()
+        case_no = input("LPD case number [%s]: " % record["case_number"])
+        if case_no:
+            record["case_number"] = case_no
+            record["filename"] = "%s.PDF" % case_no.replace("-", "").upper()
         if record["time"] is None:
             collision_time = input("Collision time: ")
             if collision_time:
@@ -146,8 +154,9 @@ class Merge(base.Command):
         if dob:
             record["cyclist_dob"] = dob
         try:
-            record["injury_region"] = jsonify.JSONifyChildProcess.injury_regions[
-                input("Injury region: ").zfill(2)]
+            record["injury_region"] = (
+                jsonify.JSONifyChildProcess.injury_regions[
+                    input("Injury region: ").zfill(2)])
         except KeyError:
             pass
 
@@ -162,8 +171,6 @@ class Merge(base.Command):
                 return status
 
         status = curate.Curate.statuses.input()
-        self._curation_data.setdefault(status, []).append(
-            record["case_number"])
         return status
 
     def __call__(self):
@@ -173,55 +180,65 @@ class Merge(base.Command):
         reader = csv.DictReader(self.filename)
         for row in reader:
             # we're only concerned with bike collisions in Lincoln
-            # from 2012 onward
-            if (int(row["AccidentYear"]) > 2011 and
-                    row["PedestrianOrPedalcyclist"] == "Cyclists" and
-                    row["CityName"] == "Lincoln"):
-                LOG.debug("Parsing collision %(AccidentKey_FromNDOR)s", row)
+            if (row["PedestrianOrPedalcyclist"] != "Cyclists" or
+                    row["CityName"] != "Lincoln"):
+                continue
 
-                # we have to pad the time with zeros in order for it
-                # to be parsed correctly
-                row["Time"] = row["Time"].zfill(4)
+            LOG.debug("Parsing collision %(AccidentKey_FromNDOR)s", row)
 
-                candidates = self._get_duplicates(row)
-                if len(candidates) == 0:
-                    LOG.info(
-                        "No possible duplicates found for %s, adding to data",
-                        row["AccidentKey_FromNDOR"])
+            # we have to pad the time with zeros in order for it
+            # to be parsed correctly
+            row["Time"] = row["Time"].zfill(4)
 
-                    loc = geocoder.google([row["Latitude"], row["Longitude"]],
-                                          method="reverse")
+            if int(row["AccidentYear"]) > 2011:
+                continue
 
+            candidates = (self._get_duplicates(row)
+                          if int(row["AccidentYear"]) > 2011
+                          else [])
+            if len(candidates) == 0:
+                LOG.info("No possible duplicates found for %s, adding to data",
+                         row["AccidentKey_FromNDOR"])
+
+                loc = geocoder.google([row["Latitude"], row["Longitude"]],
+                                      method="reverse")
+
+                if int(row["AccidentYear"]) > 2011:
                     report_record = self._get_report_record(row, loc)
-                    case_no = report_record["case_number"]
-                    self._all_reports[case_no] = report_record
-
                     status = self._curate(report_record)
+                else:
+                    report_record = self._base_report_record(row, loc)
+                    status = 'unknown'
 
-                    if status != "not_involved":
-                        geojson = geocode.cleanup_geojson(loc.geojson, case_no)
-                        self._all_geojson["features"].append(geojson)
+                case_no = report_record["case_number"]
+                self._all_reports[case_no] = report_record
+                self._curation_data.setdefault(status, []).append(case_no)
 
-                    added_count += 1
-                elif len(candidates) == 1:
-                    duplicate = copy.deepcopy(candidates[0])
-                    LOG.info(
-                        "One possible duplicate found for %s, updating %s",
-                        row["AccidentKey_FromNDOR"], duplicate["case_number"])
+                if status != "not_involved":
+                    geojson = geocode.cleanup_geojson(loc.geojson, case_no)
+                    self._all_geojson["features"].append(geojson)
 
-                    if "latitude" in duplicate:
-                        del duplicate["latitude"]
-                    if "longitude" in duplicate:
-                        del duplicate["longitude"]
+                LOG.debug("Adding report: %s" % report_record)
 
-                    for feature in self._all_geojson["features"]:
-                        if (feature["properties"]["case_no"] ==
-                                duplicate["case_number"]):
-                            feature["geometry"]["coordinates"] = [
-                                float(row["Longitude"]), float(row["Latitude"])]
+                added_count += 1
+            elif len(candidates) == 1:
+                duplicate = copy.deepcopy(candidates[0])
+                LOG.info("One possible duplicate found for %s, updating %s",
+                         row["AccidentKey_FromNDOR"], duplicate["case_number"])
+
+                if "latitude" in duplicate:
+                    del duplicate["latitude"]
+                if "longitude" in duplicate:
+                    del duplicate["longitude"]
+
+                for feature in self._all_geojson["features"]:
+                    if (feature["properties"]["case_no"] ==
+                            duplicate["case_number"]):
+                        feature["geometry"]["coordinates"] = [
+                            float(row["Longitude"]), float(row["Latitude"])]
                     updated_count += 1
 
-                self._save_data()
+            self._save_data()
 
         geocode.save_categorized_geojson(self._all_geojson, self._curation_data,
                                          self.options.geocoding)
