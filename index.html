@@ -44,7 +44,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2017-03-03 20:38 
+            Last updated: 2017-03-03 21:34 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -227,19 +227,76 @@
         </div>
 
         <div class="section-a">
-          <h3>Aggregate monthly collisions</h3>
-          <div class="ct-chart ct-major-seventh left"
-               id="monthly-aggregate-bar-chart"></div>
+          <h3>Monthly collision rate</h3>
 
-          <div class="right">
-            <p>Predictably, most accidents happen during the summer
-              months. January is the safest month, probably because
-              even the hardcores have gotten tired of riding in the
-              cold and there are so few cyclists out.</p>
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-major-twelfth has-legend"
+                 id="monthly-rate-chart"></div>
+
+            <div class="legend" id="monthly-rates-legend">
+              <div class="ct-series-a">Collisions Per Month</div>
+              <div class="ct-series-c">Monthly Rock Island Riders</div>
+              <div class="ct-series-e">Collisions Per 1000 Monthly Rock Island Riders</div>
+            </div>
+          </div>
+
+          <div class="below">
+            <p>For this chart I've invented a couple of metrics. One
+              is Monthly Rock Island Riders, or MRIR. The city has had
+              a bike traffic counter installed on the Rock Island
+              Trail since July 2014, and it provides our best
+              estimates of how many people are out riding at any given
+              time. So it's a slightly arbitrary number, we expect
+              that the number of riders on the Rock Island Trail
+              roughly mirrors the total number of riders in Lincoln
+              during each month.</p>
+
+            <p>Combining the MRIR with the average number of
+              collisions per month we can see a reasonable estimate of
+              the collision rate during any given month, measured in
+              Collisions Per Monthly Rock Island Rider
+              (CPMRIR). Although the line looks fairly flat, this is a
+              logarithmic scale so it's anything but -- you're 5.3 times more likely to be
+              hit in November as in March.</p>
+
+            <p>It's not immediately obvious why this tremendous
+              difference -- or why there's such a peak in November. One possibility might be more
+              darkness during the commute due to the end of Daylight
+              Savings Time.</p>
+
+            <p>Interestingly, the increase in ridership during the
+              spring months doesn't track CPMRIR, either. That is, it
+              doesn't appear that when more cyclists appear on the
+              streets they're more likely to be hit; instead there
+              seems to be a novelty effect, where March is quite safe
+              (relatively speaking) and then collisions go up in April
+              once drivers are more accustomed to seeing cyclists on
+              the streets.</p>
+
+            <p>Ultimately, for all the fluctuations of the CPMRIR,
+              collisions per month correlates quite closely with MRIR
+              (p=0.85), suggesting that
+              our transportation system is just plain designed to
+              bring cyclists into inevitable conflict with drivers, no
+              matter how many of us are on the roads or what time of
+              year it is.</p>
           </div>
         </div>
 
         <div class="section-b">
+          <h3>Total monthly collisions</h3>
+          <div class="ct-chart ct-major-seventh left"
+               id="monthly-aggregate-bar-chart"></div>
+
+          <div class="right">
+            <p>Predictably, most accidents by sheer numbers happen
+              during the summer months, simply because so many people
+              are riding. January has the fewest collisions, making it
+              one of the safer months.</p>
+          </div>
+        </div>
+
+        <div class="section-a">
           <h3>Collisions per year</h3>
 
           <div class="left">
@@ -260,7 +317,7 @@
                id="yearly-bar-chart"></div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Collisions per month</h3>
           <div class="ct-chart ct-major-twelfth"
                id="monthly-line-chart"></div>
@@ -270,7 +327,7 @@
             the most dangerous month in the data set.</p>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Hourly collision rate</h3>
 
           <div class="ct-chart-container">
@@ -285,19 +342,16 @@
           </div>
 
           <div class="below">
-            <p>For this chart I've invented a couple of metrics. One
-              is the "Hourly Rock Island Riders," or HRIR. The city
-              has had a bike traffic counter installed on the Rock
-              Island Trail since July 2014, and it provides our best
-              estimates of how many people are out riding at any given
-              time. So it's a slightly arbitrary number, we expect
-              that the number of riders on the Rock Island Trail
-              roughly mirrors the total number of riders in Lincoln
-              during each hour-long period.</p>
+            <p>Similar to
+              the <a href="#toc-monthly-collision-rate">Monthly
+              Collision Rate</a> graph above, I've invented a few
+              metrics. First is Hourly Rock Island Riders, which is an
+              average count of the number of cyclists on the Rock
+              Island Trail during any given one-hour period.</p>
 
-            <p>The other new metric is "Annual Collisions Per Hour,"
+            <p>The other new metric is Annual Collisions Per Hour,
               or ACPH. That's the average number of collisions in a
-              given one-hour time slot that have happened per day
+              given one-hour time slot that have happened per year
               since January 15, 2008.</p>
 
             <p>From these two metrics, we can see that the most
@@ -327,15 +381,20 @@
               has a limited effect on the number of collisions.</p>
 
             <p>Despite the spikiness of the ACPH, it correlates quite
-              well with HRIR (r=0.90), so the number of cyclists out has a significant
-              effect on the number of collisions.</p>
+              well with HRIR (r=0.90), so
+              the number of cyclists out has a significant effect on
+              the number of collisions. This is a stronger correlation
+              than we see on
+              the <a href="#toc-monthly-collision-rate">Monthly
+              Collision Rate</a> graph, so time of day has even less
+              to do with the rate of collisions than time of year.</p>
 
             <p>Note that this graph uses a logarithmic (base 2) Y
               axis.</p>
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Collisions by position of sun</h3>
 
           <div class="ct-chart ct-major-tenth left"
@@ -350,7 +409,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Collisions by position of sun and by month</h3>
 
           <div class="ct-chart-container">
@@ -384,7 +443,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Collisions by age of cyclist</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -410,7 +469,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Collisions by gender of cyclist</h3>
 
           <div class="left">
@@ -430,7 +489,7 @@
 
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Injuries by collision location</h3>
 
           <div class="left">
@@ -473,7 +532,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Injury severities</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -488,7 +547,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Body region of injuries</h3>
 
           <div class="left">
@@ -500,7 +559,7 @@
                id="injury-region-pie-chart"></div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Hit-and-runs</h3>
 
           
@@ -533,7 +592,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h2>Heatmap of Collisions</h2>
 
           <div class="map-container">
@@ -565,7 +624,7 @@
             collisions.</p>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h2>Map of Collisions</h2>
 
           <p>All locations should be considered approximations, and

@@ -96,10 +96,6 @@ function initChart(cls, defaultData, url, graphID, options) {
     charts[graphID].activate_tooltips = [];
 
     $.getJSON(url, function(data){
-        if (graphID == "hourly-chart") {
-            console.log("hourly-chart")
-            console.log(data);
-        }
         charts[graphID].update(data)
     });
 
@@ -280,14 +276,21 @@ $(document).ready(function(){
                   "Percentage of Collisions");
     initLineChart("data/graph/hourly.json",
                   "hourly-chart",
-                  {"lineSmooth": Chartist.Interpolation.none(),
-                   "showPoint": false,
-                   "axisX": {"labelInterpolationFnc": skipLabels},
-                   "axisY": {
-                       "type": Chartist.LogAxis,
-                       "base": 2},
+                  {
+                      "lineSmooth": Chartist.Interpolation.none(),
+                      "showPoint": false,
+                      "axisX": {"labelInterpolationFnc": skipLabels},
+                      "axisY": {"type": Chartist.LogAxis, "base": 2},
                   },
-                  "AACPH, AHRIRs, AACPHRIR");
+                  "ACPH, HRIRs, ACPHRIR");
+    initLineChart("data/graph/monthly_rates.json",
+                  "monthly-rate-chart",
+                  {
+                      "lineSmooth": Chartist.Interpolation.none(),
+                      "showPoint": false,
+                      "axisY": {"type": Chartist.LogAxis, "base": 10},
+                  },
+                  "CPM, MRIR, CPMRIR");
 
     initDynamicWidthBarChart("data/graph/yearly.json",
                              "yearly-bar-chart",

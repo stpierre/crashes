@@ -5,6 +5,7 @@ import collections
 import datetime
 import functools
 import json
+import math
 import operator
 import os
 
@@ -146,6 +147,21 @@ class Xform(base.Command):
         monthly_aggregate = collections.defaultdict(int)
         months = collections.defaultdict(set)
 
+        traffic_raw_counts = collections.defaultdict(int)
+        traffic_num_readings = collections.defaultdict(int)
+        first_traffic_reading = None
+        last_traffic_reading = None
+        for record in self._traffic_counts:
+            date = datetime.datetime.strptime(record['date'], "%Y-%m-%d")
+            traffic_raw_counts[date.month] += (record["northbound"] +
+                                               record["southbound"])
+            traffic_num_readings[date.month] += 1
+
+            if first_traffic_reading is None or date < first_traffic_reading:
+                first_traffic_reading = date
+            if last_traffic_reading is None or date > last_traffic_reading:
+                last_traffic_reading = date
+
         relevant = reduce(operator.add, self._curation.values())
         for case_no in relevant:
             date_str = self._reports[case_no]['date']
@@ -179,26 +195,88 @@ class Xform(base.Command):
                           "activate_tooltips": [[]]}
         min_count = min(monthly_aggregate.values())
         max_count = max(monthly_aggregate.values())
-        for i in range(12):
-            month = datetime.date(2000, i + 1, 1)
+
+        rate_labels = []
+        monthly_rate = []
+        monthly_traffic_counts = []
+        monthly_collision_rate = []
+        lowest_rate = None
+        highest_rate = None
+        for i in range(1, 13):
+            today = datetime.date.today()
+            month = datetime.date(today.year, i, 1)
+
+            # determine how many years of traffic data from this month
+            # we have. We need to figure this out from both ends,
+            # since it starts mid-year and ends whenever I last got
+            # data from the city.
+            traffic_years = (last_traffic_reading.year -
+                             first_traffic_reading.year - 1)
+            if month.month >= first_traffic_reading.month:
+                traffic_years += 1
+            if month.month <= last_traffic_reading.month:
+                traffic_years += 1
+
+            # determine how many years of collision data from this
+            # month we have. this is a lot easier because we know that
+            # the data starts at the beginning of 2008, so we only
+            # need to compare at the tail end; and because we can
+            # reasonably expect that the data has been updated
+            # recently.
+            if month.month <= today.month:
+                num_years = math.ceil(self._template_data["report_years"])
+            else:
+                num_years = math.floor(self._template_data["report_years"])
+
+            # determine how many days this month has so that we know
+            # how many traffic readings to expect
+            days_in_month = calendar.monthrange(today.year, i)[1]
+            readings = days_in_month * 24 * 4
+            traffic_count = (traffic_raw_counts[i] * (
+                float(readings) / traffic_num_readings[i])) / traffic_years
+
             month_name = month.strftime("%B")
-            aggregate_data["labels"].append(month_name)
+            rate_labels.append(month_name)
             count = monthly_aggregate[month.month]
+            cpm = float(count) / num_years
+            monthly_rate.append(cpm)
+            monthly_traffic_counts.append(traffic_count)
+            cpmrir = cpm / (traffic_count / 1000.0)
+            monthly_collision_rate.append(cpmrir)
+
+            if lowest_rate is None or cpmrir < lowest_rate[0]:
+                lowest_rate = (cpmrir, month)
+            if highest_rate is None or cpmrir > highest_rate[0]:
+                highest_rate = (cpmrir, month)
+
             aggregate_data["series"][0].append(count)
             aggregate_data["tooltips"][0].append("%s: %d\n%0.1f%% of total" % (
                 month_name, count, 100 * float(count) / len(relevant)))
-            if min_count is not None and count == min_count:
+            if count == min_count:
                 aggregate_data["activate_tooltips"][0].append(True)
                 min_count = None
                 aggregate_data["tooltips"][0][-1] += "\nLeast collisions per month"
-            elif max_count is not None and count == max_count:
+            elif count == max_count:
                 aggregate_data["activate_tooltips"][0].append(True)
                 max_count = None
                 aggregate_data["tooltips"][0][-1] += "\nMost collisions per month"
             else:
                 aggregate_data["activate_tooltips"][0].append(False)
 
+        aggregate_data["labels"] = rate_labels
         self._save_data("monthly_aggregate.json", aggregate_data)
+        self._save_data("monthly_rates.json",
+                        {"labels": rate_labels,
+                         "series": [monthly_rate, [],
+                                    monthly_traffic_counts, [],
+                                    monthly_collision_rate]})
+
+        self._template_data["mrir_correlation"] = numpy.corrcoef(
+            monthly_traffic_counts, monthly_rate)[1][0]
+        self._template_data["cpmrir_multiplier"] = (
+            highest_rate[0] / lowest_rate[0])
+        self._template_data["cpmrir_max_month"] = highest_rate[1].strftime("%B")
+        self._template_data["cpmrir_min_month"] = lowest_rate[1].strftime("%B")
 
         years = sorted(yearly_counts.keys())
         yearly_data = {
@@ -219,9 +297,9 @@ class Xform(base.Command):
         expected = 0
         last = max(datetime.datetime.strptime(r["date"], "%Y-%m-%d")
                    for r in self._reports.values() if r["date"]).date()
-        for i in range(12):
-            days_in_month = calendar.monthrange(cur_year, i + 1)[1]
-            end = datetime.date(cur_year, i + 1, days_in_month)
+        for i in range(1, 13):
+            days_in_month = calendar.monthrange(cur_year, i)[1]
+            end = datetime.date(cur_year, i, days_in_month)
             if last > end:
                 expected += avg_per_month[end.month]
             else:
@@ -358,7 +436,7 @@ class Xform(base.Command):
                         {"labels": labels,
                          "series": [times, [], traffic_counts, [], rates]})
 
-        self._template_data["hourly_hrir_correlation"] = numpy.corrcoef(
+        self._template_data["hrir_correlation"] = numpy.corrcoef(
             times, traffic_counts)[1][0]
 
     def _xform_injury_severities_by_location(self):
