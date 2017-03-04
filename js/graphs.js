@@ -278,8 +278,7 @@ $(document).ready(function(){
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false},
                   "Percentage of Collisions");
-    initLineChart("http://stpierre.github.io/crashes/data/graph/hourly.json",
-    //initLineChart("data/graph/hourly.json",
+    initLineChart("data/graph/hourly.json",
                   "hourly-chart",
                   {"lineSmooth": Chartist.Interpolation.none(),
                    "showPoint": false,

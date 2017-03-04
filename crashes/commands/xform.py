@@ -350,15 +350,15 @@ class Xform(base.Command):
         for i in range(24):
             end = i + 1 if i < 23 else 0
             labels.append("%d:00 - %d:00" % (i, end))
-            traffic_counts[i] = (float(traffic_raw_counts[i]) /
-                                 (traffic_num_readings[i] / 4))
+            traffic_counts[i] = traffic_raw_counts[i] / (
+                traffic_num_readings[i] / 4.0)
             rates.append(float(times[i]) / traffic_counts[i])
 
         self._save_data("hourly.json",
                         {"labels": labels,
                          "series": [times, [], traffic_counts, [], rates]})
 
-        self._template_data["hourly_ahrir_correlation"] = numpy.corrcoef(
+        self._template_data["hourly_hrir_correlation"] = numpy.corrcoef(
             times, traffic_counts)[1][0]
 
     def _xform_injury_severities_by_location(self):
