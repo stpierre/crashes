@@ -191,10 +191,10 @@ class Xform(base.Command):
         self._save_data("monthly.json", {"labels": labels,
                                          "series": [series]})
 
-        aggregate_data = {"labels": [], "series": [[]], "tooltips": [[]],
-                          "activate_tooltips": [[]]}
-        min_count = min(monthly_aggregate.values())
-        max_count = max(monthly_aggregate.values())
+        average_data = {"labels": [], "series": [[]], "tooltips": [[]],
+                        "activate_tooltips": [[False] * 12]}
+        min_avg = None
+        max_avg = None
 
         rate_labels = []
         monthly_rate = []
@@ -249,22 +249,25 @@ class Xform(base.Command):
             if highest_rate is None or cpmrir > highest_rate[0]:
                 highest_rate = (cpmrir, month)
 
-            aggregate_data["series"][0].append(count)
-            aggregate_data["tooltips"][0].append("%s: %d\n%0.1f%% of total" % (
-                month_name, count, 100 * float(count) / len(relevant)))
-            if count == min_count:
-                aggregate_data["activate_tooltips"][0].append(True)
-                min_count = None
-                aggregate_data["tooltips"][0][-1] += "\nLeast collisions per month"
-            elif count == max_count:
-                aggregate_data["activate_tooltips"][0].append(True)
-                max_count = None
-                aggregate_data["tooltips"][0][-1] += "\nMost collisions per month"
-            else:
-                aggregate_data["activate_tooltips"][0].append(False)
+            avg = float(count) / num_years
+            average_data["series"][0].append(avg)
+            average_data["tooltips"][0].append(
+                "%s: %0.1f average\n%d total\n%0.1f%% of total" % (
+                    month_name, avg, count, 100 * float(count) / len(relevant)))
+            if min_avg is None or avg < min_avg[0]:
+                min_avg = (avg, month)
+            if max_avg is None or avg > max_avg[0]:
+                max_avg = (avg, month)
 
-        aggregate_data["labels"] = rate_labels
-        self._save_data("monthly_aggregate.json", aggregate_data)
+        average_data["activate_tooltips"][0][min_avg[1].month - 1] = True
+        average_data["tooltips"][0][min_avg[1].month - 1] += (
+            "\nLeast collisions per month")
+        average_data["activate_tooltips"][0][max_avg[1].month - 1] = True
+        average_data["tooltips"][0][max_avg[1].month - 1] += (
+            "\nMost collisions per month")
+        average_data["labels"] = rate_labels
+
+        self._save_data("monthly_average.json", average_data)
         self._save_data("monthly_rates.json",
                         {"labels": rate_labels,
                          "series": [monthly_rate, [],

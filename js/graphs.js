@@ -300,8 +300,8 @@ $(document).ready(function(){
     initDynamicWidthBarChart("data/graph/ages.json",
                              "ages-bar-chart", {},
                              "Collisions");
-    initDynamicWidthBarChart("data/graph/monthly_aggregate.json",
-                             "monthly-aggregate-bar-chart", {},
+    initDynamicWidthBarChart("data/graph/monthly_average.json",
+                             "monthly-average-chart", {},
                              "Collisions");
     initDynamicWidthBarChart("data/graph/injury_rates.json",
                              "injury-rates-bar-chart",
