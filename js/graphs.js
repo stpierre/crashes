@@ -265,9 +265,10 @@ $(document).ready(function(){
                   "Percentage of collisions");
     initLineChart("data/graph/monthly.json",
                   "monthly-line-chart",
-                  {"lineSmooth": Chartist.Interpolation.none(),
-                   "showPoint": false,
-                   "axisX": {"labelInterpolationFnc": skip4Labels}},
+                  {
+                      "showPoint": false,
+                      "axisX": {"labelInterpolationFnc": skip4Labels}
+                  },
                   "Collisions");
     initLineChart("data/graph/daylight_by_month.json",
                   "daylight-line-chart",
