@@ -145,7 +145,6 @@ class Xform(base.Command):
         collision_counts = collections.defaultdict(int)
         yearly_counts = collections.defaultdict(int)
         monthly_aggregate = collections.defaultdict(int)
-        months = collections.defaultdict(set)
 
         traffic_raw_counts = collections.defaultdict(int)
         traffic_num_readings = collections.defaultdict(int)
@@ -170,9 +169,7 @@ class Xform(base.Command):
             collision_counts[month] += 1
             yearly_counts[date.year] += 1
             monthly_aggregate[date.month] += 1
-            months[month.strftime("%b")].add(date.year)
 
-        avg_per_month = {}
         labels = []
         series = []
         month = min(collision_counts.keys())
@@ -181,10 +178,6 @@ class Xform(base.Command):
             count = collision_counts.get(month, 0)
             labels.append(month.strftime("%b %Y"))
             series.append(count)
-            month_name = month.strftime("%B")
-            avg_per_month[month.month] = (
-                float(monthly_aggregate[month.month]) /
-                len(months[month.strftime("%b")]))
             next_month = month + datetime.timedelta(31)
             month = datetime.date(next_month.year, next_month.month, 1)
 
@@ -193,8 +186,14 @@ class Xform(base.Command):
 
         average_data = {"labels": [], "series": [[]], "tooltips": [[]],
                         "activate_tooltips": [[False] * 12]}
+        avg_per_month = {}
         min_avg = None
         max_avg = None
+
+        cur_year = datetime.date.today().year
+        expected = 0
+        last = max(datetime.datetime.strptime(r["date"], "%Y-%m-%d")
+                   for r in self._reports.values() if r["date"]).date()
 
         rate_labels = []
         monthly_rate = []
@@ -235,6 +234,7 @@ class Xform(base.Command):
             traffic_count = (traffic_raw_counts[i] * (
                 float(readings) / traffic_num_readings[i])) / traffic_years
 
+            # calculate rate data
             month_name = month.strftime("%B")
             rate_labels.append(month_name)
             count = monthly_aggregate[month.month]
@@ -249,7 +249,9 @@ class Xform(base.Command):
             if highest_rate is None or cpmrir > highest_rate[0]:
                 highest_rate = (cpmrir, month)
 
+            # calculate average data
             avg = float(count) / num_years
+            avg_per_month[month.month] = avg
             average_data["series"][0].append(avg)
             average_data["tooltips"][0].append(
                 "%s: %0.1f average\n%d total\n%0.1f%% of total" % (
@@ -258,6 +260,20 @@ class Xform(base.Command):
                 min_avg = (avg, month)
             if max_avg is None or avg > max_avg[0]:
                 max_avg = (avg, month)
+
+            # calculate multiplier for predicting the current year's
+            # data. a flat multiplier doesn't work to predict the
+            # collision rate for the current year, since different
+            # months have wildly different rates of collisions. so
+            # first we calculate how many collisions should have
+            # happened by this point in the year
+            days_in_month = calendar.monthrange(cur_year, i)[1]
+            end = datetime.date(cur_year, i, days_in_month)
+            if last > end:
+                expected += avg_per_month[end.month]
+            elif last.month == end.month:
+                month_portion = float(last.day) / days_in_month
+                expected += avg_per_month[end.month] * month_portion
 
         average_data["activate_tooltips"][0][min_avg[1].month - 1] = True
         average_data["tooltips"][0][min_avg[1].month - 1] += (
@@ -281,6 +297,13 @@ class Xform(base.Command):
         self._template_data["cpmrir_max_month"] = highest_rate[1].strftime("%B")
         self._template_data["cpmrir_min_month"] = lowest_rate[1].strftime("%B")
 
+        avg_per_year = (float(sum(yearly_counts.values()[0:-1])) /
+                        (len(yearly_counts) - 1))
+        predicted = (yearly_counts[cur_year] / expected) * avg_per_year
+        self._template_data["yearly_mean"] = avg_per_year
+        self._template_data["yearly_median"] = (
+            sorted(yearly_counts.values())[len(yearly_counts) / 2])
+
         years = sorted(yearly_counts.keys())
         yearly_data = {
             "labels": years,
@@ -290,28 +313,6 @@ class Xform(base.Command):
                     100 * float(yearly_counts[year]) / len(relevant))
                 for year in years]],
             "series": [[yearly_counts[k] for k in years]]}
-
-        # a flat multiplier doesn't work to predict the collision rate
-        # for the current year, since different months have wildly
-        # different rates of collisions. so first we calculate how
-        # many collisions should have happened by this point in the
-        # year
-        cur_year = datetime.date.today().year
-        expected = 0
-        last = max(datetime.datetime.strptime(r["date"], "%Y-%m-%d")
-                   for r in self._reports.values() if r["date"]).date()
-        for i in range(1, 13):
-            days_in_month = calendar.monthrange(cur_year, i)[1]
-            end = datetime.date(cur_year, i, days_in_month)
-            if last > end:
-                expected += avg_per_month[end.month]
-            else:
-                month_portion = float(last.day) / days_in_month
-                expected += avg_per_month[end.month] * month_portion
-                break
-        avg_per_year = (float(sum(yearly_counts.values()[0:-1])) /
-                        (len(yearly_counts) - 1))
-        predicted = (float(yearly_counts[cur_year]) / expected) * avg_per_year
 
         # calculate projected data for this year
         projected = [0] * len(years)
