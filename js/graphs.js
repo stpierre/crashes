@@ -307,4 +307,7 @@ $(document).ready(function(){
                              "injury-rates-bar-chart",
                              {"stackBars": true, "high": 100},
                              "Injury rate (%)");
+    initDynamicWidthBarChart("data/graph/daylight_rates.json",
+                             "daylight-rate-chart", {},
+                             "Collisions per HRIR");
 });

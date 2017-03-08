@@ -44,7 +44,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2017-03-05 19:00 
+            Last updated: 2017-03-08 14:03 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -275,7 +275,7 @@
 
             <p>Ultimately, for all the fluctuations of the CPMRIR,
               collisions per month correlates quite closely with MRIR
-              (p=0.85), suggesting that
+              (r=0.85), suggesting that
               our transportation system is just plain designed to
               bring cyclists into inevitable conflict with drivers, no
               matter how many of us are on the roads or what time of
@@ -398,21 +398,51 @@
         </div>
 
         <div class="section-b">
-          <h3>Collisions by position of sun</h3>
+          <h3>Collision rate by position of sun</h3>
+
+          <div class="ct-chart ct-major-tenth left"
+               id="daylight-rate-chart"></div>
+
+          <div class="right">
+            <p>Here we see that the collision rate is *much* higher
+              at night that during other times -- and that it's much
+              <i>lower</i> during times of dim light. This was pretty
+              unexpected, given how closely collision rates track
+              ridership in other cases; I didn't expect nighttime to
+              be that much more dangerous. It's probably a <i>bit</i>
+              misleading, due to the presence of the incredibly low
+              dusk and dawn bars; ultimately riding at night is only
+              1.6 times more dangerous than riding
+              during the day.</p>
+
+            <p>Dusk and dawn are also pretty interesting. It turns out
+              that dusk is safe because there are huge numbers of
+              cyclists out -- that evening commute is incredibly
+              busy. So even though it has a much higher number of
+              collisions than dawn, it's the safest phase of the
+              day.</p>
+
+            <p>Dusk and dawn may also be thrown off a bit by the
+              limited amounts of data available; they're each only
+              about 30 minutes long, while the other two phases of the
+              day make up the remainder, so we have much more data
+              about day and night.</p>
+          </div>
+        </div>
+
+        <div class="section-a">
+          <h3>Proportion of collisions by position of sun</h3>
 
           <div class="ct-chart ct-major-tenth left"
                id="daylight-pie-chart"></div>
 
           <div class="right">
             <p>The vast majority of collisions happen during the day,
-            although nighttime has its fair share. Without ridership
-            numbers, it's impossible to know if these just reflect
-            numbers of riders, or if more cyclists are hit at certain
-            times of the day.</p>
+              simply because so many riders are out then.</p>
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Collisions by position of sun and by month</h3>
 
           <div class="ct-chart-container">
@@ -438,15 +468,19 @@
 
             <p>In other words, lack of visibility is a factor in the
               collision rate, but a much greater factor is the simple
-              presence of bikes. Drivers are almost as good at not
-              seeing people on bikes in the middle of the day as they
-              are in the darkest night. (Or maybe our transportation
-              systems are designed to make collisions inevitable,
-              regardless of whether it's day or night.)</p>
+              presence of bikes. This aligns with
+              the <a href="#toc-collision-rate-by-position-of-sun">earlier
+              finding</a> that riding at night is more dangerous than
+              during the day, but not a whole lot. Drivers are almost
+              as good at not seeing people on bikes in the middle of
+              the day as they are in the darkest night. (Or maybe our
+              transportation systems are designed to make collisions
+              inevitable, regardless of whether it's day or
+              night.)</p>
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Collisions by age of cyclist</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -472,7 +506,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Collisions by gender of cyclist</h3>
 
           <div class="left">
@@ -492,7 +526,7 @@
 
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Injuries by collision location</h3>
 
           <div class="left">
@@ -535,7 +569,7 @@
           </div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Injury severities</h3>
 
           <div class="ct-chart ct-major-seventh left"
@@ -550,7 +584,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h3>Body region of injuries</h3>
 
           <div class="left">
@@ -562,7 +596,7 @@
                id="injury-region-pie-chart"></div>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h3>Hit-and-runs</h3>
 
           
@@ -595,7 +629,7 @@
           </div>
         </div>
 
-        <div class="section-b">
+        <div class="section-a">
           <h2>Heatmap of Collisions</h2>
 
           <div class="map-container">
@@ -627,7 +661,7 @@
             collisions.</p>
         </div>
 
-        <div class="section-a">
+        <div class="section-b">
           <h2>Map of Collisions</h2>
 
           <p>All locations should be considered approximations, and
@@ -847,6 +881,12 @@
           <p>It could be interesting to look at how tickets are
             assigned during collisions and see how likely drivers
             and/or cyclists are likely to be ticketed.</p>
+
+          <p>Current traffic data is based only on the Rock Island
+            Trail, but the city has other traffic counters and they've
+            generously shared the data with me. I need to find a way
+            to normalize it all to get a general traffic rate for the
+            city based on more than just the Rock Island Trail.</p>
         </div>
 
         <div class="section">

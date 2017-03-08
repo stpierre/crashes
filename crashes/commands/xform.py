@@ -96,8 +96,13 @@ class Xform(base.Command):
                        AgeRange(51, 60),
                        AgeRange(min=61)]
 
+    daylight_phases = ("night", "dawn", "dusk", "day")
+    tz = pytz.timezone("US/Central")
+    city = astral.Astral()["Lincoln"]
+
     def __init__(self, options):
         super(Xform, self).__init__(options)
+        self._sun_cache = {}
         self._reports = json.load(open(self.options.all_reports))
         self._curation = json.load(open(self.options.curation_results))
         self._traffic_counts = json.load(open(self.options.traffic_counts))
@@ -609,10 +614,33 @@ class Xform(base.Command):
         self._template_data['hit_and_run_total'] = sum(
             self._template_data['hit_and_run_counts'].values())
 
+    def sun_phases(self, date):
+        if date not in self._sun_cache:
+            self._sun_cache[date] = self.city.sun(date=date, local=True)
+        return self._sun_cache[date]
+
+    def _get_daylight_phase(self, dt):
+        sun = self.sun_phases(dt)
+        if dt < sun["dawn"] or dt > sun["dusk"]:
+            return "night"
+        elif dt < sun["sunrise"]:
+            return "dawn"
+        elif dt > sun["sunset"]:
+            return "dusk"
+        else:
+            return "day"
+
+    def _get_phase_duration(self, date):
+        sun = self.sun_phases(date)
+        return {
+            "dawn": sun["sunrise"] - sun["dawn"],
+            "day": sun["sunset"] - sun["sunrise"],
+            "dusk": sun["dusk"] - sun["sunset"],
+            "night": (sun["dawn"] + datetime.timedelta(1)) - sun["dusk"]
+        }
+
     def _xform_daylight(self):
         """Create graphs for daylight/nighttime collision data."""
-        tz = pytz.timezone("US/Central")
-        city = astral.Astral()["Lincoln"]
 
         by_month = {}
 
@@ -622,22 +650,14 @@ class Xform(base.Command):
                 crashtime = datetime.datetime.strptime(
                     "%s %s" % (self._reports[case_no]['date'],
                                self._reports[case_no]['time']),
-                    "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+                    "%Y-%m-%d %H:%M").replace(tzinfo=self.tz)
             except ValueError:
                 continue
 
-            sun = city.sun(date=crashtime, local=True)
             if crashtime.month not in by_month:
                 by_month[crashtime.month] = collections.defaultdict(int)
 
-            if crashtime < sun["dawn"] or crashtime > sun["dusk"]:
-                by_month[crashtime.month]["night"] += 1
-            elif crashtime < sun["sunrise"]:
-                by_month[crashtime.month]["dawn"] += 1
-            elif crashtime > sun["sunset"]:
-                by_month[crashtime.month]["dusk"] += 1
-            else:
-                by_month[crashtime.month]["day"] += 1
+            by_month[crashtime.month][self._get_daylight_phase(crashtime)] += 1
 
         totals = collections.defaultdict(int)
         for data in by_month.values():
@@ -651,7 +671,7 @@ class Xform(base.Command):
         line_data = {"labels": [datetime.date(2017, m, 1).strftime("%B")
                                 for m in range(1, 13)],
                      "series": []}
-        for phase in ("night", "dawn", "dusk", "day"):
+        for phase in self.daylight_phases:
             pie_data["labels"].append("%s: %d" % (phase.title(),
                                                   totals[phase]))
             pie_data["series"].append(totals[phase])
@@ -665,14 +685,56 @@ class Xform(base.Command):
                     by_month[month + 1].get(phase, 0)) / month_total
 
         line_data["series"].append([
-            100 * operator.sub(*reversed(
-                city.daylight(date=datetime.date(2017, m, 1)))).seconds / 60.0 / 60 / 24
+            (100 * operator.sub(*reversed(
+                self.city.daylight(date=datetime.date(2017, m, 1)))).seconds /
+             60.0 / 60 / 24)
             for m in range(1, 13)])
         self._save_data("daylight_totals.json", pie_data)
         self._save_data("daylight_by_month.json", line_data)
 
         self._template_data["daylight_correlation"] = numpy.corrcoef(
             line_data["series"][-1], line_data["series"][-2])[1][0]
+
+        traffic_by_phase = collections.defaultdict(float)
+        phase_duration = collections.defaultdict(int)
+        for record in self._traffic_counts:
+            date = datetime.datetime.strptime(record["date"], "%Y-%m-%d")
+            time = datetime.datetime.strptime(record["time"],
+                                              "%H:%M").replace(year=date.year,
+                                                               month=date.month,
+                                                               day=date.day,
+                                                               tzinfo=self.tz)
+            phase = self._get_daylight_phase(time)
+            traffic_by_phase[phase] += (
+                record["northbound"] + record["southbound"])
+            # this is technically not quite accurate, but since we
+            # have traffic readings in 15-minute chunks we assign each
+            # chunk to a single day phase. So even if the sun sets
+            # during a 15-minute chunk, we consider that chunk 'dusk'
+            phase_duration[phase] += 15 * 60
+
+        traffic_rates = {}
+        collision_rates = {}
+        for phase, traffic in traffic_by_phase.items():
+            traffic_rates[phase] = (
+                float(traffic) / phase_duration[phase]) * 60 * 60
+            collision_rates[phase] = (
+                float(totals[phase]) / traffic_rates[phase])
+            self._template_data["%s_collision_rate" % phase] = (
+                collision_rates[phase])
+
+        rate_data = {"labels": [],
+                     "series": [[]],
+                     "tooltips": [[]]}
+        for phase, rate in sorted(collision_rates.items(),
+                                  key=operator.itemgetter(1)):
+            rate_data["labels"].append(phase.title())
+            rate_data["series"][0].append(rate)
+            rate_data["tooltips"][0].append(
+                "%0.2f collisions per HRIR\n%s total collisions\n%0.2f HRIR" %
+                (rate, totals[phase], traffic_rates[phase]))
+
+        self._save_data("daylight_rates.json", rate_data)
 
     def _pre_xform_template_data(self):
         """Create template data for rendering index.html."""
