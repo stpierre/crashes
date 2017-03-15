@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+
+    <title>Lincoln Bicycle Collision Analytics</title>
+
+    <link rel="stylesheet" href="css/reveal.css"/>
+    <link rel="stylesheet" href="css/theme/solarized.css" id="theme"/>
+
+    <link rel="stylesheet" href="css/chartist.min.css">
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/presentation.css"/>
+
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyDpyFz8qiDpmPqe8BakGx6L8Gcwqb1DfJU&libraries=visualization"></script>
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+    <script src="js/toc.min.js"></script>
+    <script src="js/chartist.min.js"></script>
+    <script src="js/chartist-plugin-axistitle.min.js"></script>
+    <script src="js/graphs.js"></script>
+    <script src="js/maps.js"></script>
+
+    <!-- Printing and PDF exports -->
+    <script>
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+
+    <!--[if lt IE 9]>
+	<script src="lib/js/html5shiv.js"></script>
+	<![endif]-->
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section id="title">
+          <h2>Lincoln Bicycle Collision Analytics</h2>
+
+          <p><small>Chris St. Pierre - <a target="_blank"
+                                          href="http://twitter.com/chris_st_pierre">@chris_st_pierre</a></small></p>
+
+          <p><a href="https://stpierre.github.io/crashes/presentation.html">https://stpierre.github.io/crashes/presentation.html</a></p>
+        </section>
+
+        <section id="ankle" class="image-slide">
+          <img src="images/ankle.jpg" alt="One messed up ankle"/>
+        </section>
+
+        <section id="accident-report" class="image-slide">
+          <img src="images/accident-report.png" alt="My accident report"/>
+        </section>
+
+        <section id="just-the-facts">
+          <ul>
+            <li>Nearly 10 years of collisions</li>
+            <li>Nearly 37,000 accident reports parsed</li>
+            <li>Nearly 1,200 collisions between a cyclist and a
+              motorist</li>
+            <li>About 2% of collisions are between a cyclist and a
+              motorist</li>
+            <li><a href="http://tinyurl.com/collisionsLNK">http://tinyurl.com/collisionsLNK</a></li>
+          </ul>
+        </section>
+
+        <section id="open-data">
+          <h1>Support open data laws.</h1>
+
+          <aside class="notes">
+            Luck; LPD open data; Baird/Fellers city council
+          </aside>
+        </section>
+
+        <section id="location-chart" class="image-slide">
+          <h3>Where collisions happen</h3>
+
+          <div class="ct-chart ct-square" id="location-pie-chart"></div>
+        </section>
+
+        <section id="injury-rates-chart" class="image-slide">
+          <h3>Where injuries happen</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-golden-section has-legend"
+                 id="injury-rates-bar-chart"></div>
+
+            <div class="legend" id="injury-rates-legend">
+              <div class="ct-series-a">Killed</div>
+              <div class="ct-series-b">Disabling</div>
+              <div class="ct-series-c">Visible but not disabling</div>
+              <div class="ct-series-d">Possible but not visible</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="wait-but-why">
+          <h1>But <i>why</i>?</h1>
+        </section>
+
+        <section id="monthly-average" class="image-slide">
+          <h3>Average collisions per month</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="monthly-average-chart"></div>
+        </section>
+
+        <section id="monthly-rate" class="image-slide">
+          <h3>Collision rate per month</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-golden-section has-legend"
+                 id="monthly-rate-chart"></div>
+
+            <div class="legend" id="monthly-rates-legend">
+              <div class="ct-series-a">Collisions Per Month</div>
+              <div class="ct-series-c">Monthly Rock Island Riders</div>
+              <div class="ct-series-e">Collisions Per 1000 Monthly Rock Island Riders</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="hourly-rate" class="image-slide">
+          <h3>Collision rate per hour</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-golden-section has-legend"
+                 id="hourly-chart"></div>
+
+            <div class="legend" id="hourly-rates-legend">
+              <div class="ct-series-a">Annual Collisions Per Hour</div>
+              <div class="ct-series-c">Hourly Rock Island Riders</div>
+              <div class="ct-series-e">Collisions Per Hourly Rock Island Rider</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sun-position-rate" class="image-slide">
+          <h3>Collision rate per hour of daylight</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-golden-section has-legend"
+                 id="daylight-line-chart"></div>
+
+            <div class="legend" id="daylight-line-chart-legend">
+              <div class="ct-series-a">Night</div>
+              <div class="ct-series-b">Dawn</div>
+              <div class="ct-series-c">Dusk</div>
+              <div class="ct-series-d">Day</div>
+              <div class="ct-series-e">Hours of daylight</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="inevitable">
+          <h1>Are collisions just inevitable?</h1>
+        </section>
+
+        <section id="superior" class="image-slide">
+          <img src="images/superior.png"
+               alt="Superior street's horrible excuse for a bike path"/>
+        </section>
+
+        <section id="N" class="image-slide">
+          <img src="images/n-street.png"
+               alt="N street's mostly magnificent bike lane"/>
+        </section>
+
+        <section id="lanes-11th" class="image-slide">
+          <img src="images/11th-street.png"
+               alt="11th street's mostly passable bike lanes"/>
+
+          <aside class="notes">
+            While I was taking this picture, someone rode past on the
+            sidewalk.
+          </aside>
+        </section>
+
+        <section id="heatmap" class="image-slide">
+          <div class="map-container">
+            <div class="map-canvas" id="heatmap-canvas"></div>
+          </div>
+        </section>
+
+        <section id="disaster-27th" class="image-slide">
+          <img src="images/27th-street.png"
+               alt="The unmitigated disaster of 27th street"/>
+        </section>
+
+        <section id="jamaica-north" class="image-slide">
+          <img src="images/jamaica-north.png"
+               alt="The Jamaica North to nowhere"/>
+
+          <aside class="notes">
+            $1 million spent on this trail. While I was taking a
+            picture, someone rode past in the street.
+          </aside>
+        </section>
+
+        <section id="lrtp-inaction" class="image-slide">
+          <img src="images/trails-2040-inaction.png"
+               alt="Nothing will be done about dangerous areas without trails"/>
+
+          <aside class="notes">
+            No improvements to 27th or South by 2040 (or to other hot
+            spots like Randolph, N. 48th, etc.<br />
+
+            There may eventually be a bike lane on South between 27th
+            & 40th as part of a road diet.
+          </aside>
+        </section>
+
+        <section id="lrtp-bad-action" class="image-slide">
+          <img src="images/trails-2040-street-adjacent.png"
+               alt="Tons of new street-adjacent trails by 2040"/>
+        </section>
+
+        <section id="lrtp-map-other" class="image-slide">
+          <img src="images/trails-2040.png"
+               alt="All planned trails for 2040 and beyond"/>
+
+          <aside class="notes">
+            Bike lanes only planned for downtown<br />
+
+            $3m Haines Branch to nowhere
+          </aside>
+        </section>
+
+        <section id="lrtp-quote">
+          <blockquote>This amount of bicycle and pedestrian funding is
+            not sufficient to include ... pioneering new bike lanes,
+            nor completion of major sidewalk missing
+            links.</blockquote>
+
+          <aside class="notes">
+            &lt; $1m per year for trails, recommend &lt; $600K per
+            year to new trails. Maintenance favored over construction.
+          </aside>
+        </section>
+
+        <section id="think-of-the-children" class="image-slide">
+          <h3>Collisions by age of injured cyclist</h3>
+
+          <div class="ct-chart ct-golden-section" id="ages-bar-chart"></div>
+        </section>
+
+        <section id="get-political">
+          <h3>Get political</h3>
+
+          <aside class="notes">
+            <ul>
+              <li>Ask city council candidates</li>
+              <li>Go to meetings</li>
+              <li>Band together</li>
+              <li>Provide pressure and cover</li>
+            </ul>
+          </aside>
+        </section>
+
+        <section id="hit-and-runs" class="image-slide">
+          <h3>Hit and runs</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="hit-and-run-pie-chart"></div>
+        </section>
+
+        <section id="loc-by-age" class="image-slide">
+          <h3>Collision locations by age</h3>
+
+          <div class="ct-chart-container">
+            <div class="ct-chart ct-golden-section has-legend"
+                 id="location-by-age-line-chart"></div>
+
+            <div class="legend" id="location-by-age-legend">
+              <div class="ct-series-a">Road</div>
+              <div class="ct-series-b">Crosswalk</div>
+              <div class="ct-series-c">Intersection</div>
+              <div class="ct-series-d">Sidewalk</div>
+              <div class="ct-series-e">Bike lane</div>
+              <div class="ct-series-f">Elsewhere</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="per-year" class="image-slide">
+          <h3>Collisions per year</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="yearly-bar-chart"></div>
+        </section>
+
+        <section id="per-month" class="image-slide">
+          <h3>Collisions per month</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="monthly-line-chart"></div>
+        </section>
+
+        <section id="rate-by-sun" class="image-slide">
+          <h3>Collision rate by position of sun</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="daylight-rate-chart"></div>
+        </section>
+
+        <section id="proportion-by-sun" class="image-slide">
+          <h3>Number of collisions by position of sun</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="daylight-pie-chart"></div>
+        </section>
+
+        <section id="by-gender" class="image-slide">
+          <h3>Collisions by gender</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="gender-pie-chart"></div>
+        </section>
+
+        <section id="severities" class="image-slide">
+          <h3>Injury severities</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="injury-severity-pie-chart"></div>
+        </section>
+
+        <section id="regions" class="image-slide">
+          <h3>Injury regions</h3>
+
+          <div class="ct-chart ct-golden-section"
+               id="injury-region-pie-chart"></div>
+        </section>
+
+        <section id="sidewalks" class="image-slide">
+          <img src="images/fallbrook.png"
+               alt="An aerial photo of Fallbrook with lots of sidewalks missing"/>
+        </section>
+      </div>
+    </div>
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+    <script src="js/presentation.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script>
+
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+      controls: true,
+      progress: true,
+      history: true,
+      center: true,
+
+      transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+      // Optional reveal.js plugins
+      dependencies: [
+      { src: '../lib/js/classList.js', condition: function() { return !document.body.classList; } },
+      { src: '../plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: '../plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+      { src: '../plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+      { src: '../plugin/zoom-js/zoom.js', async: true },
+      { src: '../plugin/notes/notes.js', async: true }
+      ]
+      });
+
+    </script>
+
+  </body>
+</html>

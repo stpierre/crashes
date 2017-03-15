@@ -12,6 +12,7 @@
 @import url("reset.css");
 @import url("pygment.css");
 @import url("typogrify.css");
+@import url("common.css");
 
 /***** Global *****/
 /* Body */
@@ -248,36 +249,6 @@ aside, nav, article, figure {
 	    display: inherit;
 	}
 
-/* map */
-
-.map-canvas {
-    height: 700px;
-    margin: 0px;
-    padding: 0px;
-}
-.map-container {
-    background: #ededed;
-    padding-bottom: 15px;
-    spacing: 0px;
-    margin: 0px;
-}
-button.map-buttons {
-    background: #ededed;
-    border: none;
-    color: #222;
-    padding: 10px 15px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 20px;
-    opacity: 0.6;
-}
-button.map-buttons.current{
-    background: #ededed;
-    color: #222;
-    opacity: 1.0;
-}
-
 /*
 	Featured
 *****************/
@@ -403,72 +374,6 @@ div.below {
     background: #ededed;
 }
 
-/* graphs and charts */
-
-.ct-chart {
-    margin-left: 20px;
-}
-
-svg.ct-chart-pie g text.ct-label {
-    fill: #fff;
-    font-weight: bold;
-}
-
-.ct-label.ct-horizontal, .ct-label.ct-vertical {
-    color: #333;
-}
-
-.ct-area {
-    fill-opacity: 1;
-}
-
-#yearly-bar-chart .ct-series-b {
-    opacity: 0.6;
-}
-
-.legend {
-    border: 2px solid #333;
-    padding: 1em;
-}
-.legend div {
-    padding: .5em;
-    margin: .5em 0 .5em 0;
-}
-.legend .ct-series-a {
-    background: #d70206;
-    color: #fff;
-}
-.legend .ct-series-b {
-    background: #f05b4f;
-    color: #fff;
-}
-.legend .ct-series-c {
-    background: #f4c63d;
-    color: #333;
-}
-.legend .ct-series-d {
-    background: #d17905;
-    color: #fff;
-}
-.legend .ct-series-e {
-    background: #453d3f;
-    color: #fff;
-}
-.legend .ct-series-f {
-    background: #59922b;
-    color: #fff;
-}
-
-.legend {
-    width: 15%;
-    margin-left: 80%;
-}
-
-.has-legend {
-    width: 80%;
-    float: left;
-}
-
 .four-columns > div {
     display: block;
     width: 25%;
@@ -489,8 +394,4 @@ svg.ct-chart-pie g text.ct-label {
 
 .col-a,.col-b,.col-c,.col-d {
     padding: 0 2% 0 2%;
-}
-
-.chart-title {
-    text-align: center;
 }

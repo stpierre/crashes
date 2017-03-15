@@ -242,72 +242,122 @@ function initLineChart(url, graphID, options, yLabel) {
 }
 
 
-$(document).ready(function(){
-    initPieChart("data/graph/proportions.json",
-                 "location-pie-chart");
-    initPieChart("data/graph/injury_severities.json",
-                 "injury-severity-pie-chart");
-    initPieChart("data/graph/injury_regions.json",
-                 "injury-region-pie-chart");
-    initPieChart("data/graph/hit_and_runs.json",
-                 "hit-and-run-pie-chart");
-    initPieChart("data/graph/by_gender.json",
-                 "gender-pie-chart");
-    initPieChart("data/graph/daylight_totals.json",
-                 "daylight-pie-chart");
+var graphs = {
+    "location-pie-chart": {
+        "type": initPieChart,
+        "url": "data/graph/proportions.json"
+    },
+    "injury-severity-pie-chart": {
+        "type": initPieChart,
+        "url": "data/graph/injury_severities.json"
+    },
+    "injury-region-pie-chart": {
+        "type": initPieChart,
+        "url": "data/graph/injury_regions.json"
+    },
+    "hit-and-run-pie-chart": {
+        "type": initPieChart,
+        "url": "data/graph/hit_and_runs.json"
+    },
+    "gender-pie-chart": {
+        "type": initPieChart,
+        "url": "data/graph/by_gender.json"
+    },
+    "daylight-pie-chart": {
+        "type": initPieChart,
+        "url": "data/graph/daylight_totals.json"
+    },
+    "location-by-age-line-chart": {
+        "type": initLineChart,
+        "url": "data/graph/location_by_age.json",
+        "options": {
+            "showArea": true,
+            "high": 100,
+            "lineSmooth": Chartist.Interpolation.none(),
+            "showPoint": false
+        },
+        "yLabel": "Percentage of collisions"
+    },
+    "monthly-line-chart": {
+        "type": initLineChart,
+        "url": "data/graph/monthly.json",
+        "options": {
+            "showPoint": false,
+            "axisX": {"labelInterpolationFnc": skip4Labels}
+        },
+        "yLabel": "Collisions"
+    },
+    "daylight-line-chart": {
+        "type": initLineChart,
+        "url": "data/graph/daylight_by_month.json",
+        "options": {
+            "lineSmooth": Chartist.Interpolation.none(),
+            "showPoint": false
+        },
+        "yLabel": "Percentage of Collisions"
+    },
+    "hourly-chart": {
+        "type": initLineChart,
+        "url": "data/graph/hourly.json",
+        "options": {
+            "lineSmooth": Chartist.Interpolation.none(),
+            "showPoint": false,
+            "axisX": {"labelInterpolationFnc": skipLabels},
+            "axisY": {"type": Chartist.LogAxis, "base": 2},
+        },
+        "yLabel": "ACPH, HRIRs, ACPHRIR"
+    },
+    "monthly-rate-chart": {
+        "type": initLineChart,
+        "url": "data/graph/monthly_rates.json",
+        "options": {
+            "lineSmooth": Chartist.Interpolation.none(),
+            "showPoint": false,
+            "axisY": {"type": Chartist.LogAxis, "base": 10},
+        },
+        "yLabel": "CPM, MRIR, CPMRIR"
+    },
+    "yearly-bar-chart": {
+        "type": initDynamicWidthBarChart,
+        "url": "data/graph/yearly.json",
+        "options": {"stackBars": false},
+        "yLabel": "Collisions"
+    },
+    "ages-bar-chart": {
+        "type": initDynamicWidthBarChart,
+        "url": "data/graph/ages.json",
+        "yLabel": "Collisions"
+    },
+    "monthly-average-chart": {
+        "type": initDynamicWidthBarChart,
+        "url": "data/graph/monthly_average.json",
+        "yLabel": "Collisions"
+    },
+    "injury-rates-bar-chart": {
+        "type": initDynamicWidthBarChart,
+        "url": "data/graph/injury_rates.json",
+        "options": {"stackBars": true, "high": 100},
+        "yLabel": "Injury rate (%)"
+    },
+    "daylight-rate-chart": {
+        "type": initDynamicWidthBarChart,
+        "url": "data/graph/daylight_rates.json",
+        "yLabel": "Collisions per HRIR"
+    }
+};
 
-    initLineChart("data/graph/location_by_age.json",
-                  "location-by-age-line-chart",
-                  {"showArea": true,
-                   "high": 100,
-                   "lineSmooth": Chartist.Interpolation.none(),
-                   "showPoint": false},
-                  "Percentage of collisions");
-    initLineChart("data/graph/monthly.json",
-                  "monthly-line-chart",
-                  {
-                      "showPoint": false,
-                      "axisX": {"labelInterpolationFnc": skip4Labels}
-                  },
-                  "Collisions");
-    initLineChart("data/graph/daylight_by_month.json",
-                  "daylight-line-chart",
-                  {"lineSmooth": Chartist.Interpolation.none(),
-                   "showPoint": false},
-                  "Percentage of Collisions");
-    initLineChart("data/graph/hourly.json",
-                  "hourly-chart",
-                  {
-                      "lineSmooth": Chartist.Interpolation.none(),
-                      "showPoint": false,
-                      "axisX": {"labelInterpolationFnc": skipLabels},
-                      "axisY": {"type": Chartist.LogAxis, "base": 2},
-                  },
-                  "ACPH, HRIRs, ACPHRIR");
-    initLineChart("data/graph/monthly_rates.json",
-                  "monthly-rate-chart",
-                  {
-                      "lineSmooth": Chartist.Interpolation.none(),
-                      "showPoint": false,
-                      "axisY": {"type": Chartist.LogAxis, "base": 10},
-                  },
-                  "CPM, MRIR, CPMRIR");
 
-    initDynamicWidthBarChart("data/graph/yearly.json",
-                             "yearly-bar-chart",
-                             {"stackBars": false},
-                             "Collisions");
-    initDynamicWidthBarChart("data/graph/ages.json",
-                             "ages-bar-chart", {},
-                             "Collisions");
-    initDynamicWidthBarChart("data/graph/monthly_average.json",
-                             "monthly-average-chart", {},
-                             "Collisions");
-    initDynamicWidthBarChart("data/graph/injury_rates.json",
-                             "injury-rates-bar-chart",
-                             {"stackBars": true, "high": 100},
-                             "Injury rate (%)");
-    initDynamicWidthBarChart("data/graph/daylight_rates.json",
-                             "daylight-rate-chart", {},
-                             "Collisions per HRIR");
-});
+function drawGraph(id) {
+    var graphOpts = graphs[id];
+    var func = graphOpts.type;
+    return func(graphOpts.url, id, graphOpts.options || {},
+                graphOpts.yLabel || null);
+}
+
+function drawAllGraphs() {
+    for (var id in graphs) {
+        if (graphs.hasOwnProperty(id)) {
+            drawGraph(id);
+        }
+    }
+}

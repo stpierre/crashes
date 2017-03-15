@@ -1,0 +1,113 @@
+/*
+	Name: Smashing HTML5
+	Date: July 2009
+	Description: Sample layout for HTML5 and CSS3 goodness.
+	Version: 1.0
+	License: MIT <http://opensource.org/licenses/MIT>
+	Licensed by: Smashing Media GmbH <http://www.smashingmagazine.com/>
+	Original author: Enrique Ramírez <http://enrique-ramirez.com/>
+*/
+
+/* Imports */
+@import url("reset.css");
+@import url("pygment.css");
+@import url("typogrify.css");
+
+/* map */
+
+.map-canvas {
+    height: 700px;
+    margin: 0px;
+    padding: 0px;
+}
+.map-container {
+    background: #ededed;
+    padding-bottom: 15px;
+    spacing: 0px;
+    margin: 0px;
+}
+button.map-buttons {
+    background: #ededed;
+    border: none;
+    color: #222;
+    padding: 10px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    opacity: 0.6;
+}
+button.map-buttons.current{
+    background: #ededed;
+    color: #222;
+    opacity: 1.0;
+}
+
+/* graphs and charts */
+
+.ct-chart {
+    margin-left: 20px;
+}
+
+svg.ct-chart-pie g text.ct-label {
+    fill: #fff;
+    font-weight: bold;
+}
+
+.ct-label.ct-horizontal, .ct-label.ct-vertical {
+    color: #333;
+}
+
+.ct-area {
+    fill-opacity: 1;
+}
+
+#yearly-bar-chart .ct-series-b {
+    opacity: 0.6;
+}
+
+div.legend {
+    border: 2px solid #333;
+    padding: 1em;
+    width: 15%;
+    margin-left: 80%;
+}
+
+.legend div {
+    padding: .5em;
+    margin: .5em 0 .5em 0;
+}
+
+.legend .ct-series-a {
+    background: #d70206;
+    color: #fff;
+}
+.legend .ct-series-b {
+    background: #f05b4f;
+    color: #fff;
+}
+.legend .ct-series-c {
+    background: #f4c63d;
+    color: #333;
+}
+.legend .ct-series-d {
+    background: #d17905;
+    color: #fff;
+}
+.legend .ct-series-e {
+    background: #453d3f;
+    color: #fff;
+}
+.legend .ct-series-f {
+    background: #59922b;
+    color: #fff;
+}
+
+.has-legend {
+    width: 80%;
+    float: left;
+}
+
+.chart-title {
+    text-align: center;
+}

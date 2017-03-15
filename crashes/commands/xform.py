@@ -2,6 +2,7 @@
 
 import calendar
 import collections
+import copy
 import datetime
 import functools
 import json
@@ -553,9 +554,11 @@ class Xform(base.Command):
         """Create data for pie chart of collisions by location."""
         LOG.info("Transforming data on proportions of collision locations")
 
+        relevant = copy.copy(self._curation)
+        del relevant["unknown"]
         data = {"labels": [], "series": []}
-        total = len(reduce(operator.add, self._curation.values()))
-        for name, cases in reversed(sorted(self._curation.items(),
+        total = len(reduce(operator.add, relevant.values()))
+        for name, cases in reversed(sorted(relevant.items(),
                                            key=lambda d: len(d[1]))):
             num_cases = len(cases)
             data["labels"].append("%s: %d (%0.1f%%)" % (

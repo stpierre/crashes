@@ -1,0 +1,27 @@
+.reveal section img {
+    border: 0;
+}
+
+section.image-slide {
+    height: 100%;
+    width: 100%;
+}
+
+.reveal section img {
+    max-height: 80%;
+    max-width: 80%;
+}
+
+div.ct-chart {
+    max-height: 80%;
+    max-width: 80%;
+}
+
+.reveal .ct-label, .reveal .ct-axis-title, div.legend {
+    font-size: 0.9rem;
+}
+
+.reveal div.ct-chart-container {
+    width: 70%;
+    float: left;
+}
