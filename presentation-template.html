@@ -58,11 +58,11 @@
         <section id="just-the-facts">
           <ul>
             <li>Nearly 10 years of collisions</li>
-            <li>37,185 accident
+            <li>{{ "{0:,}".format(post_2011_reports) }} accident
               reports parsed</li>
             <li>Nearly 1,200 collisions between a cyclist and a
               motorist</li>
-            <li>About 2% of collisions are
+            <li>About {{ "%d%%" % (bike_pct | round(0)) }} of collisions are
               between a cyclist and a motorist</li>
             <li><a href="http://tinyurl.com/collisionsLNK">http://tinyurl.com/collisionsLNK</a></li>
           </ul>
@@ -98,7 +98,8 @@
           </div>
 
           <aside class="notes">
-            619 / 701 (88.3%)
+            {{ injured_count }} / {{ bike_reports }} ({{
+            ((injured_count * 100 | float) / bike_reports) | round(1) }}%)
             are injured
           </aside>
         </section>
@@ -255,8 +256,8 @@
 
           <aside class="notes">
             <ul>
-              <li>under 11/yr: 11.3</li>
-              <li>% children: 32.8</li>
+              <li>under 11/yr: {{ under_11_per_year | round(1) }}</li>
+              <li>% children: {{ pct_children | round(1) }}</li>
             </ul>
           </aside>
         </section>

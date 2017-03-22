@@ -43,12 +43,12 @@ class Results(base.Command):
 
         LOG.debug("Using template variables: %r" % self._template_data)
 
-        LOG.debug("Loading template from %s" % self.options.template)
-        template = env.from_string(open(self.options.template).read())
+        for tmpl, output in self.options.templates.items():
+            LOG.debug("Loading template from %s" % tmpl)
+            template = env.from_string(open(tmpl).read())
 
-        LOG.info("Writing output to %s" % self.options.results_output)
-        open(self.options.results_output,
-             "w").write(template.render(**self._template_data))
+            LOG.info("Writing output to %s" % output)
+            open(output, "w").write(template.render(**self._template_data))
 
     def satisfied(self):
         return os.path.exists(self.options.crash_graph)

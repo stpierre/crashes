@@ -6,7 +6,7 @@ import os
 import pkgutil
 import sys
 
-from six.moves import configparser
+import yaml
 
 from crashes import commands
 from crashes.commands import base
@@ -16,27 +16,34 @@ LOG = log.getLogger(__name__)
 
 # config defaults
 DEFAULTS = {
-    "url": "HTTP://CJIS.LINCOLN.NE.GOV/HTBIN/CGI.COM",
-    "direct_base_url": "http://cjis.lincoln.ne.gov/~ACC",
-    "token": "DISK0:[020020.WWW]ACCDESK.COM",
-    "sleep_min": "5",
-    "sleep_max": "30",
-    "days": "365",
-    "start": "",
-    "retries": "3",
-    "datadir": "data",
-    "pdfdir": "pdfs",
-    "all_reports": "reports.json",
-    "curation_results": "curation.json",
-    "metadata": "metadata.json",
-    "geocoding": "geojson",
-    "imagedir": "images",
-    "template": "results.html",
-    "results_output": "index.html",
-    "lb716_results": "lb716.json",
-    "graph_data": "graph",
-    "hitnrun_data": "hit-and-run.json",
-    "traffic_counts": "traffic_counts.json",
+    "form": {
+        "url": "HTTP://CJIS.LINCOLN.NE.GOV/HTBIN/CGI.COM",
+        "token": "DISK0:[020020.WWW]ACCDESK.COM",
+        "sleep_min": "5",
+        "sleep_max": "30",
+    },
+    "fetch": {
+        "days": "365",
+        "start": "",
+        "retries": "3",
+        "direct_base_url": "http://cjis.lincoln.ne.gov/~ACC",
+    },
+    "files": {
+        "datadir": "data",
+        "pdfdir": "pdfs",
+        "all_reports": "reports.json",
+        "curation_results": "curation.json",
+        "metadata": "metadata.json",
+        "geocoding": "geojson",
+        "imagedir": "images",
+        "templates": {"results.html": "index.html",
+                      "presentation-template.html": "presentation.html"},
+        "lb716_results": "lb716.json",
+        "graph_data": "graph",
+        "hitnrun_data": "hit-and-run.json",
+        "traffic_counts": "traffic_counts.json",
+        "bike_route_geojson": "bike-paths.geojson"
+    }
 }
 
 
@@ -52,7 +59,7 @@ def parse_args():
     """Parse arguments and config file."""
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=argparse.FileType("r"),
-                        default="crashes.conf", help="Path to config file")
+                        default="crashes.yml", help="Path to config file")
     parser.add_argument("-v", "--verbose", action="count",
                         default=0, help="Verbosity level")
 
@@ -76,44 +83,46 @@ def parse_args():
     options = parser.parse_args()
 
     # parse config file
-    cfp = configparser.ConfigParser(DEFAULTS)
-    cfp.readfp(options.config)
-    options.form_url = cfp.get("form", "url")
-    options.form_token = cfp.get("form", "token")
-    options.sleep_min = int(cfp.get("form", "sleep_min"))
-    options.sleep_max = int(cfp.get("form", "sleep_max"))
-    options.fetch_days = int(cfp.get("fetch", "days"))
-    options.fetch_start = cfp.get("fetch", "start")
-    options.fetch_retries = int(cfp.get("fetch", "retries"))
-    options.fetch_direct_base_url = cfp.get("fetch", "direct_base_url")
-    options.datadir = _canonicalize(cfp.get("files", "datadir"), os.getcwd())
-    options.pdfdir = _canonicalize(cfp.get("files", "pdfdir"),
+    config = yaml.load(options.config)
+
+    def _get_config(key, val):
+        return config.get(key, {}).get(val, DEFAULTS[key][val])
+
+    options.form_url = _get_config("form", "url")
+    options.form_token = _get_config("form", "token")
+    options.sleep_min = int(_get_config("form", "sleep_min"))
+    options.sleep_max = int(_get_config("form", "sleep_max"))
+    options.fetch_days = int(_get_config("fetch", "days"))
+    options.fetch_start = _get_config("fetch", "start")
+    options.fetch_retries = int(_get_config("fetch", "retries"))
+    options.fetch_direct_base_url = _get_config("fetch", "direct_base_url")
+    options.datadir = _canonicalize(_get_config("files", "datadir"),
+                                    os.getcwd())
+    options.pdfdir = _canonicalize(_get_config("files", "pdfdir"),
                                    options.datadir)
-    options.all_reports = _canonicalize(cfp.get("files", "all_reports"),
+    options.all_reports = _canonicalize(_get_config("files", "all_reports"),
                                         options.datadir)
-    options.curation_results = _canonicalize(cfp.get("files",
-                                                     "curation_results"),
-                                             options.datadir)
-    options.geocoding = _canonicalize(cfp.get("files", "geocoding"),
+    options.curation_results = _canonicalize(
+        _get_config("files", "curation_results"), options.datadir)
+    options.geocoding = _canonicalize(_get_config("files", "geocoding"),
                                       options.datadir)
-    options.imagedir = _canonicalize(cfp.get("files", "imagedir"),
+    options.imagedir = _canonicalize(_get_config("files", "imagedir"),
                                      options.datadir)
-    options.template = _canonicalize(cfp.get("files", "template"),
-                                     os.getcwd())
-    options.results_output = _canonicalize(cfp.get("files", "results_output"),
-                                           os.getcwd())
-    options.bike_route_geojson = _canonicalize(cfp.get("files",
-                                                       "bike_route_geojson"))
-    options.lb716_results = _canonicalize(cfp.get("files", "lb716_results"),
-                                          options.datadir)
-    options.graph_data = _canonicalize(cfp.get("files", "graph_data"),
+    options.templates = {
+        _canonicalize(t, os.getcwd()): _canonicalize(o, os.getcwd())
+        for t, o in _get_config("files", "templates").items()}
+    options.bike_route_geojson = _canonicalize(
+        _get_config("files", "bike_route_geojson"))
+    options.lb716_results = _canonicalize(
+        _get_config("files", "lb716_results"), options.datadir)
+    options.graph_data = _canonicalize(_get_config("files", "graph_data"),
                                        options.datadir)
-    options.metadata = _canonicalize(cfp.get("files", "metadata"),
+    options.metadata = _canonicalize(_get_config("files", "metadata"),
                                      options.datadir)
-    options.hitnrun_data = _canonicalize(cfp.get("files", "hitnrun_data"),
+    options.hitnrun_data = _canonicalize(_get_config("files", "hitnrun_data"),
                                          options.datadir)
-    options.traffic_counts = _canonicalize(cfp.get("files", "traffic_counts"),
-                                           options.datadir)
+    options.traffic_counts = _canonicalize(
+        _get_config("files", "traffic_counts"), options.datadir)
 
     options.func = options.command(options)
     return options

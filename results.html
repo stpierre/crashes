@@ -108,12 +108,14 @@
         <div class="section">
           <h2>Quantitative Results</h2>
 
-          <p>The current dataset includes {{ report_count }} reports,
-            from {{ first_report }} to {{ last_report }}. Since 2012,
-            when LPD started widespread use of computer-written
-            accident reports, the dataset includes {{
-            post_2011_reports}} reports, {{ bike_reports }} ({{ '%0.1f' %
-            bike_pct }}%) of which involved a person on a bicycle.</p>
+          <p>The current dataset includes {{
+            "{0:,}".format(report_count) }} reports, from {{
+            first_report }} to {{ last_report }}. Since 2012, when LPD
+            started widespread use of computer-written accident
+            reports, the dataset includes {{
+            "{0:,}".format(post_2011_reports) }} reports, {{
+            "{0:,}".format(bike_reports) }} ({{ '%0.1f' % bike_pct
+            }}%) of which involved a person on a bicycle.</p>
 
           <p>This number is almost certainly an underestimate, for
             several reasons:</p>

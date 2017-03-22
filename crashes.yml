@@ -1,0 +1,11 @@
+---
+form:
+  sleep_min: 1
+  sleep_max: 10
+
+fetch:
+  start: 2012-01-01
+  retries: 10
+
+files:
+  bike_route_geojson: ~/devel/lincoln-bike-routes/data/bike-paths.geojson
