@@ -17,6 +17,11 @@ div.ct-chart {
     max-width: 80%;
 }
 
+div.map-canvas {
+    max-height: 80%;
+    max-width: 80%;
+}
+
 .reveal .ct-label, .reveal .ct-axis-title, div.legend {
     font-size: 0.9rem;
 }

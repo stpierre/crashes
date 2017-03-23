@@ -395,3 +395,33 @@ div.below {
 .col-a,.col-b,.col-c,.col-d {
     padding: 0 2% 0 2%;
 }
+
+/* map */
+
+.map-canvas {
+    height: 700px;
+    margin: 0px;
+    padding: 0px;
+}
+.map-container {
+    background: #ededed;
+    padding-bottom: 15px;
+    spacing: 0px;
+    margin: 0px;
+}
+button.map-buttons {
+    background: #ededed;
+    border: none;
+    color: #222;
+    padding: 10px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    opacity: 0.6;
+}
+button.map-buttons.current{
+    background: #ededed;
+    color: #222;
+    opacity: 1.0;
+}

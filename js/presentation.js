@@ -3,4 +3,8 @@ Reveal.addEventListener('slidechanged', function(event) {
     slide.find("div.ct-chart").each(function(idx) {
         drawGraph($(this).attr('id'));
     });
+
+    if (slide.find("div.map-canvas")) {
+        init_heatmap();
+    }
 });

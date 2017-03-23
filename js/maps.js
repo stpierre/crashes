@@ -5,7 +5,7 @@ var datadir = "http://stpierre.github.io/crashes/data/geojson/";
 var markers = "http://www.googlemapsmarkers.com/v1/";
 
 
-function init_maps() {
+function init_collision_map() {
     all_map = new google.maps.Map(
         document.getElementById('all-collisions-map-canvas'), {
             zoom: 12,
@@ -63,7 +63,10 @@ function init_maps() {
             all_info_window.open(all_map);
         });
     }
+}
 
+
+function init_heatmap() {
     var heatmap_base = new google.maps.Map(
         document.getElementById('heatmap-canvas'), {
             zoom: 12,
@@ -85,6 +88,7 @@ function init_maps() {
 }
 
 
-$(document).ready(function(){
-    google.maps.event.addDomListener(window, 'load', init_maps);
-})
+function init_maps() {
+    init_collision_map()
+    init_heatmap()
+}

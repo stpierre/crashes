@@ -15,4 +15,6 @@ $(document).ready(function(){
     });
 
     drawAllGraphs();
+
+    google.maps.event.addDomListener(window, 'load', init_maps);
 });
