@@ -4,3 +4,4 @@ cache
 build
 *.egg-info
 dist
+crashes.sqlite

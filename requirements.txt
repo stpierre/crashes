@@ -9,3 +9,5 @@ astral
 pytz
 numpy
 PyYAML
+sqlalchemy
+unicodecsv

@@ -28,6 +28,10 @@ DEFAULTS = {
         "retries": "3",
         "direct_base_url": "http://cjis.lincoln.ne.gov/~ACC",
     },
+    "database": {
+        "uri": "sqlite:///crashes.sqlite",
+        "dumpdir": "db_dump",
+    },
     "files": {
         "datadir": "data",
         "pdfdir": "pdfs",
@@ -96,6 +100,7 @@ def parse_args():
     options.fetch_start = _get_config("fetch", "start")
     options.fetch_retries = int(_get_config("fetch", "retries"))
     options.fetch_direct_base_url = _get_config("fetch", "direct_base_url")
+
     options.datadir = _canonicalize(_get_config("files", "datadir"),
                                     os.getcwd())
     options.pdfdir = _canonicalize(_get_config("files", "pdfdir"),
@@ -123,6 +128,10 @@ def parse_args():
                                          options.datadir)
     options.traffic_counts = _canonicalize(
         _get_config("files", "traffic_counts"), options.datadir)
+
+    options.database = _get_config("database", "uri")
+    options.dumpdir = _canonicalize(_get_config("database", "dumpdir"),
+                                    options.datadir)
 
     options.func = options.command(options)
     return options
