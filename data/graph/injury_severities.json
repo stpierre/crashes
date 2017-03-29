@@ -1,1 +1,1 @@
-{"series": [70, 106, 2, 347, 658], "labels": ["Uninjured: 70 (5.9%)", "Disabling: 106 (9.0%)", "Killed: 2 (0.2%)", "Possible but not visible: 347 (29.3%)", "Visible but not disabling: 658 (55.6%)"]}
+{"series": [347, 1, 106, 2, 658], "labels": ["Possible but not visible: 347 (31.1%)", "Uninjured: 1 (0.1%)", "Disabling: 106 (9.5%)", "Killed: 2 (0.2%)", "Visible but not disabling: 658 (59.1%)"]}

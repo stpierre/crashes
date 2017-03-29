@@ -65,36 +65,9 @@
           on where they happened. The following locations are tracked:
 
           <ul class="simple">
-            <li><b>Crosswalk</b>: Collision happened while a person on
-              a bicycle was using a crosswalk; that is, attempting to
-              cross a road or intersection either in a painted
-              crosswalk, or crossing an intersection from one sidewalk
-              to another. This does not include cyclists who are
-              riding on the street and pass through the intersection
-              without using a crosswalk.</li>
-            <li><b>Sidewalk</b>: Collision happened while a person on
-              a bicycle was riding on a sidewalk. For instance, a car
-              entering or leaving a private driveway or, in
-              {{"B6-022972"|report_link("rare situations")}}, a car
-              that jumps the curb.</li>
-            <li><b>Road</b>: Collision happened while a person on a
-              bicycle was riding on the road, excluding
-              intersections.</li>
-            <li><b>Intersection</b>: Collision happened while a person
-              on a bicycle was riding through an intersection on the
-              road, not using a crosswalk.</li>
-            <li><b>Bike lane</b>: Collision happened while a person on
-              a bicycle was riding in a bike lane.</li>
-            <li><b>Elsewhere</b>: Collision happened elsewhere
-              (alleyways, parking lots, etc.). This also includes
-              collisions that happened on the road, but where the
-              cyclist was not riding on the road as such. (E.g., the
-              cyclist was crossing the street away from a
-              crosswalk.)</li>
-            <li><b>Unknown</b>: The police report contained
-              insufficient information to determine where the
-              collision happened; or the collision record came from
-              NDOR and no police report could be located.</li>
+{% for name, desc in status_descriptions %}
+            <li><b>{{ name }}</b>: {{ desc }}</li>
+{% endfor %}
           </ul>
 
           <p>There is some inherent difficulty in categorizing certain
@@ -851,9 +824,9 @@
             <a href="https://lincoln.ne.gov/city/police/stats/acc.htm"
                class="reference external">Lincoln Police Department's
                website</a>. The reports are parsed automatically and
-               selected data are extracted. The data are available
-               at <a href="{{all_reports}}" class="reference
-               external">{{all_reports}}</a>.
+               selected data are extracted. The data are available as
+               CSV files at <a href="{{ db_dump }}" class="reference
+               external">{{ db_dump }}</a>.
 
           <p>These reports are then curated by hand to determine where
             the collision happened, as described above. This depends
