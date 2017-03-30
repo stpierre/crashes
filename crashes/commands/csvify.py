@@ -26,7 +26,12 @@ class CSVify(base.Command):
             writer = unicodecsv.writer(outfile, encoding="utf-8",
                                        dialect=csv.excel)
             writer.writerow(("Case #", "Initials", "Description"))
-            for ticket in self.db.query(models.Ticket).all():
+            tickets = self.db.query(models.Ticket).join(
+                models.Collision).filter(
+                    models.Collision.road_location_name.isnot(None)).filter(
+                        models.Collision.road_location_name != "not involved"
+                    ).all()
+            for ticket in tickets:
                 writer.writerow((ticket.case_no, ticket.initials, ticket.desc))
                 rows += 1
         LOG.info("Dumped %s rows to %s", rows, output_path)
@@ -46,7 +51,10 @@ class CSVify(base.Command):
                              "Location", "ZIP", "Latitude", "Longitude",
                              "Hit and run?", "Hit and runner",
                              "Road location", "Report"))
-            for crash in self.db.query(models.Collision).all():
+            crashes = self.db.query(models.Collision).filter(
+                models.Collision.road_location_name.isnot(None)).filter(
+                    models.Collision.road_location_name != "not involved").all()
+            for crash in crashes:
                 if crash.geojson:
                     geojson = json.loads(crash.geojson)
                 else:
@@ -56,7 +64,7 @@ class CSVify(base.Command):
                        crash.initials, crash.date, crash.time,
                        crash.injury_region, crash.injury_severity,
                        crash.location, zipcode, crash.latitude, crash.longitude,
-                       crash.hit_and_run, crash.hit_and_run_status,
+                       crash.hit_and_run, crash.hit_and_run_status_name,
                        crash.road_location_name, crash.report)
                 writer.writerow(row)
                 rows += 1
