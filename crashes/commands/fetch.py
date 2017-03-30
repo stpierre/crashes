@@ -2,17 +2,19 @@
 
 import datetime
 import glob
-import json
 import logging
-import operator
 import os
 import random
 import time
 
 import bs4
 import requests
+import sqlalchemy
+from sqlalchemy import func
+from sqlalchemy import orm
 
 from crashes.commands import base
+from crashes import models
 
 LOG = logging.getLogger(__name__)
 
@@ -45,15 +47,9 @@ class Fetch(base.Command):
     arguments = [
         base.Argument("--start",
                       type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
+        base.Argument("--autostart", action="store_true"),
         base.Argument("--refetch-curated", action="store_true")
     ]
-
-    def __init__(self, options):
-        super(Fetch, self).__init__(options)
-        self._metadata = {}
-        if os.path.exists(self.options.metadata):
-            self._metadata = json.load(open(self.options.metadata))
-        self.report_data = json.load(open(self.options.all_reports))
 
     @staticmethod
     def _munge_name(name):
@@ -85,21 +81,30 @@ class Fetch(base.Command):
         page_data = bs4.BeautifulSoup(response.text, "html.parser")
         ticket_table = page_data.find('table', attrs={'width': 800})
 
-        tickets = {}
+        tickets = []
         current_person = None
         for row in ticket_table.find_all("tr"):
             if "person cited" in row.text.lower():
                 headers = row.find_all("th")
                 current_person = self._munge_name(headers[1].string)
                 LOG.debug("Found tickets for %s" % current_person)
-                tickets[current_person] = []
             elif "cited for" in row.text.lower():
                 data = row.find_all("td")
                 charge = data[3].b.text.strip()
                 LOG.debug("Found ticket for %s: %s" % (current_person,
                                                        charge))
-                tickets[current_person].append(charge)
+                tickets.append(models.Ticket(case_no=case_no,
+                                             initials=current_person,
+                                             desc=charge))
         return tickets
+
+    def _case_number_exists(self, case_no):
+        try:
+            self.db.query(models.Collision).filter(
+                models.Collision.case_no == case_no).one()
+            return True
+        except orm.exc.NoResultFound:
+            return False
 
     def _list_reports_for_date(self, date):
         """Get a list of URLs for reports from a given date."""
@@ -123,34 +128,40 @@ class Fetch(base.Command):
             if row.td and row.td.a:
                 cols = row.find_all("td")
                 case_no = cols[0].a.string.strip()
-                if case_no not in self._metadata:
-                    self._metadata[case_no] = {
-                        "date": datetime.datetime.strptime(
-                            cols[2].string.strip(),
-                            "%m-%d-%Y").strftime("%Y-%m-%d"),
-                        "hit_and_run": "H&R" in cols[4].string
-                    }
+                if not self._case_number_exists(case_no):
+                    self.db.add(models.Collision(
+                        case_no=case_no,
+                        date=datetime.datetime.strptime(cols[2].string.strip(),
+                                                        "%m-%d-%Y"),
+                        hit_and_run="H&R" in cols[4].string))
+                    self.db.commit()
+
                     submit = cols[5].input
                     if submit:
                         ticket_post_data = {
                             "CGI": ticket_token,
                             submit["name"]: submit["value"]}
-                        self._metadata[case_no]["tickets"] = (
-                            self._parse_tickets(case_no, ticket_url,
-                                                ticket_post_data))
+
+                        self.db.add_all(self._parse_tickets(case_no, ticket_url,
+                                                            ticket_post_data))
+                        self.db.commit()
 
                 yield cols[0].a['href'].strip()
 
     def _dates_in_range(self):
         """Generate all dates in the desired range, not including today."""
         end = datetime.date.today()
-        if self.options.start:
+        if self.options.autostart:
+            last = self.db.query(func.max(models.Collision.date)).one()[0]
+            current = last - datetime.timedelta(2)
+        elif self.options.start:
             current = self.options.start.date()
         elif self.options.fetch_start:
             current = datetime.datetime.strptime(self.options.fetch_start,
                                                  "%Y-%m-%d").date()
         else:
             current = end - datetime.timedelta(self.options.fetch_days)
+        LOG.debug("Fetching reports starting from %s", current)
 
         while current <= end:
             yield current
@@ -162,7 +173,8 @@ class Fetch(base.Command):
         filename = os.path.split(url)[1]
         filepath = os.path.join(self.options.pdfdir, filename)
         case_no = "-".join((filename[0:2], filename[2:8]))
-        if not force and case_no in self.report_data:
+
+        if not force and self._case_number_exists(case_no):
             LOG.debug("Already parsed %s, skipping" % case_no)
         else:
             LOG.debug("Downloading %s to %s" % (url, filepath))
@@ -192,14 +204,14 @@ class Fetch(base.Command):
             self._fetch_by_date()
 
     def _fetch_curated(self):
-        curation = json.load(open(self.options.curation_results))
-        for case_no in reduce(operator.add, curation.values()):
-            if case_no.startswith("NDOR"):
-                continue
-            filename = self.report_data[case_no]["filename"]
+        reports = self.db.query(models.Collision).filter(
+            models.Collision.road_location_name.isnot(None)).filter(
+                sqlalchemy.not_(models.Collision.case_no.like("NDOR%"))).all()
+        for report in reports:
+            filename = "%s.PDF" % report.case_no.replace("-", "").upper()
             prefix = filename[0:4]
             url = "%s/%s/%s" % (self.options.fetch_direct_base_url,
-                              prefix, filename)
+                                prefix, filename)
             self._download_report(url, force=True)
 
     def _fetch_by_date(self):
@@ -209,7 +221,6 @@ class Fetch(base.Command):
             LOG.info("Fetching reports from %s" % date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url)
-                json.dump(self._metadata, open(self.options.metadata, 'w'))
 
     def satisfied(self):
         # consider it success if any reports have ever been downloaded

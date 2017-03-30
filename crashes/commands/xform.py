@@ -2,7 +2,6 @@
 
 import calendar
 import collections
-import copy
 import datetime
 import functools
 import json
