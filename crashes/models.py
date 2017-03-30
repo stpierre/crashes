@@ -31,7 +31,8 @@ class Collision(Base):
     location = sqlalchemy.Column(sqlalchemy.String)
     latitude = sqlalchemy.Column(sqlalchemy.Float)
     longitude = sqlalchemy.Column(sqlalchemy.Float)
-    geojson = sqlalchemy.Column(sqlalchemy.Text, default="{}")
+    geojson = sqlalchemy.Column(sqlalchemy.Text)
+    skip_geojson = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
 
     hit_and_run = sqlalchemy.Column(sqlalchemy.Boolean)
     hit_and_run_status = sqlalchemy.Column(

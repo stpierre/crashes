@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import copy
 import json
-import logging
 import operator
 import os
 import random
@@ -12,12 +11,13 @@ import re
 import textwrap
 
 import geocoder
-import termcolor
 from six.moves import input
+import sqlalchemy
+import termcolor
 
 from crashes.commands import base
-from crashes.commands import curate
 from crashes import log
+from crashes import models
 
 
 LOG = log.getLogger(__name__)
@@ -46,19 +46,15 @@ def _save_geojson(data, filepath):
     return json.dump(data, open(filepath, 'w'))
 
 
-def save_categorized_geojson(all_geojson, curation_data, geocoding_dir):
+def save_categorized_geojson(reports, geocoding_dir):
     """create categorized GeoJSON files."""
-    by_loc = {k: new_geojson() for k in curation_data.keys()}
-    for feature in all_geojson['features']:
-        for loc, cases in curation_data.items():
-            if feature['properties']['case_no'] in cases:
-                by_loc[loc]['features'].append(feature)
-                break
-        else:
-            LOG.warning("Unable to determine crash location for %s" %
-                        feature['properties']['case_no'])
+    categories = set(r.road_location_name for r in reports)
+    by_loc = {c: new_geojson() for c in categories}
+    for report in reports:
+        by_loc[report.road_location_name]["features"].append(
+            json.loads(report.geojson))
     for loc, data in by_loc.items():
-        fpath = os.path.join(geocoding_dir, "%s.json" % loc)
+        fpath = os.path.join(geocoding_dir, "%s.json" % loc.replace(" ", "_"))
         _save_geojson(data, fpath)
 
 
@@ -84,17 +80,19 @@ class Geocode(base.Command):
             val *= -1
         return val
 
-    def _jitter_duplicates(self, features):
+    def _jitter_duplicates(self, reports):
         retval = []
-        for feature in features:
-            new = copy.copy(feature)
+        for report in reports:
             adj = (self._random_jitter(), self._random_jitter())
             LOG.debug("Adjusting coordinates for %s by %s" %
-                      (new['properties']['case_no'], adj))
-            new['geometry']['coordinates'] = map(
+                      (report.case_no, adj))
+            geojson = json.loads(report.geojson)
+            geojson['geometry']['coordinates'] = map(
                 lambda c: operator.add(*c),
-                zip(new['geometry']['coordinates'], adj))
-            retval.append(new)
+                zip(geojson['geometry']['coordinates'], adj))
+            report.geojson = json.dumps(geojson)
+            report.latitude = geojson["geometry"]["coordinates"][1]
+            report.longitude = geojson["geometry"]["coordinates"][0]
         return retval
 
     def _parse_location(self, location):
@@ -148,17 +146,17 @@ class Geocode(base.Command):
             LOG.debug("Location %s is not automatically parseable" % location)
             return location, False
 
-    def _get_coordinates(self, case_no, report):
+    def _get_coordinates(self, report):
         retval = None
         ans = None
         while True:
-            default, usable = self._parse_location(report['location'])
+            default, usable = self._parse_location(report.location)
             if not usable or retval:
                 # either the default location isn't immediately
                 # searchable; or this is our second time through the
                 # loop, so we have to prompt for user interactionn
                 print("Original: %s" %
-                      termcolor.colored(report['location'], "green"))
+                      termcolor.colored(report.location, "green"))
                 print("Default: %s" % termcolor.colored(default, "green"))
                 ans = input("Enter to %s, 's' to skip, or enter address: " %
                             ("accept" if retval else "search"))
@@ -176,7 +174,7 @@ class Geocode(base.Command):
                 LOG.error("Error finding %s: %s" %
                           (address, retval['properties']['status']))
             else:
-                retval = cleanup_geojson(retval, case_no)
+                retval = cleanup_geojson(retval, report.case_no)
                 print("Address: %s" %
                       termcolor.colored(retval['properties']['address'],
                                         "green", attrs=["bold"]))
@@ -193,57 +191,51 @@ class Geocode(base.Command):
         return retval
 
     def __call__(self):
-        data = json.load(open(self.options.all_reports))
-        curation_data = json.load(open(self.options.curation_results))
-        del curation_data['not_involved']
-
-        all_geojson = self._load_geojson("all.json")
-
-        skipfile = os.path.join(self.options.geocoding, "skip.json")
-        if os.path.exists(skipfile):
-            skips = json.load(open(skipfile))
-        else:
-            skips = []
-
-        coded = [f['properties']['case_no']
-                 for f in all_geojson['features']]
-
-        all_curated = reduce(operator.add, curation_data.values())
-        for case_no in all_curated:
-            if case_no in coded + skips:
-                continue
-            report = data[case_no]
-            print(termcolor.colored("%-10s %50s" % (case_no, report['date']),
+        coded = 0
+        reports = self.db.query(models.Collision).filter(
+            models.Collision.road_location_name.isnot(None)).filter(
+                models.Collision.road_location_name != "not involved").filter(
+                    models.Collision.skip_geojson != True).filter(
+                        models.Collision.geojson.is_(None)).all()
+        for report in reports:
+            print(termcolor.colored("%-10s %50s" % (report.case_no,
+                                                    report.date),
                                     'red', attrs=['bold']))
-            print(textwrap.fill(report['report']))
-            geojson = self._get_coordinates(case_no, report)
+            print(textwrap.fill(report.report))
+            geojson = self._get_coordinates(report)
             if geojson is None:
-                skips.append(case_no)
+                report.skip_geojson = True
             else:
-                all_geojson['features'].append(geojson)
+                report.geojson = json.dumps(geojson)
+                report.latitude = geojson["geometry"]["coordinates"][1]
+                report.longitude = geojson["geometry"]["coordinates"][0]
+                report.skip_geojson = False
+            coded += 1
+            self.db.commit()
             print()
-            coded.append(case_no)
-
-            _save_geojson(all_geojson,
-                          os.path.join(self.options.geocoding, "all.json"))
-            json.dump(skips, open(skipfile, "w"))
             LOG.info("%s/%s coded (%.02f%%)" %
-                     (len(coded), len(all_curated),
-                      100.0 * len(coded) / len(all_curated)))
+                     (coded, len(reports),
+                      100.0 * coded / len(reports)))
+
+        if coded == 0:
+            # no new geocoding, so we don't need to muck with the
+            # existing files
+            return 0
 
         # introduce jitter in cases with identical coordinates.
+        geocoded = self.db.query(models.Collision).filter(
+            models.Collision.geojson.isnot(None)).all()
+
         duplicates = {}
-        for feature in all_geojson['features']:
-            key = (round(feature['geometry']['coordinates'][0], 6),
-                   round(feature['geometry']['coordinates'][1], 6))
-            duplicates.setdefault(key, []).append(feature)
+        for report in geocoded:
+            geojson = json.loads(report.geojson)
+            key = (round(geojson['geometry']['coordinates'][0], 6),
+                   round(geojson['geometry']['coordinates'][1], 6))
+            duplicates.setdefault(key, []).append(report)
 
-        for features in duplicates.values():
-            if len(features) > 1:
-                for feature in features:
-                    all_geojson['features'].remove(feature)
-                all_geojson['features'].extend(
-                    self._jitter_duplicates(features))
+        for reports in duplicates.values():
+            if len(reports) > 1:
+                self._jitter_duplicates(reports)
+                self.db.commit()
 
-        save_categorized_geojson(all_geojson, curation_data,
-                                 self.options.geocoding)
+        save_categorized_geojson(geocoded, self.options.geocoding)
