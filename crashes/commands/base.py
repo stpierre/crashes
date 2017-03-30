@@ -1,6 +1,7 @@
 """Base command object."""
 
 import logging
+import os
 
 import sqlalchemy
 from sqlalchemy import orm

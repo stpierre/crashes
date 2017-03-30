@@ -43,6 +43,8 @@ class Collision(Base):
         sqlalchemy.ForeignKey("location.name"))
     road_location = orm.relationship("Location")
 
+    parsed = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
+
     tickets = orm.relationship("Ticket", back_populates="case")
 
 

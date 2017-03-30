@@ -17,7 +17,7 @@ from six.moves import input
 from crashes.commands import base
 from crashes.commands import curate
 from crashes.commands import geocode
-from crashes.commands import jsonify
+from crashes.commands import parse
 from crashes import log
 
 LOG = log.getLogger(__name__)
@@ -155,7 +155,7 @@ class Merge(base.Command):
             record["cyclist_dob"] = dob
         try:
             record["injury_region"] = (
-                jsonify.JSONifyChildProcess.injury_regions[
+                parse.ParseChildProcess.injury_regions[
                     input("Injury region: ").zfill(2)])
         except KeyError:
             pass

@@ -13,7 +13,7 @@ import termcolor
 from six.moves import input
 
 from crashes.commands import base
-from crashes.commands import jsonify
+from crashes.commands import parse
 
 
 LOG = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ class Curate(base.Command):
         r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
         r'crosswalk|sidewalk|intersection)',
         re.I)
-    prerequisites = [jsonify.JSONify]
+    prerequisites = [parse.Parse]
 
     results_file = "curation_results"
 

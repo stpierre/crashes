@@ -15,6 +15,7 @@ from sqlalchemy import orm
 
 from crashes.commands import base
 from crashes import models
+from crashes import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -98,14 +99,6 @@ class Fetch(base.Command):
                                              desc=charge))
         return tickets
 
-    def _case_number_exists(self, case_no):
-        try:
-            self.db.query(models.Collision).filter(
-                models.Collision.case_no == case_no).one()
-            return True
-        except orm.exc.NoResultFound:
-            return False
-
     def _list_reports_for_date(self, date):
         """Get a list of URLs for reports from a given date."""
         post_data = {"CGI": self.options.form_token,
@@ -128,7 +121,7 @@ class Fetch(base.Command):
             if row.td and row.td.a:
                 cols = row.find_all("td")
                 case_no = cols[0].a.string.strip()
-                if not self._case_number_exists(case_no):
+                if not self.report_exists(case_no):
                     self.db.add(models.Collision(
                         case_no=case_no,
                         date=datetime.datetime.strptime(cols[2].string.strip(),
@@ -168,34 +161,48 @@ class Fetch(base.Command):
 
             current += datetime.timedelta(1)
 
+    def report_exists(self, case_no, *filters):
+        try:
+            query = self.db.query(models.Collision).filter(
+                models.Collision.case_no == case_no)
+            for fltr in filters:
+                query = query.filter(fltr)
+            LOG.info("Found case in database: %s", query.one())
+            return True
+        except orm.exc.NoResultFound:
+            return False
+
+    def report_parsed(self, case_no):
+        return self.report_exists(case_no,
+                                  models.Collision.parsed != True)
+
     def _download_report(self, url, force=False):
         """Download the report at the URL to the pdfdir."""
         filename = os.path.split(url)[1]
         filepath = os.path.join(self.options.pdfdir, filename)
-        case_no = "-".join((filename[0:2], filename[2:8]))
+        case_no = utils.filename_to_case_no(filename)
 
-        if not force and self._case_number_exists(case_no):
+        if not force and self.report_parsed(case_no):
             LOG.debug("Already parsed %s, skipping" % case_no)
+        elif os.path.exists(filepath):
+            LOG.debug("%s already exists, skipping" % filepath)
         else:
             LOG.debug("Downloading %s to %s" % (url, filepath))
-            if os.path.exists(filepath):
-                LOG.debug("%s already exists, skipping" % filepath)
-            else:
-                response = retry(
-                    requests.get, args=(url,),
-                    kwargs={"stream": True},
-                    exceptions=(requests.exceptions.ConnectionError,
-                                requests.exceptions.ChunkedEncodingError),
-                    times=self.options.fetch_retries)
-                if response.status_code != 200:
-                    raise Exception("Failed to download report %s: %s" %
-                                    (url, response.status_code))
-                with open(filepath, 'wb') as outfile:
-                    for chunk in response.iter_content():
-                        outfile.write(chunk)
-                LOG.debug("Wrote data from %s to %s" % (url, filepath))
-                time.sleep(random.randint(self.options.sleep_min,
-                                          self.options.sleep_max))
+            response = retry(
+                requests.get, args=(url,),
+                kwargs={"stream": True},
+                exceptions=(requests.exceptions.ConnectionError,
+                            requests.exceptions.ChunkedEncodingError),
+                times=self.options.fetch_retries)
+            if response.status_code != 200:
+                raise Exception("Failed to download report %s: %s" %
+                                (url, response.status_code))
+            with open(filepath, 'wb') as outfile:
+                for chunk in response.iter_content():
+                    outfile.write(chunk)
+            LOG.debug("Wrote data from %s to %s" % (url, filepath))
+            time.sleep(random.randint(self.options.sleep_min,
+                                      self.options.sleep_max))
 
     def __call__(self):
         if self.options.refetch_curated:
@@ -208,7 +215,7 @@ class Fetch(base.Command):
             models.Collision.road_location_name.isnot(None)).filter(
                 sqlalchemy.not_(models.Collision.case_no.like("NDOR%"))).all()
         for report in reports:
-            filename = "%s.PDF" % report.case_no.replace("-", "").upper()
+            filename = utils.case_no_to_filename(report.case_no)
             prefix = filename[0:4]
             url = "%s/%s/%s" % (self.options.fetch_direct_base_url,
                                 prefix, filename)
