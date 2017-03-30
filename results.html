@@ -65,7 +65,7 @@
           on where they happened. The following locations are tracked:
 
           <ul class="simple">
-{% for name, desc in status_descriptions %}
+{% for name, desc in status_descriptions.items() %}
             <li><b>{{ name }}</b>: {{ desc }}</li>
 {% endfor %}
           </ul>
@@ -884,6 +884,11 @@
           <h2>Links</h2>
 
           <ul class="simple">
+            <li><a href="https://one.nhtsa.gov/nhtsa/stateCatalog/states/ne/docs/Nebraska_PAR_Instruction_Manual_2009_sub12_22_09.pdf">Comprehensive
+                guide to LPD Accident Reports</a>. There are lots of
+                little arcane notations all over the accident report;
+                this tells you what they all mean. Many of them are
+                demonstrably wrong on many accident reports.</a>
             <li><a href="http://www.arcgis.com/home/webmap/viewer.html?webmap=76d544b5646645dcaa8e9ba5c5543d0a">GIS
                 maps of statewide data on collisions involving
                 cyclists and pedestrians, 2008-2014</a>. Part of a UNO
@@ -896,7 +901,7 @@
                    class="reference external">Official Nebraska
                    Department of Roads Crash Data</a>. Monthly and
                    yearly summaries with lots of aggregate crash data,
-                   but little in the way of bicycyle-specific
+                   but little in the way of bicycle-specific
                    data.</li>
             <li><a href="https://lincoln.ne.gov/city/plan/reports/GapAnalysis.pdf"
                    class="reference external">Lincoln Complete Streets
