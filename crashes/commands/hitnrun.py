@@ -12,8 +12,6 @@ LOG = log.getLogger(__name__)
 class Hitnrun(curate.Curate):
     """Determine who hit-and-ran."""
 
-    prerequisites = [curate.Curate]
-
     statuses = curate.StatusDict()
     statuses["D"] = curate.CurationStatus(
         "driver", "Driver only left scene")

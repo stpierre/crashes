@@ -3,17 +3,15 @@
 from __future__ import print_function
 
 import collections
-import json
 import logging
-import os
 import re
 import textwrap
 
-import termcolor
 from six.moves import input
+import termcolor
 
 from crashes.commands import base
-from crashes.commands import parse
+from crashes import models
 
 
 LOG = logging.getLogger(__name__)
@@ -87,89 +85,55 @@ class Curate(base.Command):
         r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
         r'crosswalk|sidewalk|intersection)',
         re.I)
-    prerequisites = [parse.Parse]
 
-    results_file = "curation_results"
-
-    statuses = StatusDict()
-    statuses["C"] = CurationStatus("crosswalk",
-                                   "Bicycle in collision in crosswalk")
-    statuses["S"] = CurationStatus("sidewalk",
-                                   "Bicycle in collision on sidewalk")
-    statuses["R"] = CurationStatus("road",
-                                   "Bicycle in collision riding on road")
-    statuses["I"] = CurationStatus(
-        "intersection",
-        "Bicycle in collision riding through intersection")
-    statuses["L"] = CurationStatus(
-        "bike_lane",
-        "Bicycle in collision while in bike lane")
-    statuses["E"] = CurationStatus("elsewhere",
-                                   "Bicycle in collision elsewhere")
-    statuses["U"] = CurationStatus(
-        "unknown",
-        "Collision location unknown or could not be determined")
-    statuses["N"] = CurationStatus("not_involved", "Bicycle not in collision")
+    results_column = "road_location_name"
 
     def __init__(self, options):
         super(Curate, self).__init__(options)
-        self.data = None
+        self.statuses = StatusDict()
+        for status in self.db.query(models.Location).all():
+            self.statuses[status.shortcut] = CurationStatus(status.name,
+                                                            status.desc)
 
-    def _get_default(self, case_no):
+    def _get_default(self, report):
         return None
 
-    def _print_additional_info(self, case_no):
+    def _print_additional_info(self, report):
         pass
 
-    def _get_answer(self, case_no):
-        return self.statuses.input(default=self._get_default(case_no))
-
-    def _load_data(self):
-        self.data = json.load(open(self.options.all_reports))
-
-    def _save_data(self, results):
-        LOG.debug("Dumping curation data to %s" %
-                  getattr(self.options, self.results_file))
-        json.dump(results, open(getattr(self.options, self.results_file), "w"))
+    def _get_answer(self, report):
+        return self.statuses.input(default=self._get_default(report))
 
     def __call__(self):
-        self._load_data()
-        if os.path.exists(getattr(self.options, self.results_file)):
-            results = json.load(open(getattr(self.options, self.results_file)))
-        else:
-            results = {}
-        for status in self.statuses.values():
-            if status.name and status.name not in results:
-                results[status.name] = []
-        complete = sum(len(v) for v in results.values())
-        for case_no, report in self.data.items():
-            if any(case_no in c for c in results.values()):
+        column = getattr(models.Collision, self.results_column)
+
+        complete = 0
+        to_curate = self.db.query(models.Collision).filter(
+            column.is_(None)).all()
+        for report in to_curate:
+            if report.report is None:
+                LOG.debug("%s has no report, skipping", report.case_no)
                 continue
-            complete += 1
-            if self.search_re.search(report['report']):
-                split = self.highlight_re.split(report['report'])
+            elif not self.search_re.search(report.report):
+                LOG.debug("%s doesn't match the search regex, skipping",
+                          report.case_no)
+                continue
+            split = self.highlight_re.split(report.report)
 
-                # manually curate collisions
-                print(termcolor.colored("%-10s %50s" % (case_no,
-                                                        report['date']),
-                                        'red', attrs=['bold']))
-                # colorize matches in the output to make it easier to curate
-                for i in range(1, len(split), 2):
-                    split[i] = termcolor.colored(split[i], 'green',
-                                                 attrs=["bold"])
-                print(textwrap.fill("".join(split)))
-                self._print_additional_info(case_no)
-                ans = self._get_answer(case_no)
-                if ans:
-                    results[ans].append(case_no)
-                    print()
-                    self._save_data(results)
-                LOG.info("%s/%s curated (%.02f%%)" %
-                         (complete, len(self.data),
-                          100 * complete / float(len(self.data))))
-                LOG.debug(", ".join("%s: %s" % (n, len(d))
-                                    for n, d in results.items()))
-        self._save_data(results)
-
-    def satisfied(self):
-        return os.path.exists(getattr(self.options, self.results_file))
+            # manually curate collisions
+            print(termcolor.colored("%-10s %50s" % (report.case_no,
+                                                    report.date),
+                                    'red', attrs=['bold']))
+            # colorize matches in the output to make it easier to curate
+            for i in range(1, len(split), 2):
+                split[i] = termcolor.colored(split[i], 'green', attrs=["bold"])
+            print(textwrap.fill("".join(split)))
+            self._print_additional_info(report)
+            ans = self._get_answer(report)
+            if ans:
+                complete += 1
+                setattr(report, self.results_column, ans)
+                self.db.commit()
+            LOG.info("%s/%s curated (%.02f%%)" %
+                     (complete, len(to_curate),
+                      100 * complete / float(len(to_curate))))

@@ -20,7 +20,6 @@ from six.moves import queue
 import sqlalchemy
 
 from crashes.commands import base
-from crashes.commands import fetch
 from crashes import log
 from crashes import models
 from crashes import utils
@@ -448,8 +447,6 @@ def _parse_gender(text):
 class Parse(base.Command):
     """Extract data from all downloaded reports."""
 
-    prerequisites = [fetch.Fetch]
-
     arguments = [base.Argument("files", nargs='*'),
                  base.Argument("--processes", type=int,
                                default=multiprocessing.cpu_count()),
@@ -563,9 +560,6 @@ class Parse(base.Command):
 
         self._work_queue.close()
         self._result_queue.close()
-
-    def satisfied(self):
-        return os.path.exists(self.options.all_reports)
 
 
 class ParseChildProcess(multiprocessing.Process):

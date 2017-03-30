@@ -65,8 +65,6 @@ def save_categorized_geojson(all_geojson, curation_data, geocoding_dir):
 class Geocode(base.Command):
     """Geocode accident locations."""
 
-    prerequisites = [curate.Curate]
-
     location_separator = re.compile(r'\s*(?:[/&,;]|\b(?:and|at|on)\b)\s*',
                                     re.I)
     dash_split = re.compile(r'\s*-+\s*')
@@ -249,6 +247,3 @@ class Geocode(base.Command):
 
         save_categorized_geojson(all_geojson, curation_data,
                                  self.options.geocoding)
-
-    def satisfied(self):
-        return os.path.exists(self.options.geocoding)

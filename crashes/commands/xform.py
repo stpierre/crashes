@@ -15,7 +15,6 @@ import pytz
 from sqlalchemy import func
 
 from crashes.commands import base
-from crashes.commands import curate
 from crashes import log
 from crashes import models
 
@@ -64,8 +63,6 @@ def auto_percent_with_abs(total):
 
 class Xform(base.Command):
     """Produce nicely transformed data for graphs."""
-
-    prerequisites = [curate.Curate]
 
     narrow_age_ranges = [AgeRange(max=5),
                          AgeRange(6, 10),
@@ -815,6 +812,3 @@ class Xform(base.Command):
         tmpl_path = os.path.join(self.options.datadir, "template_data.json")
         LOG.info("Writing template data to %s" % tmpl_path)
         json.dump(self._template_data, open(tmpl_path, "w"))
-
-    def satisfied(self):
-        return os.path.exists(self.options.collision_graph)

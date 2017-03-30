@@ -1,13 +1,11 @@
 """Produce a monthly graph of when bike-related crashes happen."""
 
-import datetime
 import json
 import os
 
 import jinja2
 
 from crashes.commands import base
-from crashes.commands import xform
 from crashes import log
 
 LOG = log.getLogger(__name__)
@@ -29,8 +27,6 @@ def literal(text):
 class Results(base.Command):
     """Render the results template."""
 
-    prerequisites = [xform.Xform]
-
     def __init__(self, options):
         super(Results, self).__init__(options)
         self._template_data = json.load(
@@ -49,6 +45,3 @@ class Results(base.Command):
 
             LOG.info("Writing output to %s" % output)
             open(output, "w").write(template.render(**self._template_data))
-
-    def satisfied(self):
-        return os.path.exists(self.options.crash_graph)

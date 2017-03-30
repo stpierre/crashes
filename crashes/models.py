@@ -103,6 +103,7 @@ class Location(Base):
 
     fixture = [
         {"name": "crosswalk",
+         "shortcut": "C",
          "desc": ("Collision happened while a person on a bicycle was using a "
                   "crosswalk between two sidewalks; that is, attempting to "
                   "cross a road or intersection either in a painted crosswalk "
@@ -112,14 +113,17 @@ class Location(Base):
                   "through the intersection without using a crosswalk, nor "
                   "cyclists in a crosswalk that is part of a bike trail.")},
         {"name": "sidewalk",
+         "shortcut": "S",
          "desc": ("Collision happened while a person on a bicycle was riding "
                   "on a sidewalk that is not a bike trail. For instance, a car "
                   "entering or leaving a private driveway or, in rare "
                   "situations, a car that jumps the curb.")},
         {"name": "bike lane",
+         "shortcut": "L",
          "desc": ("Collision happened while a person on a bicycle was riding "
                   "in a bike lane.")},
         {"name": "bike trail crossing",
+         "shortcut": "T",
          "desc": ("Collision happened while a person on a bicycle was using a "
                   "crosswalk between two bike trail segments, or continuing "
                   "past the end of a bike trail over a crosswalk to the start "
@@ -127,27 +131,34 @@ class Location(Base):
                   "perpendicularly to a bike trail, unless they are continuing "
                   "on another bike trail on the other side.")},
         {"name": "bike trail",
+         "shortcut": "B",
          "desc": ("Collision happened while a person on a bicycle was riding "
                   "on a bike trail, not in an intersection.")},
         {"name": "road",
+         "shortcut": "R",
          "desc": ("Collision happened while a person on a bicycle was riding "
                   "on the road, excluding intersections.")},
         {"name": "intersection",
+         "shortcut": "I",
          "desc": ("Collision happened while a person on a bicycle was riding "
                   "through an intersection on the road, not using a "
                   "crosswalk.")},
         {"name": "elsewhere",
+         "shortcut": "E",
          "desc": ("Collision happened elsewhere (alleyways, parking lots, "
                   "etc.). This also includes ride-outs at mid-block and other "
                   "collisions that happened on the road, but where the cyclist "
                   "was not riding on the road as such.")},
         {"name": "unknown",
+         "shortcut": "U",
          "desc": ("The police report contained insufficient information to "
                   "determine where the collision happened; or the collision "
                   "record came from NDOR and no police report could be "
                   "located.")},
         {"name": "not involved",
+         "shortcut": "N",
          "desc": "No person riding a bicycle was involved in the collision."}]
 
     name = sqlalchemy.Column(sqlalchemy.String, primary_key=True)
+    shortcut = sqlalchemy.Column(sqlalchemy.String(length=1), unique=True)
     desc = sqlalchemy.Column(sqlalchemy.Text)

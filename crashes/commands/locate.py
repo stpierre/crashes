@@ -98,8 +98,6 @@ class Locate(curate.Curate, geocode.Geocode):
         r'(?:bike)?path)',
         re.I)
 
-    prerequisites = [geocode.Geocode]
-
     statuses = curate.StatusDict()
     statuses["Y"] = curate.CurationStatus(
         "row", "Collision related to right-of-way in a bike path")

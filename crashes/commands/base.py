@@ -1,7 +1,6 @@
 """Base command object."""
 
 import logging
-import os
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -23,7 +22,7 @@ class Argument(object):
 
 class Command(object):
     """Superclass for classes that are exposed as a CLI command."""
-    prerequisites = []
+
     arguments = []
 
     def __init__(self, options):
@@ -35,19 +34,3 @@ class Command(object):
 
     def __call__(self):
         raise NotImplementedError
-
-    def satisfied(self):
-        """Determine if this command has been run when checking prereqs."""
-        raise NotImplementedError
-
-    def satisfy_prereqs(self):
-        """Follow prerequisite commands recursively."""
-        for prereq in self.prerequisites:
-            cmd = prereq(self.options)
-            if not cmd.satisfied:
-                LOG.info("Found unsatisfied prerequisite: %s" %
-                         prereq.__name__.lower())
-                cmd.satisfy_prereqs()
-                LOG.info("Calling unsatisfied prerequisite: %s" %
-                         prereq.__name__.lower())
-                cmd()

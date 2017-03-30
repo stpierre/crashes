@@ -228,7 +228,3 @@ class Fetch(base.Command):
             LOG.info("Fetching reports from %s" % date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url)
-
-    def satisfied(self):
-        # consider it success if any reports have ever been downloaded
-        return len(glob.glob(os.path.join(self.options.pdfdir, "*"))) > 0
