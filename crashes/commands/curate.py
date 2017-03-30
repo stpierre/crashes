@@ -87,13 +87,17 @@ class Curate(base.Command):
         re.I)
 
     results_column = "road_location_name"
+    status_table = models.Location
 
     def __init__(self, options):
         super(Curate, self).__init__(options)
-        self.statuses = StatusDict()
-        for status in self.db.query(models.Location).all():
-            self.statuses[status.shortcut] = CurationStatus(status.name,
-                                                            status.desc)
+        self.statuses = self.get_statuses()
+
+    def get_statuses(self):
+        statuses = StatusDict()
+        for status in self.db.query(self.status_table).all():
+            statuses[status.shortcut] = CurationStatus(status.name,
+                                                       status.desc)
 
     def _get_default(self, report):
         return None

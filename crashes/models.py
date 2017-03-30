@@ -35,12 +35,15 @@ class Collision(Base):
     skip_geojson = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
 
     hit_and_run = sqlalchemy.Column(sqlalchemy.Boolean)
-    hit_and_run_status = sqlalchemy.Column(
-        sqlalchemy.Enum("driver", "cyclist", "both", "unknown"))
+    hit_and_run_status_name = sqlalchemy.Column(
+        sqlalchemy.String,
+        sqlalchemy.ForeignKey("hit_and_run_status.name"))
+    hit_and_run_status = orm.relationship("HitAndRunStatus")
+
     dot_code = sqlalchemy.Column(sqlalchemy.Integer)
 
     road_location_name = sqlalchemy.Column(
-        sqlalchemy.Integer,
+        sqlalchemy.String,
         sqlalchemy.ForeignKey("location.name"))
     road_location = orm.relationship("Location")
 
@@ -99,7 +102,13 @@ class InjurySeverity(Base):
     desc = sqlalchemy.Column(sqlalchemy.String)
 
 
-class Location(Base):
+class StatusTableMixin(object):
+    name = sqlalchemy.Column(sqlalchemy.String, primary_key=True)
+    shortcut = sqlalchemy.Column(sqlalchemy.String(length=1), unique=True)
+    desc = sqlalchemy.Column(sqlalchemy.Text)
+
+
+class Location(Base, StatusTableMixin):
     __tablename__ = "location"
 
     fixture = [
@@ -160,6 +169,20 @@ class Location(Base):
          "shortcut": "N",
          "desc": "No person riding a bicycle was involved in the collision."}]
 
-    name = sqlalchemy.Column(sqlalchemy.String, primary_key=True)
-    shortcut = sqlalchemy.Column(sqlalchemy.String(length=1), unique=True)
-    desc = sqlalchemy.Column(sqlalchemy.Text)
+
+class HitAndRunStatus(Base, StatusTableMixin):
+    __tablename__ = "hit_and_run_status"
+
+    fixture = [
+        {"name": "driver",
+         "shortcut": "D",
+         "desc": "Driver only left scene"},
+        {"name": "cyclist",
+         "shortcut": "C",
+         "desc": "Cyclist only left scene"},
+        {"name": "both",
+         "shortcut": "2",
+         "desc": "Both driver and cyclist left the scene"},
+        {"name": "unknown",
+         "shortcut": "N",
+         "desc": "Not a hit-and-run/unclear who left"}]
