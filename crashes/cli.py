@@ -46,7 +46,8 @@ DEFAULTS = {
         "graph_data": "graph",
         "hitnrun_data": "hit-and-run.json",
         "traffic_counts": "traffic_counts.json",
-        "bike_route_geojson": "bike-paths.geojson"
+        "bike_route_geojson": "bike-paths.geojson",
+        "csvdir": "csv"
     }
 }
 
@@ -128,6 +129,7 @@ def parse_args():
                                          options.datadir)
     options.traffic_counts = _canonicalize(
         _get_config("files", "traffic_counts"), options.datadir)
+    options.csvdir = _canonicalize(_get_config("files", "csvdir"), os.getcwd())
 
     options.database = _get_config("database", "uri")
     options.dumpdir = _canonicalize(_get_config("database", "dumpdir"),
