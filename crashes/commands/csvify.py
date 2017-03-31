@@ -61,12 +61,20 @@ class CSVify(base.Command):
                 else:
                     geojson = {}
                 zipcode = geojson.get("properties", {}).get("postal")
-                row = (crash.case_no, crash.dob, crash.gender,
-                       crash.initials, crash.date, crash.time,
-                       crash.injury_region_id, crash.injury_severity_id,
-                       crash.location, zipcode, crash.latitude, crash.longitude,
-                       crash.hit_and_run, crash.hit_and_run_status_name,
-                       crash.road_location_name, crash.report)
+                row = [crash.case_no, crash.dob, crash.gender,
+                       crash.initials, crash.date, crash.time]
+                if crash.injury_region:
+                    row.append(crash.injury_region.desc)
+                else:
+                    row.append(None)
+                if crash.injury_severity:
+                    row.append(crash.injury_severity.desc)
+                else:
+                    row.append(None)
+                row.extend(
+                    [crash.location, zipcode, crash.latitude, crash.longitude,
+                     crash.hit_and_run, crash.hit_and_run_status_name,
+                     crash.road_location_name, crash.report])
                 writer.writerow(row)
                 rows += 1
         LOG.info("Dumped %s rows to %s", rows, output_path)
