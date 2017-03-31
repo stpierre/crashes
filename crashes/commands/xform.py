@@ -777,7 +777,8 @@ class Xform(base.Command):
             (loc.name.title(), loc.desc)
             for loc in self.db.query(
                     models.Location).filter(
-                        models.Location.name != "not involved").all()]
+                        models.Location.name != "not involved").order_by(
+                            models.Location.name).all()]
 
     def _post_xform_template_data(self):
         self._template_data['pct_children'] = (

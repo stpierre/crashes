@@ -29,8 +29,8 @@ class CSVify(base.Command):
             tickets = self.db.query(models.Ticket).join(
                 models.Collision).filter(
                     models.Collision.road_location_name.isnot(None)).filter(
-                        models.Collision.road_location_name != "not involved"
-                    ).all()
+                        models.Collision.road_location_name != "not involved").order_by(
+                            models.Collision.date, models.Collision.time).all()
             for ticket in tickets:
                 writer.writerow((ticket.case_no, ticket.initials, ticket.desc))
                 rows += 1
@@ -53,7 +53,8 @@ class CSVify(base.Command):
                              "Road location", "Report"))
             crashes = self.db.query(models.Collision).filter(
                 models.Collision.road_location_name.isnot(None)).filter(
-                    models.Collision.road_location_name != "not involved").all()
+                    models.Collision.road_location_name != "not involved").order_by(
+                        models.Collision.date, models.Collision.time).all()
             for crash in crashes:
                 if crash.geojson:
                     geojson = json.loads(crash.geojson)
