@@ -2,6 +2,7 @@
 
 import calendar
 import collections
+import copy
 import datetime
 import functools
 import json
@@ -95,7 +96,6 @@ class Xform(base.Command):
     def __init__(self, options):
         super(Xform, self).__init__(options)
         self._sun_cache = {}
-        self._traffic_counts = json.load(open(self.options.traffic_counts))
         self._template_data = {
             "now": datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z"),
             "report_count": self.db.query(
@@ -145,18 +145,17 @@ class Xform(base.Command):
 
         traffic_raw_counts = collections.defaultdict(int)
         traffic_num_readings = collections.defaultdict(int)
-        first_traffic_reading = None
-        last_traffic_reading = None
-        for record in self._traffic_counts:
-            date = datetime.datetime.strptime(record['date'], "%Y-%m-%d")
-            traffic_raw_counts[date.month] += (record["northbound"] +
-                                               record["southbound"])
-            traffic_num_readings[date.month] += 1
+        first_traffic_reading = self.db.query(
+            func.min(models.Traffic.date)).filter(
+                models.Traffic.type == "bike").one()[0]
+        last_traffic_reading = self.db.query(
+            func.max(models.Traffic.date)).filter(
+                models.Traffic.type == "bike").one()[0]
 
-            if first_traffic_reading is None or date < first_traffic_reading:
-                first_traffic_reading = date
-            if last_traffic_reading is None or date > last_traffic_reading:
-                last_traffic_reading = date
+        for record in self.db.query(models.Traffic).filter(
+                models.Traffic.type == "bike").all():
+            traffic_raw_counts[record.date.month] += record.count
+            traffic_num_readings[record.date.month] += 1
 
         relevant = self._get_relevant_crashes()
         for report in relevant:
@@ -403,11 +402,10 @@ class Xform(base.Command):
 
         traffic_raw_counts = [0] * 24
         traffic_num_readings = [0] * 24
-        for record in self._traffic_counts:
-            time = datetime.datetime.strptime(record['time'], "%H:%M")
-            traffic_raw_counts[time.hour] += (record["northbound"] +
-                                              record["southbound"])
-            traffic_num_readings[time.hour] += 1
+        for record in self.db.query(models.Traffic).filter(
+                models.Traffic.type == "bike").all():
+            traffic_raw_counts[record.start.hour] += record.count
+            traffic_num_readings[record.start.hour] += 1
 
         times = [0] * 24
         for report in self._get_relevant_crashes():
@@ -685,16 +683,17 @@ class Xform(base.Command):
 
         traffic_by_phase = collections.defaultdict(float)
         phase_duration = collections.defaultdict(int)
-        for record in self._traffic_counts:
-            date = datetime.datetime.strptime(record["date"], "%Y-%m-%d")
-            time = datetime.datetime.strptime(record["time"],
-                                              "%H:%M").replace(year=date.year,
-                                                               month=date.month,
-                                                               day=date.day,
-                                                               tzinfo=self.tz)
+        for record in self.db.query(models.Traffic).filter(
+                models.Traffic.type == "bike").all():
+            time = datetime.datetime(year=record.date.year,
+                                     month=record.date.month,
+                                     day=record.date.day,
+                                     hour=record.start.hour,
+                                     minute=record.start.minute,
+                                     second=record.start.second,
+                                     tzinfo=self.tz)
             phase = self._get_daylight_phase(time)
-            traffic_by_phase[phase] += (
-                record["northbound"] + record["southbound"])
+            traffic_by_phase[phase] += record.count
             # this is technically not quite accurate, but since we
             # have traffic readings in 15-minute chunks we assign each
             # chunk to a single day phase. So even if the sun sets
