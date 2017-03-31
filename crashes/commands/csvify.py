@@ -63,7 +63,7 @@ class CSVify(base.Command):
                 zipcode = geojson.get("properties", {}).get("postal")
                 row = (crash.case_no, crash.dob, crash.gender,
                        crash.initials, crash.date, crash.time,
-                       crash.injury_region, crash.injury_severity,
+                       crash.injury_region_id, crash.injury_severity_id,
                        crash.location, zipcode, crash.latitude, crash.longitude,
                        crash.hit_and_run, crash.hit_and_run_status_name,
                        crash.road_location_name, crash.report)
