@@ -35,17 +35,11 @@ DEFAULTS = {
     "files": {
         "datadir": "data",
         "pdfdir": "pdfs",
-        "all_reports": "reports.json",
-        "curation_results": "curation.json",
-        "metadata": "metadata.json",
         "geocoding": "geojson",
         "imagedir": "images",
         "templates": {"results.html": "index.html",
                       "presentation-template.html": "presentation.html"},
-        "lb716_results": "lb716.json",
         "graph_data": "graph",
-        "hitnrun_data": "hit-and-run.json",
-        "traffic_counts": "traffic_counts.json",
         "bike_route_geojson": "bike-paths.geojson",
         "csvdir": "csv"
     }
@@ -106,10 +100,6 @@ def parse_args():
                                     os.getcwd())
     options.pdfdir = _canonicalize(_get_config("files", "pdfdir"),
                                    options.datadir)
-    options.all_reports = _canonicalize(_get_config("files", "all_reports"),
-                                        options.datadir)
-    options.curation_results = _canonicalize(
-        _get_config("files", "curation_results"), options.datadir)
     options.geocoding = _canonicalize(_get_config("files", "geocoding"),
                                       options.datadir)
     options.imagedir = _canonicalize(_get_config("files", "imagedir"),
@@ -119,16 +109,8 @@ def parse_args():
         for t, o in _get_config("files", "templates").items()}
     options.bike_route_geojson = _canonicalize(
         _get_config("files", "bike_route_geojson"))
-    options.lb716_results = _canonicalize(
-        _get_config("files", "lb716_results"), options.datadir)
     options.graph_data = _canonicalize(_get_config("files", "graph_data"),
                                        options.datadir)
-    options.metadata = _canonicalize(_get_config("files", "metadata"),
-                                     options.datadir)
-    options.hitnrun_data = _canonicalize(_get_config("files", "hitnrun_data"),
-                                         options.datadir)
-    options.traffic_counts = _canonicalize(
-        _get_config("files", "traffic_counts"), options.datadir)
     options.csvdir = _canonicalize(_get_config("files", "csvdir"), os.getcwd())
 
     options.database = _get_config("database", "uri")
