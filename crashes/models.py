@@ -66,6 +66,19 @@ class Ticket(Base):
     case = orm.relationship("Collision", back_populates="tickets")
 
 
+class Traffic(Base):
+    __tablename__ = "traffic"
+
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True,
+                           autoincrement=True)
+    date = sqlalchemy.Column(sqlalchemy.Date)
+    start = sqlalchemy.Column(sqlalchemy.Time)
+    end = sqlalchemy.Column(sqlalchemy.Time)
+    type = sqlalchemy.Column(sqlalchemy.Enum("bike", "car"))
+    count = sqlalchemy.Column(sqlalchemy.Integer)
+    location = sqlalchemy.Column(sqlalchemy.String)
+
+
 class InjuryRegion(Base):
     __tablename__ = "injury_region"
 

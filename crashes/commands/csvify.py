@@ -79,9 +79,33 @@ class CSVify(base.Command):
                 rows += 1
         LOG.info("Dumped %s rows to %s", rows, output_path)
 
+    def dump_traffic(self):
+        for ttype in ("bike", "car"):
+            output_path = os.path.join(self.options.csvdir,
+                                       "%s-%s.csv" % (
+                                           models.Traffic.__tablename__,
+                                           ttype))
+            LOG.info("Dumping data on %s traffic from %r table to %s",
+                     ttype, models.Traffic.__tablename__, output_path)
+            rows = 0
+            with open(output_path, "w") as outfile:
+                writer = unicodecsv.writer(outfile, encoding="utf-8",
+                                           dialect=csv.excel)
+                writer.writerow(("Date", "Start", "End", "Count", "Location"))
+                traffic = self.db.query(models.Traffic).filter(
+                    models.Traffic.type == ttype).order_by(
+                        models.Traffic.date,
+                        models.Traffic.start).all()
+                for record in traffic:
+                    writer.writerow((record.date, record.start, record.end,
+                                     record.count, record.location))
+                    rows += 1
+                LOG.info("Dumped %s rows to %s", rows, output_path)
+
     def __call__(self):
         if not os.path.exists(self.options.csvdir):
             os.makedirs(self.options.csvdir)
 
         self.dump_tickets()
         self.dump_collisions()
+        self.dump_traffic()
