@@ -65,7 +65,7 @@
           on where they happened. The following locations are tracked:
 
           <ul class="simple">
-{% for name, desc in status_descriptions.items() %}
+{% for name, desc in status_descriptions %}
             <li><b>{{ name }}</b>: {{ desc }}</li>
 {% endfor %}
           </ul>
@@ -585,8 +585,7 @@
         <div class="{{ section_class.next() }}">
           <h3>Hit-and-runs</h3>
 
-          {% set real_hnrs = hit_and_run_total -
-          hit_and_run_counts.both - hit_and_run_counts.unclear %}
+          {% set real_hnrs = hit_and_run_total - hit_and_run_counts.both - hit_and_run_counts.unknown %}
 
           <div class="ct-chart ct-major-seventh left"
                id="hit-and-run-pie-chart"></div>
@@ -595,8 +594,8 @@
             <p>Of the {{bike_reports}} collisions,
               {{hit_and_run_total}} ({{(hit_and_run_total * 100.0 /
               bike_reports)|round(1)}}%) were categorized as
-              hit-and-runs by LPD. In {{hit_and_run_counts.both +
-              hit_and_run_counts.unclear}} cases, either both the
+              hit-and-runs by LPD. In {{ hit_and_run_counts.both +
+              hit_and_run_counts.unknown }} cases, either both the
               driver and cyclist left the scene, or it couldn't be
               easily determined who left the scene. In the remaining
               {{real_hnrs}} cases, the driver fled the scene the vast

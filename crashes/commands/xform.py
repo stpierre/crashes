@@ -572,21 +572,27 @@ class Xform(base.Command):
     def _xform_hit_and_runs(self):
         """Create data for pie chart of hit-and-runs."""
         LOG.info("Transforming data on hit-and-runs")
-        hitnrun_data = json.load(open(self.options.hitnrun_data))
-        total_hnrs = len(reduce(operator.add, hitnrun_data.values()))
+
+        hit_and_runs = dict(self.db.query(
+            models.Collision.hit_and_run_status_name,
+            func.count(models.Collision.case_no)).filter(
+                models.Collision.hit_and_run_status_name.isnot(None)).group_by(
+                    models.Collision.hit_and_run_status_name).all())
+
+        total_hnrs = sum(hit_and_runs.values())
 
         data = {"labels": [], "series": []}
-        num_driver = len(hitnrun_data["driver"])
-        data["series"].append(num_driver)
+        data["series"].append(hit_and_runs["driver"])
         data["labels"].append("Driver only left scene: %s (%0.1f%%)" %
-                              (num_driver, 100.0 * num_driver / total_hnrs))
+                              (hit_and_runs["driver"],
+                               100.0 * hit_and_runs["driver"] / total_hnrs))
 
-        num_cyclist = len(hitnrun_data["cyclist"])
-        data["series"].append(num_cyclist)
+        data["series"].append(hit_and_runs["cyclist"])
         data["labels"].append("Cyclist only left scene: %s (%0.1f%%)" %
-                              (num_cyclist, 100.0 * num_cyclist / total_hnrs))
+                              (hit_and_runs["cyclist"],
+                               100.0 * hit_and_runs["cyclist"] / total_hnrs))
 
-        num_both = len(hitnrun_data["both"]) + len(hitnrun_data["unclear"])
+        num_both = hit_and_runs["both"] + hit_and_runs["unknown"]
         data["series"].append(num_both)
         data["labels"].append(
             "Both parties left scene or unclear: %s (%0.1f%%)" %
@@ -594,10 +600,8 @@ class Xform(base.Command):
 
         self._save_data("hit_and_runs.json", data)
 
-        self._template_data['hit_and_run_counts'] = {
-            t: len(c) for t, c in hitnrun_data.items()}
-        self._template_data['hit_and_run_total'] = sum(
-            self._template_data['hit_and_run_counts'].values())
+        self._template_data['hit_and_run_counts'] = hit_and_runs
+        self._template_data['hit_and_run_total'] = total_hnrs
 
     def sun_phases(self, date):
         if date not in self._sun_cache:
@@ -740,7 +744,8 @@ class Xform(base.Command):
                 self._template_data['ndor_count'] += 1
             if report.date.year > 2011:
                 post_2011_reports += 1
-                if report.road_location_name != "not involved":
+                if (report.road_location_name and
+                        report.road_location_name != "not involved"):
                     bike_report_count += 1
 
         self._template_data["first_report"] = first_report.strftime(
