@@ -50,12 +50,15 @@ def save_categorized_geojson(reports, geocoding_dir):
     """create categorized GeoJSON files."""
     categories = set(r.road_location_name for r in reports)
     by_loc = {c: new_geojson() for c in categories}
+    all_collisions = new_geojson()
     for report in reports:
-        by_loc[report.road_location_name]["features"].append(
-            json.loads(report.geojson))
+        geojson = json.loads(report.geojson)
+        by_loc[report.road_location_name]["features"].append(geojson)
+        all_collisions["features"].append(geojson)
     for loc, data in by_loc.items():
         fpath = os.path.join(geocoding_dir, "%s.json" % loc.replace(" ", "_"))
         _save_geojson(data, fpath)
+    _save_geojson(all_collisions, os.path.join(geocoding_dir, "all.json"))
 
 
 class Geocode(base.Command):
