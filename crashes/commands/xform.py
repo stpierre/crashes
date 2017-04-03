@@ -542,7 +542,7 @@ class Xform(base.Command):
         for name, num_cases in reversed(sorted(statuses,
                                                key=operator.itemgetter(1))):
             data["labels"].append("%s: %d (%0.1f%%)" % (
-                name.title, num_cases, float(num_cases) / total * 100))
+                name.title(), num_cases, float(num_cases) / total * 100))
             data["series"].append(num_cases)
         self._save_data("proportions.json", data)
 
