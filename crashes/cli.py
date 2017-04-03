@@ -37,11 +37,13 @@ DEFAULTS = {
         "pdfdir": "pdfs",
         "geocoding": "geojson",
         "imagedir": "images",
-        "templates": {"results.html": "index.html",
-                      "presentation-template.html": "presentation.html"},
         "graph_data": "graph",
         "bike_route_geojson": "bike-paths.geojson",
         "csvdir": "csv"
+    },
+    "templates": {
+        "sourcedir": "templates",
+        "destdir": "."
     }
 }
 
@@ -104,14 +106,18 @@ def parse_args():
                                       options.datadir)
     options.imagedir = _canonicalize(_get_config("files", "imagedir"),
                                      options.datadir)
-    options.templates = {
-        _canonicalize(t, os.getcwd()): _canonicalize(o, os.getcwd())
-        for t, o in _get_config("files", "templates").items()}
     options.bike_route_geojson = _canonicalize(
         _get_config("files", "bike_route_geojson"))
     options.graph_data = _canonicalize(_get_config("files", "graph_data"),
                                        options.datadir)
     options.csvdir = _canonicalize(_get_config("files", "csvdir"), os.getcwd())
+
+    options.template_source_dir = _canonicalize(
+        _get_config("templates", "sourcedir"),
+        os.getcwd())
+    options.template_dest_dir = _canonicalize(
+        _get_config("templates", "destdir"),
+        os.getcwd())
 
     options.database = _get_config("database", "uri")
     options.dumpdir = _canonicalize(_get_config("database", "dumpdir"),

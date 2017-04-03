@@ -24,11 +24,11 @@ def literal(text):
     return '<tt class="docutils literal">%s</tt>' % text
 
 
-class Results(base.Command):
-    """Render the results template."""
+class Template(base.Command):
+    """Render the templates."""
 
     def __init__(self, options):
-        super(Results, self).__init__(options)
+        super(Template, self).__init__(options)
         self._template_data = json.load(
             open(os.path.join(self.options.datadir, "template_data.json")))
 
@@ -39,9 +39,12 @@ class Results(base.Command):
 
         LOG.debug("Using template variables: %r" % self._template_data)
 
-        for tmpl, output in self.options.templates.items():
-            LOG.debug("Loading template from %s" % tmpl)
-            template = env.from_string(open(tmpl).read())
+        for tmpl_name in os.listdir(self.options.template_source_dir):
+            tmpl_file = os.path.join(self.options.template_source_dir,
+                                     tmpl_name)
+            LOG.debug("Loading template from %s" % tmpl_file)
+            template = env.from_string(open(tmpl_file).read())
 
-            LOG.info("Writing output to %s" % output)
-            open(output, "w").write(template.render(**self._template_data))
+            dest_file = os.path.join(self.options.template_dest_dir, tmpl_name)
+            LOG.info("Writing output to %s" % dest_file)
+            open(dest_file, "w").write(template.render(**self._template_data))
