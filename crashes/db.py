@@ -47,13 +47,13 @@ class Fixture(collections.Mapping):
 
 class DateTimeSerializer(tinydb_serialization.Serializer):
     OBJ_CLASS = datetime.datetime
-    fmt = "%Y-%m-%dT%H:%M%S"
+    fmt = "%Y-%m-%dT%H:%M:%S"
 
     def encode(self, obj):
         return obj.strftime(self.fmt)
 
     def decode(self, datestr):
-        return datetime.strptime(datestr, self.fmt)
+        return datetime.datetime.strptime(datestr, self.fmt)
 
 
 class TimeSerializer(DateTimeSerializer):
