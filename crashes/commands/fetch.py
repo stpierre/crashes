@@ -9,12 +9,10 @@ import time
 
 import bs4
 import requests
-import sqlalchemy
-from sqlalchemy import func
-from sqlalchemy import orm
+import tinydb
 
 from crashes.commands import base
-from crashes import models
+from crashes import db
 from crashes import utils
 
 LOG = logging.getLogger(__name__)
@@ -64,7 +62,7 @@ class Fetch(base.Command):
         parts = name.split(" (dob) ")
         return " ".join([
             "".join(w[0] for w in parts[0].split()),
-            parts[1]])
+            parts[1]]).strip()
 
     def _parse_tickets(self, case_no, url, post_data):
         time.sleep(random.randint(self.options.sleep_min,
@@ -82,7 +80,6 @@ class Fetch(base.Command):
         page_data = bs4.BeautifulSoup(response.text, "html.parser")
         ticket_table = page_data.find('table', attrs={'width': 800})
 
-        tickets = []
         current_person = None
         for row in ticket_table.find_all("tr"):
             if "person cited" in row.text.lower():
@@ -94,10 +91,9 @@ class Fetch(base.Command):
                 charge = data[3].b.text.strip()
                 LOG.debug("Found ticket for %s: %s" % (current_person,
                                                        charge))
-                tickets.append(models.Ticket(case_no=case_no,
-                                             initials=current_person,
-                                             desc=charge))
-        return tickets
+                db.tickets.insert({"case_no": case_no,
+                                   "initials": current_person,
+                                   "desc": charge})
 
     def _list_reports_for_date(self, date):
         """Get a list of URLs for reports from a given date."""
@@ -121,13 +117,12 @@ class Fetch(base.Command):
             if row.td and row.td.a:
                 cols = row.find_all("td")
                 case_no = cols[0].a.string.strip()
-                if not self.report_exists(case_no):
-                    self.db.add(models.Collision(
-                        case_no=case_no,
-                        date=datetime.datetime.strptime(cols[2].string.strip(),
-                                                        "%m-%d-%Y"),
-                        hit_and_run="H&R" in cols[4].string))
-                    self.db.commit()
+                if not db.collisions.exists(case_no):
+                    db.collisions.insert(
+                        {"case_no": case_no,
+                         "date": datetime.datetime.strptime(
+                             cols[2].string.strip(), "%m-%d-%Y"),
+                         "hit_and_run": "H&R" in cols[4].string})
 
                     submit = cols[5].input
                     if submit:
@@ -135,9 +130,8 @@ class Fetch(base.Command):
                             "CGI": ticket_token,
                             submit["name"]: submit["value"]}
 
-                        self.db.add_all(self._parse_tickets(case_no, ticket_url,
-                                                            ticket_post_data))
-                        self.db.commit()
+                        self._parse_tickets(case_no, ticket_url,
+                                            ticket_post_data)
 
                 yield cols[0].a['href'].strip()
 
@@ -145,7 +139,8 @@ class Fetch(base.Command):
         """Generate all dates in the desired range, not including today."""
         end = datetime.date.today()
         if self.options.autostart:
-            last = self.db.query(func.max(models.Collision.date)).one()[0]
+            last = max(r["date"] for r in db.collisions.all()
+                       if "date" in r)
             current = last - datetime.timedelta(2)
         elif self.options.start:
             current = self.options.start.date()
@@ -161,28 +156,13 @@ class Fetch(base.Command):
 
             current += datetime.timedelta(1)
 
-    def report_exists(self, case_no, *filters):
-        try:
-            query = self.db.query(models.Collision).filter(
-                models.Collision.case_no == case_no)
-            for fltr in filters:
-                query = query.filter(fltr)
-            LOG.info("Found case in database: %s", query.one())
-            return True
-        except orm.exc.NoResultFound:
-            return False
-
-    def report_parsed(self, case_no):
-        return self.report_exists(case_no,
-                                  models.Collision.parsed != True)
-
     def _download_report(self, url, force=False):
         """Download the report at the URL to the pdfdir."""
         filename = os.path.split(url)[1]
         filepath = os.path.join(self.options.pdfdir, filename)
         case_no = utils.filename_to_case_no(filename)
 
-        if not force and self.report_parsed(case_no):
+        if not force and db.collisions.parsed(case_no):
             LOG.debug("Already parsed %s, skipping" % case_no)
         elif os.path.exists(filepath):
             LOG.debug("%s already exists, skipping" % filepath)
@@ -211,9 +191,10 @@ class Fetch(base.Command):
             self._fetch_by_date()
 
     def _fetch_curated(self):
-        reports = self.db.query(models.Collision).filter(
-            models.Collision.road_location_name.isnot(None)).filter(
-                sqlalchemy.not_(models.Collision.case_no.like("NDOR%"))).all()
+        collision = tinydb.Query()
+        reports = db.collisions.search(
+            (collision.road_location != None) &
+            (~collision.case_no.matches("NDOR")))
         for report in reports:
             filename = utils.case_no_to_filename(report.case_no)
             prefix = filename[0:4]

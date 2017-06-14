@@ -1,0 +1,13 @@
+---
+- name: driver
+  shortcut: D
+  desc: Driver only left scene
+- name: cyclist
+  shortcut: C
+  desc: Cyclist only left scene
+- name: both
+  shortcut: 2
+  desc: Both driver and cyclist left the scene
+- name: unknown
+  shortcut: N
+  desc: Not a hit-and-run/unclear who left

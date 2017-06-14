@@ -10,6 +10,7 @@ import yaml
 
 from crashes import commands
 from crashes.commands import base
+from crashes import db
 from crashes import log
 
 LOG = log.getLogger(__name__)
@@ -39,7 +40,10 @@ DEFAULTS = {
         "imagedir": "images",
         "graph_data": "graph",
         "bike_route_geojson": "bike-paths.geojson",
-        "csvdir": "csv"
+        "csvdir": "csv",
+        "layout": "layout.yml",
+        "fixtures": "fixtures",
+        "db": "db",
     },
     "templates": {
         "sourcedir": "templates",
@@ -93,6 +97,7 @@ def parse_args():
     options.form_token = _get_config("form", "token")
     options.sleep_min = int(_get_config("form", "sleep_min"))
     options.sleep_max = int(_get_config("form", "sleep_max"))
+
     options.fetch_days = int(_get_config("fetch", "days"))
     options.fetch_start = _get_config("fetch", "start")
     options.fetch_retries = int(_get_config("fetch", "retries"))
@@ -111,6 +116,11 @@ def parse_args():
     options.graph_data = _canonicalize(_get_config("files", "graph_data"),
                                        options.datadir)
     options.csvdir = _canonicalize(_get_config("files", "csvdir"), os.getcwd())
+    options.layout = _canonicalize(_get_config("files", "layout"), os.getcwd())
+    options.fixtures = _canonicalize(_get_config("files", "fixtures"),
+                                     options.datadir)
+    options.dbdir = _canonicalize(_get_config("files", "db"),
+                                  options.datadir)
 
     options.template_source_dir = _canonicalize(
         _get_config("templates", "sourcedir"),
@@ -130,6 +140,7 @@ def parse_args():
 def main():
     options = parse_args()
     log.setup_logging(options.verbose)
+    db.init(options.dbdir, options.fixtures)
 
     if not os.path.exists(options.datadir):
         LOG.info("Creating datadir %s" % options.datadir)

@@ -1,0 +1,27 @@
+---
+- id: 1
+  desc: Head
+- id: 2
+  desc: Face
+- id: 3
+  desc: Neck
+- id: 4
+  desc: Chest
+- id: 5
+  desc: Back/spine
+- id: 6
+  desc: Shoulder/upper arm
+- id: 7
+  desc: Elbow/lower arm/hand
+- id: 8
+  desc: Abdomen/pelvis
+- id: 9
+  desc: Hip/upper leg
+- id: 10
+  desc: Knee/lower leg/foot
+- id: 11
+  desc: Entire body
+- id: 12
+  desc: Unknown
+- id: 13
+  desc: null

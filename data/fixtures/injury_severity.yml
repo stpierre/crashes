@@ -1,0 +1,11 @@
+---
+- id: 1
+  desc: Killed
+- id: 2
+  desc: Disabling
+- id: 3
+  desc: Visible but not disabling
+- id: 4
+  desc: Possible but not visible
+- id: 5
+  desc: Uninjured
