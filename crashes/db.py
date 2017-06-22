@@ -49,21 +49,30 @@ class DateTimeSerializer(tinydb_serialization.Serializer):
     OBJ_CLASS = datetime.datetime
     fmt = "%Y-%m-%dT%H:%M:%S"
 
+    def converter(self, obj):
+        return obj
+
     def encode(self, obj):
         return obj.strftime(self.fmt)
 
     def decode(self, datestr):
-        return datetime.datetime.strptime(datestr, self.fmt)
+        return self.converter(datetime.datetime.strptime(datestr, self.fmt))
 
 
 class TimeSerializer(DateTimeSerializer):
     OBJ_CLASS = datetime.time
     fmt = "%H:%M:%S"
 
+    def converter(self, obj):
+        return obj.time()
+
 
 class DateSerializer(DateTimeSerializer):
     OBJ_CLASS = datetime.date
     fmt = "%Y-%m-%d"
+
+    def converter(self, obj):
+        return obj.date()
 
 
 class Collisions(tinydb.TinyDB):
@@ -75,6 +84,13 @@ class Collisions(tinydb.TinyDB):
         collision = tinydb.Query()
         return bool(self.get((collision.case_no == case_no) &
                              (collision.parsed == True)))
+
+    def upsert(self, record):
+        if self.exists(record["case_no"]):
+            collision = tinydb.Query()
+            return self.update(record, collision.case_no == record["case_no"])
+        else:
+            return self.insert(record)
 
 
 _base_path = None
@@ -91,18 +107,20 @@ collisions = None
 traffic = None
 
 
-def init(db_path, fixture_path):
-    global _base_path, tickets, collisions, traffic
-    _base_path = fixture_path
-
+def _init_db(filename, cls=tinydb.TinyDB):
     serialization = tinydb_serialization.SerializationMiddleware()
     serialization.register_serializer(DateTimeSerializer(), 'TinyDateTime')
     serialization.register_serializer(DateSerializer(), 'TinyDate')
     serialization.register_serializer(TimeSerializer(), 'TinyTime')
 
-    tickets = tinydb.TinyDB(os.path.join(db_path, "tickets.json"),
-                            storage=serialization)
-    collisions = Collisions(os.path.join(db_path, "collisions.json"),
-                            storage=serialization)
-    traffic = tinydb.TinyDB(os.path.join(db_path, "traffic.json"),
-                            storage=serialization)
+    return cls(filename, storage=serialization)
+
+
+def init(db_path, fixture_path):
+    global _base_path, tickets, collisions, traffic
+    _base_path = fixture_path
+
+    tickets = _init_db(os.path.join(db_path, "tickets.json"))
+    collisions = _init_db(os.path.join(db_path, "collisions.json"),
+                          cls=Collisions)
+    traffic = _init_db(os.path.join(db_path, "traffic.json"))

@@ -140,7 +140,8 @@ class Fetch(base.Command):
         end = datetime.date.today()
         if self.options.autostart:
             last = max(r["date"] for r in db.collisions.all()
-                       if "date" in r)
+                       if r.get("date"))
+            LOG.debug("Last report was fetched from %s", last)
             current = last - datetime.timedelta(2)
         elif self.options.start:
             current = self.options.start.date()

@@ -18,10 +18,11 @@ from pdfminer import pdfparser
 from pdfminer import psparser
 from six.moves import queue
 import sqlalchemy
+import tinydb
 
 from crashes.commands import base
+from crashes import db
 from crashes import log
-from crashes import models
 from crashes import utils
 
 LOG = log.getLogger(__name__)
@@ -464,35 +465,32 @@ class Parse(base.Command):
             try:
                 result = self._result_queue.get(True, timeout)
                 if result:
-                    results.append(result)
+                    LOG.debug("Got result for %(case_no)s from result queue" %
+                              result)
+                    if self.options.file:
+                        print(json.dumps(result))
+                    else:
+                        db.collisions.upsert(result)
             except queue.Empty:
                 break
-        LOG.debug("Got %s results from result queue" % len(results))
-
-        if len(results):
-            if self.options.files:
-                print(json.dumps(results))
-            else:
-                for result in results:
-                    self.db.merge(models.Collision(**result))
-        return results
 
     def __call__(self):
         if self.options.files:
             filelist = self.options.files
         elif self.options.reparse_curated:
-            reports = self.db.query(models.Collision).filter(
-                models.Collision.road_location_name.isnot(None)).filter(
-                    sqlalchemy.not_(
-                        models.Collision.case_no.like("NDOR%"))).all()
+            collision = tinydb.Query()
+            reports = [
+                r for r in db.collisions.get((collision.road_location != None))
+                if not r.startswith("NDOR")]
             filelist = [
                 os.path.join(self.options.pdfdir,
                              utils.case_no_to_filename(report.case_no))
                 for report in reports]
         else:
-            reports = self.db.query(models.Collision).filter(
-                sqlalchemy.not_(models.Collision.case_no.like("NDOR%"))).filter(
-                    models.Collision.parsed == True).all()
+            collision = tinydb.Query()
+            reports = [
+                r for r in db.collisions.get((collision.parsed == True))
+                if not r.startswith("NDOR")]
             case_numbers = [report.case_no for report in reports]
             filelist = [
                 fpath

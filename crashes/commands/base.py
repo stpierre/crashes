@@ -2,9 +2,6 @@
 
 import logging
 
-import sqlalchemy
-from sqlalchemy import orm
-
 LOG = logging.getLogger(__name__)
 
 
