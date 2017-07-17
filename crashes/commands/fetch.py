@@ -1,7 +1,6 @@
 """Command to download reports from LPD."""
 
 import datetime
-import glob
 import logging
 import os
 import random

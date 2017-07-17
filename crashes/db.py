@@ -1,10 +1,13 @@
 import collections
 import datetime
+import logging
 import os
 
 import tinydb
 import tinydb_serialization
 import yaml
+
+LOG = logging.getLogger(__name__)
 
 
 class FixtureNotReady(Exception):
@@ -108,6 +111,7 @@ traffic = None
 
 
 def _init_db(filename, cls=tinydb.TinyDB):
+    LOG.debug("Initializing database at %s", filename)
     serialization = tinydb_serialization.SerializationMiddleware()
     serialization.register_serializer(DateTimeSerializer(), 'TinyDateTime')
     serialization.register_serializer(DateSerializer(), 'TinyDate')
@@ -120,7 +124,11 @@ def init(db_path, fixture_path):
     global _base_path, tickets, collisions, traffic
     _base_path = fixture_path
 
+    LOG.debug("Initializing databases...")
+
     tickets = _init_db(os.path.join(db_path, "tickets.json"))
     collisions = _init_db(os.path.join(db_path, "collisions.json"),
                           cls=Collisions)
     traffic = _init_db(os.path.join(db_path, "traffic.json"))
+
+    LOG.debug("Database initialization complete")

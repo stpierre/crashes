@@ -17,7 +17,6 @@ from pdfminer import pdfpage
 from pdfminer import pdfparser
 from pdfminer import psparser
 from six.moves import queue
-import sqlalchemy
 import tinydb
 
 from crashes.commands import base
@@ -467,7 +466,7 @@ class Parse(base.Command):
                 if result:
                     LOG.debug("Got result for %(case_no)s from result queue" %
                               result)
-                    if self.options.file:
+                    if self.options.files:
                         print(json.dumps(result))
                     else:
                         db.collisions.upsert(result)
@@ -475,27 +474,30 @@ class Parse(base.Command):
                 break
 
     def __call__(self):
+        LOG.debug("Building list of files to parse...")
         if self.options.files:
             filelist = self.options.files
         elif self.options.reparse_curated:
             collision = tinydb.Query()
             reports = [
-                r for r in db.collisions.get((collision.road_location != None))
-                if not r.startswith("NDOR")]
+                r for r in db.collisions.search(collision.road_location != None)
+                if not r["case_no"].startswith("NDOR")]
             filelist = [
                 os.path.join(self.options.pdfdir,
                              utils.case_no_to_filename(report.case_no))
                 for report in reports]
         else:
             collision = tinydb.Query()
-            reports = [
-                r for r in db.collisions.get((collision.parsed == True))
-                if not r.startswith("NDOR")]
-            case_numbers = [report.case_no for report in reports]
+            case_numbers = [
+                r["case_no"]
+                for r in db.collisions.search(collision.parsed == True)
+                if not r["case_no"].startswith("NDOR")]
             filelist = [
                 fpath
                 for fpath in glob.glob(os.path.join(self.options.pdfdir, "*"))
                 if utils.filename_to_case_no(fpath) not in case_numbers]
+
+        LOG.debug("Parsing %s files" % len(filelist))
 
         if len(filelist) < self.options.processes:
             LOG.debug("Fewer files than processes (%s files, %s processes)" %
