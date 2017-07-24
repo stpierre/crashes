@@ -17,7 +17,6 @@ from pdfminer import pdfpage
 from pdfminer import pdfparser
 from pdfminer import psparser
 from six.moves import queue
-import tinydb
 
 from crashes.commands import base
 from crashes import db
@@ -459,13 +458,14 @@ class Parse(base.Command):
         self._terminate = multiprocessing.Event()
 
     def _handle_results(self, timeout=1):
-        results = []
         while True:
             try:
                 result = self._result_queue.get(True, timeout)
                 if result:
                     LOG.debug("Got result for %(case_no)s from result queue" %
                               result)
+                    LOG.debug("%s items still in result queue" %
+                              self._result_queue.qsize())
                     if self.options.files:
                         print(json.dumps(result))
                     else:
@@ -478,20 +478,18 @@ class Parse(base.Command):
         if self.options.files:
             filelist = self.options.files
         elif self.options.reparse_curated:
-            collision = tinydb.Query()
-            reports = [
-                r for r in db.collisions.search(collision.road_location != None)
-                if not r["case_no"].startswith("NDOR")]
+            reports = [r for r in db.collisions
+                       if r["road_location"] is not None and
+                       not r["case_no"].startswith("NDOR")]
             filelist = [
                 os.path.join(self.options.pdfdir,
                              utils.case_no_to_filename(report.case_no))
                 for report in reports]
         else:
-            collision = tinydb.Query()
             case_numbers = [
                 r["case_no"]
-                for r in db.collisions.search(collision.parsed == True)
-                if not r["case_no"].startswith("NDOR")]
+                for r in db.collisions
+                if r["parsed"] and not r["case_no"].startswith("NDOR")]
             filelist = [
                 fpath
                 for fpath in glob.glob(os.path.join(self.options.pdfdir, "*"))

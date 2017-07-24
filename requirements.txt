@@ -11,6 +11,3 @@ numpy
 PyYAML
 sqlalchemy
 unicodecsv
-tinydb
-ujson
-tinydb-serialization

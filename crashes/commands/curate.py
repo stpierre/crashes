@@ -11,7 +11,7 @@ from six.moves import input
 import termcolor
 
 from crashes.commands import base
-from crashes import models
+from crashes import db
 
 
 LOG = logging.getLogger(__name__)
@@ -51,12 +51,15 @@ class StatusDict(collections.MutableMapping):
     def help(self):
         rv = []
         for key, status in self.items():
-            rv.append("%s: %s" % (key, status.description))
+            if status.name:
+                rv.append("%s (%s): %s" % (key, status.name, status.description))
+            else:
+                rv.append("%s: %s" % (key, status.description))
         return "\n".join(rv)
 
     @property
     def choices(self):
-        return "/".join(self.keys())
+        return "/".join(str(k) for k in self.keys())
 
     def input(self, default=None):
         if default:
@@ -86,18 +89,26 @@ class Curate(base.Command):
         r'crosswalk|sidewalk|intersection)',
         re.I)
 
-    results_column = "road_location_name"
-    status_table = models.Location
+    results_column = "road_location"
+    status_fixture = db.location
 
     def __init__(self, options):
         super(Curate, self).__init__(options)
-        self.statuses = self.get_statuses()
+        # NOTE(stpierre): we have to defer the population of
+        # self._statuses until after the constructor is called, since
+        # it depends on database initialization to read the fixture
+        # data. But db init is called after option parsing, which is
+        # when the constructor is called.
+        self._statuses = None
 
-    def get_statuses(self):
-        statuses = StatusDict()
-        for status in self.db.query(self.status_table).all():
-            statuses[status.shortcut] = CurationStatus(status.name,
-                                                       status.desc)
+    @property
+    def statuses(self):
+        if self._statuses is None:
+            self._statuses = StatusDict()
+            for name, status in self.status_fixture.items():
+                self._statuses[status["shortcut"]] = CurationStatus(
+                    name, status["desc"])
+        return self._statuses
 
     def _get_default(self, report):
         return None
@@ -108,25 +119,30 @@ class Curate(base.Command):
     def _get_answer(self, report):
         return self.statuses.input(default=self._get_default(report))
 
-    def __call__(self):
-        column = getattr(models.Collision, self.results_column)
+    def curate_case(self, report):
+        return True
 
+    def __call__(self):
         complete = 0
-        to_curate = self.db.query(models.Collision).filter(
-            column.is_(None)).all()
+        to_curate = []
+        for report in db.collisions:
+            if report.get(self.results_column) is None:
+                if report["report"] is None:
+                    LOG.debug("%s has no report, skipping", report["case_no"])
+                elif not self.search_re.search(report["report"]):
+                    LOG.debug("%s doesn't match the search regex, skipping",
+                              report["case_no"])
+                elif self.curate_case(report):
+                    to_curate.append(report)
+                else:
+                    LOG.debug("Skipping curation on %s", report["case_no"])
+
         for report in to_curate:
-            if report.report is None:
-                LOG.debug("%s has no report, skipping", report.case_no)
-                continue
-            elif not self.search_re.search(report.report):
-                LOG.debug("%s doesn't match the search regex, skipping",
-                          report.case_no)
-                continue
-            split = self.highlight_re.split(report.report)
+            split = self.highlight_re.split(report["report"])
 
             # manually curate collisions
-            print(termcolor.colored("%-10s %50s" % (report.case_no,
-                                                    report.date),
+            print(termcolor.colored("%-10s %50s" % (report["case_no"],
+                                                    report["date"]),
                                     'red', attrs=['bold']))
             # colorize matches in the output to make it easier to curate
             for i in range(1, len(split), 2):
@@ -136,8 +152,8 @@ class Curate(base.Command):
             ans = self._get_answer(report)
             if ans:
                 complete += 1
-                setattr(report, self.results_column, ans)
-                self.db.commit()
+                report[self.results_column] = ans
+                db.collisions.update_one(report)
             LOG.info("%s/%s curated (%.02f%%)" %
                      (complete, len(to_curate),
                       100 * complete / float(len(to_curate))))
