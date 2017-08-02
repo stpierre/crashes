@@ -8,7 +8,6 @@ import time
 
 import bs4
 import requests
-import tinydb
 
 from crashes.commands import base
 from crashes import db
@@ -90,7 +89,7 @@ class Fetch(base.Command):
                 charge = data[3].b.text.strip()
                 LOG.debug("Found ticket for %s: %s" % (current_person,
                                                        charge))
-                db.tickets.insert({"case_no": case_no,
+                db.tickets.append({"case_no": case_no,
                                    "initials": current_person,
                                    "desc": charge})
 
@@ -117,10 +116,10 @@ class Fetch(base.Command):
                 cols = row.find_all("td")
                 case_no = cols[0].a.string.strip()
                 if not db.collisions.exists(case_no):
-                    db.collisions.insert(
+                    db.collisions.append(
                         {"case_no": case_no,
                          "date": datetime.datetime.strptime(
-                             cols[2].string.strip(), "%m-%d-%Y"),
+                             cols[2].string.strip(), "%m-%d-%Y").date(),
                          "hit_and_run": "H&R" in cols[4].string})
 
                     submit = cols[5].input
@@ -138,8 +137,7 @@ class Fetch(base.Command):
         """Generate all dates in the desired range, not including today."""
         end = datetime.date.today()
         if self.options.autostart:
-            last = max(r["date"] for r in db.collisions.all()
-                       if r.get("date"))
+            last = max(r["date"] for r in db.collisions if r.get("date"))
             LOG.debug("Last report was fetched from %s", last)
             current = last - datetime.timedelta(2)
         elif self.options.start:
@@ -162,7 +160,7 @@ class Fetch(base.Command):
         filepath = os.path.join(self.options.pdfdir, filename)
         case_no = utils.filename_to_case_no(filename)
 
-        if not force and db.collisions.parsed(case_no):
+        if not force and db.collisions[case_no].get("parsed"):
             LOG.debug("Already parsed %s, skipping" % case_no)
         elif os.path.exists(filepath):
             LOG.debug("%s already exists, skipping" % filepath)
@@ -191,10 +189,9 @@ class Fetch(base.Command):
             self._fetch_by_date()
 
     def _fetch_curated(self):
-        collision = tinydb.Query()
-        reports = db.collisions.search(
-            (collision.road_location != None) &
-            (~collision.case_no.matches("NDOR")))
+        reports = [c for c in db.collisions
+                   if c["road_location"] is not None and
+                   not c["case_no"].startswith("NDOR")]
         for report in reports:
             filename = utils.case_no_to_filename(report.case_no)
             prefix = filename[0:4]

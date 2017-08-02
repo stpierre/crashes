@@ -208,12 +208,12 @@ class Database(collections.MutableSequence):
 
     def __len__(self):
         self._load()
-        return len(self._data())
+        return len(self._data)
 
     def insert(self, idx, value):
         self._load()
-        self._data.insert(idx, value)
-        self.save()
+        self._data.insert(idx, self._serialize(value))
+        self._save()
 
     def __str__(self):
         if self._data is None:
@@ -238,6 +238,14 @@ class KeyedDatabase(Database):
         if self._by_key is None:
             self._by_key = {d[self.key]: d for d in self._data}
 
+    def __getitem__(self, key):
+        self._load()
+        if key in self._by_key:
+            data = self._by_key[key]
+        else:
+            data = self._data[key]
+        return self._deserialize(data)
+
     def __setitem__(self, key, value):
         self._load()
         if key in self._by_key:
@@ -256,10 +264,6 @@ class KeyedDatabase(Database):
     def insert(self, idx, value):
         super(KeyedDatabase, self).insert(idx, value)
         self._by_key[value[self.key]] = value
-
-    def get_one(self, key):
-        self._load()
-        return self._by_key[key]
 
     def exists(self, key):
         self._load()
