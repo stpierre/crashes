@@ -311,16 +311,16 @@ class PDFFinder(object):
             for locator in missing_locators[:]:
                 if locator.check_text(obj):
                     logtext = self.newline_re.sub(r'\\n', get_text(obj))
-                    LOG.debug("Found locator %s for %s on page %s: %s ('%s')" %
-                              (locator, self.name, page, obj, logtext))
+                    LOG.debug("Found locator %s for %s on page %s: %s ('%s')",
+                              locator, self.name, page, obj, logtext)
                     locator_objs.append(obj)
                     missing_locators.remove(locator)
         if len(missing_locators):
-            LOG.info("Missing locators for %s on page %s: %s" %
-                     (self.name, page, missing_locators))
+            LOG.debug("Missing locators for %s on page %s: %s",
+                      self.name, page, missing_locators)
             return
-        LOG.debug("Found bounds for %s on page %s: %s" % (
-            self.name, page, self.bounds))
+        LOG.debug("Found bounds for %s on page %s: %s",
+                  self.name, page, self.bounds)
 
         return [obj for obj in layout
                 if obj not in locator_objs and self.bounds.contains(obj)]
@@ -330,10 +330,10 @@ class PDFFinder(object):
 
         Raises NotFound if no value is found.
         """
-        LOG.debug("Finding %s on page %s" % (self.name, page))
+        LOG.debug("Finding %s on page %s", self.name, page)
         candidates = self._get_bounded_objects(layout, page=page)
         if not candidates:
-            LOG.debug("No %s found on page %s" % (self.name, page))
+            LOG.debug("No %s found on page %s", self.name, page)
             raise NotFound()
         if self.type == 'longest':
             longest = ''
@@ -344,18 +344,18 @@ class PDFFinder(object):
                     longest = text
                     obj = candidate
             if longest:
-                LOG.debug("Found %s on page %s: %s (%s)" %
-                          (self.name, page, longest, obj))
+                LOG.debug("Found %s on page %s: %s (%s)",
+                          self.name, page, longest, obj)
                 return longest
             else:
-                LOG.debug("No %s found on page %s" % (self.name, page))
+                LOG.debug("No %s found on page %s", self.name, page)
                 raise NotFound()
         elif self.type:
             for candidate in candidates:
                 text = get_text(candidate)
                 logtext = self.newline_re.sub(r'\\n', text)
-                LOG.debug("%s: Checking text '%s' against type" % (self.name,
-                                                                   logtext))
+                LOG.debug("%s: Checking text '%s' against type",
+                          self.name, logtext)
                 try:
                     retval = self.type(text)
                     LOG.debug("%s: Converted text '%s' to: %s" %
@@ -364,19 +364,19 @@ class PDFFinder(object):
                               (self.name, page, retval, candidate))
                     return retval
                 except Exception as err:
-                    LOG.debug("%s: Error converting text '%s' to type: %s" %
-                              (self.name, logtext, err))
-            LOG.debug("No %s matches correct type on page %s" % (self.name,
-                                                                 page))
+                    LOG.debug("%s: Error converting text '%s' to type: %s",
+                              self.name, logtext, err)
+            LOG.debug("No %s matches correct type on page %s", self.name,
+                      page)
             raise NotFound()
         else:
             if len(candidates) > 1:
-                LOG.warning("Multiple candidates found for %s: %s" %
-                            (self.name, candidates))
+                LOG.warning("Multiple candidates found for %s: %s",
+                            self.name, candidates)
             obj = candidates[0]
             text = get_text(obj)
-            LOG.debug("Found %s on page %s: %s (%s)" % (self.name, page,
-                                                        text, obj))
+            LOG.debug("Found %s on page %s: %s (%s)", self.name, page,
+                      text, obj)
             return text
 
     def update(self, layout, page=None):
@@ -386,7 +386,7 @@ class PDFFinder(object):
         by page, and each PDFFinder can be update()'d to collect the
         first value, or all values for multi-valued PDFFinders.
         """
-        LOG.debug("Updating field %s" % self.name)
+        LOG.debug("Updating field %s", self.name)
         try:
             if self.multiple:
                 newval = self.get(layout, page=page)
@@ -406,8 +406,8 @@ class PDFFinder(object):
         try:
             return self.serialize(self._data)
         except Exception as err:
-            LOG.warning("Failed to serialize %s '%s': %s" %
-                        (self.name, self._data, err))
+            LOG.warning("Failed to serialize %s '%s': %s",
+                        self.name, self._data, err)
             return None
 
 
@@ -462,9 +462,9 @@ class Parse(base.Command):
             try:
                 result = self._result_queue.get(True, timeout)
                 if result:
-                    LOG.debug("Got result for %(case_no)s from result queue" %
+                    LOG.debug("Got result for %(case_no)s from result queue",
                               result)
-                    LOG.debug("%s items still in result queue" %
+                    LOG.debug("%s items still in result queue",
                               self._result_queue.qsize())
                     if self.options.files:
                         print(json.dumps(result))
@@ -489,20 +489,20 @@ class Parse(base.Command):
             case_numbers = [
                 r["case_no"]
                 for r in db.collisions
-                if r["parsed"] and not r["case_no"].startswith("NDOR")]
+                if r.get("parsed") and not r["case_no"].startswith("NDOR")]
             filelist = [
                 fpath
                 for fpath in glob.glob(os.path.join(self.options.pdfdir, "*"))
                 if utils.filename_to_case_no(fpath) not in case_numbers]
 
-        LOG.debug("Parsing %s files" % len(filelist))
+        LOG.debug("Parsing %s files", len(filelist))
 
         if len(filelist) < self.options.processes:
-            LOG.debug("Fewer files than processes (%s files, %s processes)" %
-                      (len(filelist), self.options.processes))
+            LOG.debug("Fewer files than processes (%s files, %s processes)",
+                      len(filelist), self.options.processes)
         nprocs = min(len(filelist), self.options.processes)
 
-        LOG.debug("Building %s worker processes" % nprocs)
+        LOG.debug("Building %s worker processes", nprocs)
         processes = [ParseChildProcess(self._terminate,
                                        self._work_queue,
                                        self._result_queue,
@@ -512,10 +512,10 @@ class Parse(base.Command):
 
         for fpath in filelist:
             self._work_queue.put(fpath)
-        LOG.debug("Added %s file paths to work queue" %
+        LOG.debug("Added %s file paths to work queue",
                   self._work_queue.qsize())
 
-        LOG.debug("Starting %s worker processes" % len(processes))
+        LOG.debug("Starting %s worker processes", len(processes))
         for process in processes:
             process.start()
 
@@ -534,23 +534,23 @@ class Parse(base.Command):
                         if process.is_alive():
                             running = True
                         else:
-                            LOG.debug("Process %s completed" % process.name)
+                            LOG.debug("Process %s completed", process.name)
                     elif self._terminate:
-                        LOG.debug("Process %s exited" % process.name)
+                        LOG.debug("Process %s exited", process.name)
                     else:
-                        LOG.warn("Process %s exited unexpectedly" %
+                        LOG.warn("Process %s exited unexpectedly",
                                  process.name)
                     if not running:
                         processes.remove(process)
-                LOG.debug("%s processes still running" % len(processes))
-                LOG.debug("%s items still in work queue" %
+                LOG.debug("%s processes still running", len(processes))
+                LOG.debug("%s items still in work queue",
                           self._work_queue.qsize())
             except (SystemExit, KeyboardInterrupt):
-                LOG.info("Stopping %s processes" % len(processes))
+                LOG.info("Stopping %s processes", len(processes))
                 self._terminate.set()
             except Exception:
                 self._terminate.set()
-                LOG.error("Uncaught exception: %s" % traceback.format_exc())
+                LOG.error("Uncaught exception: %s", traceback.format_exc())
 
         # handle any more results that have arrived between the time
         # that results were handled and all processes stopped.
@@ -671,7 +671,7 @@ class ParseChildProcess(multiprocessing.Process):
 
     def _parse_pdf(self, stream):
         """Parse a single PDF and return the date and description."""
-        LOG.info("Parsing accident report data from %s" % stream.name)
+        LOG.info("Parsing accident report data from %s", stream.name)
         fields = self._get_fields()
 
         try:
@@ -682,13 +682,13 @@ class ParseChildProcess(multiprocessing.Process):
                 rsrcmgr, laparams=pdflayout.LAParams())
             interpreter = pdfinterp.PDFPageInterpreter(rsrcmgr, device)
         except psparser.PSException as err:
-            LOG.warn("Parsing %s failed, skipping: %s" % (stream.name, err))
+            LOG.warn("Parsing %s failed, skipping: %s", stream.name, err)
             return dict([(f.name, f.value) for f in fields])
 
         page_num = 1
 
         for page in pdfpage.PDFPage.create_pages(document):
-            LOG.debug("Parsing page %s" % page_num)
+            LOG.debug("Parsing page %s", page_num)
 
             interpreter.process_page(page)
             layout = device.get_result()
@@ -697,8 +697,8 @@ class ParseChildProcess(multiprocessing.Process):
                 field.update(layout, page=page_num)
                 if (not field.value and field.short_circuit and
                         page_num >= field.maxpage):
-                    LOG.warn("No %s found in %s, aborting parsing" %
-                             (field.name, stream.name))
+                    LOG.warn("No %s found in %s, aborting parsing",
+                             field.name, stream.name)
                     return dict([(f.name, f.value) for f in fields])
 
             page_num += 1
@@ -715,9 +715,9 @@ class ParseChildProcess(multiprocessing.Process):
         while not self._terminate.is_set():
             try:
                 fpath = self._work_queue.get_nowait()
-                LOG.debug("Got file path from work queue: %s" % fpath)
+                LOG.debug("Got file path from work queue: %s", fpath)
                 data = self._get_data(open(fpath, 'rb'))
-                LOG.debug("Returning data for %s to results queue" % fpath)
+                LOG.debug("Returning data for %s to results queue", fpath)
                 self._result_queue.put(data)
             except queue.Empty:
                 LOG.info("Work queue is empty, exiting")
