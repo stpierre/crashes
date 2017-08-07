@@ -49,8 +49,8 @@ class Serializer(object):
         """Serialize a value, including the magic to flag it as serialized."""
         if isinstance(value, self.cls):
             return "%s%s" % (self._magic, self.encode(value))
-        raise SerializationNotSupported("%r is not of type %s" %
-                                        (value, self.cls))
+        raise SerializationNotSupported("%r is not of type %s" % (value,
+                                                                  self.cls))
 
     def deserialize(self, value):
         """Deserialize a value, stripping the magic flag."""
@@ -142,9 +142,7 @@ class Fixture(collections.Mapping):
 
 
 class Database(collections.MutableSequence):
-    serializers = [DatetimeSerializer(),
-                   DateSerializer(),
-                   TimeSerializer()]
+    serializers = [DatetimeSerializer(), DateSerializer(), TimeSerializer()]
 
     def __init__(self, filename):
         self.filename = filename
@@ -219,13 +217,15 @@ class Database(collections.MutableSequence):
         if self._data is None:
             return "%s(%s, not loaded)" % (self.__class__.__name__,
                                            self.filename)
-        return "%s(%s=%s)" % (self.__class__.__name__, self.filename, dict(self))
+        return "%s(%s=%s)" % (self.__class__.__name__, self.filename,
+                              dict(self))
 
     def __repr__(self):
         if self._data is None:
             return "%s(%s, not loaded)" % (self.__class__.__name__,
                                            self.filename)
-        return "%s(%s=%r)" % (self.__class__.__name__, self.filename, dict(self))
+        return "%s(%s=%r)" % (self.__class__.__name__, self.filename,
+                              dict(self))
 
 
 class KeyedDatabase(Database):

@@ -12,3 +12,5 @@ PyYAML
 sqlalchemy
 unicodecsv
 backports.shutil_get_terminal_size
+yapf
+prospector

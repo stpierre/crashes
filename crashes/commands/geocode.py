@@ -18,22 +18,20 @@ from crashes.commands import base
 from crashes import db
 from crashes import log
 
-
 LOG = log.getLogger(__name__)
 
 
 def new_geojson():
-    return {"type": "FeatureCollection",
-            "features": []}
+    return {"type": "FeatureCollection", "features": []}
 
 
 def cleanup_geojson(geojson, case_no):
     retval = copy.deepcopy(geojson)
     retval['properties']['case_no'] = case_no
     # remove some of the extraneous junk from the geojson properties
-    for key in ('status', 'confidence', 'ok', 'encoding',
-                'geometry', 'provider', 'bbox', 'location', 'lat',
-                'lng', 'accuracy', 'quality', 'method'):
+    for key in ('status', 'confidence', 'ok', 'encoding', 'geometry',
+                'provider', 'bbox', 'location', 'lat', 'lng', 'accuracy',
+                'quality', 'method'):
         if key in retval["properties"]:
             del retval['properties'][key]
     return retval
@@ -77,8 +75,8 @@ class Geocode(base.Command):
     quit = object()
 
     def _random_jitter(self):
-        val = (random.random() * (self.jitter_max - self.jitter_min) +
-               self.jitter_min)
+        val = (random.random() *
+               (self.jitter_max - self.jitter_min) + self.jitter_min)
         if random.choice((True, False)):
             val *= -1
         return val
@@ -92,8 +90,10 @@ class Geocode(base.Command):
             report["geojson"]['geometry']['coordinates'] = map(
                 lambda c: operator.add(*c),
                 zip(report["geojson"]['geometry']['coordinates'], adj))
-            report["latitude"] = report["geojson"]["geometry"]["coordinates"][1]
-            report["longitude"] = report["geojson"]["geometry"]["coordinates"][0]
+            report["latitude"] = report["geojson"]["geometry"]["coordinates"][
+                1]
+            report["longitude"] = report["geojson"]["geometry"]["coordinates"][
+                0]
         db.collisions.update_many(reports)
         return retval
 
@@ -131,11 +131,11 @@ class Geocode(base.Command):
             # * Gets confused if there's no space between the
             #   direction and street number, e.g., 'S40th' instead of
             #   'S 40th'.
-            retval = self.no_space_re.sub(
-                r'\1 \2',
-                self.o_re.sub(
-                    'East O',
-                    self.quote_re.sub(r'\1 ', retval)))
+            retval = self.no_space_re.sub(r'\1 \2',
+                                          self.o_re.sub(
+                                              'East O',
+                                              self.quote_re.sub(
+                                                  r'\1 ', retval)))
 
             LOG.debug("Transformed address from %s to %s" % (location, retval))
             return retval, True
@@ -157,8 +157,8 @@ class Geocode(base.Command):
                 # either the default location isn't immediately
                 # searchable; or this is our second time through the
                 # loop, so we have to prompt for user interactionn
-                print("Original: %s" %
-                      termcolor.colored(report["location"], "green"))
+                print("Original: %s" % termcolor.colored(
+                    report["location"], "green"))
                 print("Default: %s" % termcolor.colored(default, "green"))
                 ans = input("Enter to %s, 's' to skip, or enter address: " %
                             ("accept" if retval else "search"))
@@ -179,9 +179,8 @@ class Geocode(base.Command):
                           (address, retval['properties']['status']))
             else:
                 retval = cleanup_geojson(retval, report["case_no"])
-                print("Address: %s" %
-                      termcolor.colored(retval['properties']['address'],
-                                        "green", attrs=["bold"]))
+                print("Address: %s" % termcolor.colored(
+                    retval['properties']['address'], "green", attrs=["bold"]))
 
     def _load_geojson(self, filename, create=True):
         fpath = os.path.join(self.options.geocoding, filename)
@@ -197,12 +196,13 @@ class Geocode(base.Command):
     def __call__(self):
         coded = 0
         for report in db.collisions:
-            if (report.get("road_location") not in (None, "not involved") and
-                    not report.get("skip_geojson") and
-                    report.get("geojson") is None):
-                print(termcolor.colored("%-10s %50s" % (report["case_no"],
-                                                        report["date"]),
-                                        'red', attrs=['bold']))
+            if (report.get("road_location") not in (None, "not involved")
+                    and not report.get("skip_geojson")
+                    and report.get("geojson") is None):
+                print(termcolor.colored(
+                    "%-10s %50s" % (report["case_no"], report["date"]),
+                    'red',
+                    attrs=['bold']))
                 print(textwrap.fill(report["report"]))
                 geojson = self._get_coordinates(report)
                 if geojson is None:
@@ -229,8 +229,9 @@ class Geocode(base.Command):
         for report in db.collisions:
             if report.get("geojson"):
                 geocoded.append(report)
-                key = (round(report["geojson"]['geometry']['coordinates'][0], 6),
-                       round(report["geojson"]['geometry']['coordinates'][1], 6))
+                key = (round(
+                    report["geojson"]['geometry']['coordinates'][0], 6), round(
+                        report["geojson"]['geometry']['coordinates'][1], 6))
                 duplicates.setdefault(key, []).append(report)
 
         for reports in duplicates.values():

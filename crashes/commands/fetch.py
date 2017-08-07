@@ -21,15 +21,14 @@ def retry(func, args=(), kwargs=None, exceptions=None, times=1, wait=5):
     if kwargs is None:
         kwargs = {}
     if exceptions is None:
-        exceptions = (Exception,)
+        exceptions = (Exception, )
     while tries < times:
         tries += 1
         try:
             return func(*args, **kwargs)
         except exceptions as err:
             if tries == times:
-                LOG.error("Retried %s %s times, failed: %s",
-                          func, tries, err)
+                LOG.error("Retried %s %s times, failed: %s", func, tries, err)
                 raise
             else:
                 LOG.info(
@@ -42,10 +41,11 @@ class Fetch(base.Command):
     """Download reports from LPD."""
 
     arguments = [
-        base.Argument("--start",
-                      type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
-        base.Argument("--end",
-                      type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
+        base.Argument(
+            "--start",
+            type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
+        base.Argument(
+            "--end", type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
         base.Argument("--autostart", action="store_true"),
         base.Argument("--refetch-curated", action="store_true")
     ]
@@ -60,18 +60,19 @@ class Fetch(base.Command):
         people in a collision without storing their names.
         """
         parts = name.split(" (dob) ")
-        return " ".join([
-            "".join(w[0] for w in parts[0].split()),
-            parts[1]]).strip()
+        return " ".join(["".join(w[0] for w in parts[0].split()),
+                         parts[1]]).strip()
 
     def _parse_tickets(self, case_no, url, post_data):
-        time.sleep(random.randint(self.options.sleep_min,
-                                  self.options.sleep_max))
+        time.sleep(
+            random.randint(self.options.sleep_min, self.options.sleep_max))
         LOG.info("Fetching tickets for %s", case_no)
-        response = retry(requests.post, args=(url,),
-                         kwargs={"data": post_data},
-                         exceptions=(requests.exceptions.ConnectionError,),
-                         times=self.options.fetch_retries)
+        response = retry(
+            requests.post,
+            args=(url, ),
+            kwargs={"data": post_data},
+            exceptions=(requests.exceptions.ConnectionError, ),
+            times=self.options.fetch_retries)
         if response.status_code != 200:
             LOG.warning("Failed to fetch tickets for %s: %s" %
                         (case_no, response.status_code))
@@ -89,21 +90,26 @@ class Fetch(base.Command):
             elif "cited for" in row.text.lower():
                 data = row.find_all("td")
                 charge = data[3].b.text.strip()
-                LOG.debug("Found ticket for %s: %s" % (current_person,
-                                                       charge))
-                db.tickets.append({"case_no": case_no,
-                                   "initials": current_person,
-                                   "desc": charge})
+                LOG.debug("Found ticket for %s: %s" % (current_person, charge))
+                db.tickets.append({
+                    "case_no": case_no,
+                    "initials": current_person,
+                    "desc": charge
+                })
 
     def _list_reports_for_date(self, date):
         """Get a list of URLs for reports from a given date."""
-        post_data = {"CGI": self.options.form_token,
-                     "rky": '',
-                     "date": date.strftime("%m-%d-%Y")}
-        response = retry(requests.post, args=(self.options.form_url,),
-                         kwargs={"data": post_data},
-                         exceptions=(requests.exceptions.ConnectionError,),
-                         times=self.options.fetch_retries)
+        post_data = {
+            "CGI": self.options.form_token,
+            "rky": '',
+            "date": date.strftime("%m-%d-%Y")
+        }
+        response = retry(
+            requests.post,
+            args=(self.options.form_url, ),
+            kwargs={"data": post_data},
+            exceptions=(requests.exceptions.ConnectionError, ),
+            times=self.options.fetch_retries)
         if response.status_code != 200:
             raise Exception("Failed to list reports for %s: %s" %
                             (date.isoformat(), response.status_code))
@@ -120,24 +126,28 @@ class Fetch(base.Command):
                 record = db.collisions.get(case_no)
                 hit_and_run = "H&R" in cols[4].string
                 if record is None:
-                    db.collisions.append(
-                        {"case_no": case_no,
-                         "date": datetime.datetime.strptime(
-                             cols[2].string.strip(), "%m-%d-%Y").date(),
-                         "hit_and_run": hit_and_run})
+                    db.collisions.append({
+                        "case_no":
+                        case_no,
+                        "date":
+                        datetime.datetime.strptime(cols[2].string.strip(),
+                                                   "%m-%d-%Y").date(),
+                        "hit_and_run":
+                        hit_and_run
+                    })
 
                     submit = cols[5].input
                     if submit:
                         ticket_post_data = {
                             "CGI": ticket_token,
-                            submit["name"]: submit["value"]}
+                            submit["name"]: submit["value"]
+                        }
 
                         self._parse_tickets(case_no, ticket_url,
                                             ticket_post_data)
                 elif hit_and_run != record.get("hit_and_run"):
                     LOG.info("Setting hit-and-run status for %s: %s (was %s)",
-                             case_no, hit_and_run,
-                             record.get("hit_and_run"))
+                             case_no, hit_and_run, record.get("hit_and_run"))
                     record["hit_and_run"] = hit_and_run
                     db.collisions.update_one(record)
 
@@ -182,7 +192,8 @@ class Fetch(base.Command):
         else:
             LOG.debug("Downloading %s to %s" % (url, filepath))
             response = retry(
-                requests.get, args=(url,),
+                requests.get,
+                args=(url, ),
                 kwargs={"stream": True},
                 exceptions=(requests.exceptions.ConnectionError,
                             requests.exceptions.ChunkedEncodingError),
@@ -194,8 +205,8 @@ class Fetch(base.Command):
                 for chunk in response.iter_content():
                     outfile.write(chunk)
             LOG.debug("Wrote data from %s to %s" % (url, filepath))
-            time.sleep(random.randint(self.options.sleep_min,
-                                      self.options.sleep_max))
+            time.sleep(
+                random.randint(self.options.sleep_min, self.options.sleep_max))
 
     def __call__(self):
         if self.options.refetch_curated:
@@ -204,20 +215,22 @@ class Fetch(base.Command):
             self._fetch_by_date()
 
     def _fetch_curated(self):
-        reports = [c for c in db.collisions
-                   if c["road_location"] is not None and
-                   not c["case_no"].startswith("NDOR")]
+        reports = [
+            c for c in db.collisions
+            if c["road_location"] is not None
+            and not c["case_no"].startswith("NDOR")
+        ]
         for report in reports:
             filename = utils.case_no_to_filename(report.case_no)
             prefix = filename[0:4]
-            url = "%s/%s/%s" % (self.options.fetch_direct_base_url,
-                                prefix, filename)
+            url = "%s/%s/%s" % (self.options.fetch_direct_base_url, prefix,
+                                filename)
             self._download_report(url, force=True)
 
     def _fetch_by_date(self):
         for date in self._dates_in_range():
-            time.sleep(random.randint(self.options.sleep_min,
-                                      self.options.sleep_max))
+            time.sleep(
+                random.randint(self.options.sleep_min, self.options.sleep_max))
             LOG.info("Fetching reports from %s" % date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url)

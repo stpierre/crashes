@@ -15,12 +15,11 @@ import termcolor
 from crashes.commands import base
 from crashes import db
 
-
 LOG = logging.getLogger(__name__)
 ROWS = get_terminal_size()[0]
 
-CurationStatus = collections.namedtuple("CurationStatus",
-                                        ("name", "description"))
+CurationStatus = collections.namedtuple("CurationStatus", ("name",
+                                                           "description"))
 
 
 class StatusDict(collections.MutableMapping):
@@ -28,9 +27,11 @@ class StatusDict(collections.MutableMapping):
         self._prompt = prompt
         self._order = []
         self._end = ["K", "Q", "?"]
-        self._statuses = {"K": CurationStatus(None, "Skip"),
-                          "Q": CurationStatus(None, "Quit"),
-                          "?": CurationStatus(None, "Help")}
+        self._statuses = {
+            "K": CurationStatus(None, "Skip"),
+            "Q": CurationStatus(None, "Quit"),
+            "?": CurationStatus(None, "Help")
+        }
 
     def __getitem__(self, key):
         return self._statuses[key]
@@ -53,8 +54,8 @@ class StatusDict(collections.MutableMapping):
 
     @property
     def help(self):
-        longest_key = min(1, max(len(str(key))
-                                 for key in self._statuses.keys()))
+        longest_key = min(1,
+                          max(len(str(key)) for key in self._statuses.keys()))
         indent = " " * (longest_key + 2)
         rv = []
         for key in self:
@@ -63,7 +64,8 @@ class StatusDict(collections.MutableMapping):
                 line = "%s (%s): %s" % (key, status.name, status.description)
             else:
                 line = "%s: %s" % (key, status.description)
-            rv.append(textwrap.fill(line, width=ROWS, subsequent_indent=indent))
+            rv.append(
+                textwrap.fill(line, width=ROWS, subsequent_indent=indent))
         return "\n".join(rv)
 
     @property
@@ -148,8 +150,8 @@ class HitnrunCuration(CurationStep):
         return "D"
 
     def curate_case(self, report):
-        return (report.get("road_location") not in (None, 'not involved') and
-                report.get("hit_and_run", False))
+        return (report.get("road_location") not in (None, 'not involved')
+                and report.get("hit_and_run", False))
 
 
 class Curate(base.Command):
@@ -157,27 +159,25 @@ class Curate(base.Command):
 
     fmt = "%%-10s %%%ds" % (ROWS - 12)
     search_re = re.compile(r'\b(bicycle|bike|(?:bi)?cyclist)\b', re.I)
-    highlight_re = re.compile(
-        r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
-        r'crosswalk|sidewalk|intersection)',
-        re.I)
+    highlight_re = re.compile(r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
+                              r'crosswalk|sidewalk|intersection)', re.I)
 
     def __init__(self, options):
         super(Curate, self).__init__(options)
         self.steps = []
         for name, obj in globals().items():
-            if (not name.startswith("_") and
-                    isinstance(obj, type) and
-                    issubclass(obj, CurationStep) and
-                    obj != CurationStep):
+            if (not name.startswith("_") and isinstance(obj, type)
+                    and issubclass(obj, CurationStep) and obj != CurationStep):
                 self.steps.append(obj(options))
         self.steps.sort(key=operator.attrgetter("order"))
 
     def _print_report(self, report):
         split = self.highlight_re.split(report["report"])
 
-        print(termcolor.colored(self.fmt % (report["case_no"], report["date"]),
-                                'red', attrs=['bold']))
+        print(termcolor.colored(
+            self.fmt % (report["case_no"], report["date"]),
+            'red',
+            attrs=['bold']))
         # colorize matches in the output to make it easier to curate
         for i in range(1, len(split), 2):
             split[i] = termcolor.colored(split[i], 'green', attrs=["bold"])
@@ -186,7 +186,8 @@ class Curate(base.Command):
     def _curate_one(self, report):
         report_printed = False
         for step in self.steps:
-            if not report.get(step.results_column) and step.curate_case(report):
+            if not report.get(step.results_column) and step.curate_case(
+                    report):
                 if not report_printed:
                     self._print_report(report)
                     report_printed = True
@@ -209,6 +210,6 @@ class Curate(base.Command):
                           report["case_no"])
             else:
                 self._curate_one(report)
-                LOG.info("%s/%s curated (%.02f%%)",
-                         complete, total, 100.0 * complete / total)
+                LOG.info("%s/%s curated (%.02f%%)", complete, total,
+                         100.0 * complete / total)
             complete += 1

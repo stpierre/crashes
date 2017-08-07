@@ -63,10 +63,14 @@ def _canonicalize(path, datadir=None):
 def parse_args():
     """Parse arguments and config file."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=argparse.FileType("r"),
-                        default="crashes.yml", help="Path to config file")
-    parser.add_argument("-v", "--verbose", action="count",
-                        default=0, help="Verbosity level")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=argparse.FileType("r"),
+        default="crashes.yml",
+        help="Path to config file")
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Verbosity level")
 
     # collect commands
     subparsers = parser.add_subparsers()
@@ -74,13 +78,11 @@ def parse_args():
         module = loader.find_module(name).load_module(name)
 
         for name, cls in inspect.getmembers(module):
-            if (not isinstance(cls, type) or
-                    not issubclass(cls, base.Command) or
-                    name.startswith('__')):
+            if (not isinstance(cls, type) or not issubclass(cls, base.Command)
+                    or name.startswith('__')):
                 continue
 
-            cmd_parser = subparsers.add_parser(name.lower(),
-                                               help=cls.__doc__)
+            cmd_parser = subparsers.add_parser(name.lower(), help=cls.__doc__)
             cmd_parser.set_defaults(command=cls)
             for arg in cls.arguments:
                 arg.add_to_parser(cmd_parser)
@@ -103,35 +105,32 @@ def parse_args():
     options.fetch_retries = int(_get_config("fetch", "retries"))
     options.fetch_direct_base_url = _get_config("fetch", "direct_base_url")
 
-    options.datadir = _canonicalize(_get_config("files", "datadir"),
-                                    os.getcwd())
-    options.pdfdir = _canonicalize(_get_config("files", "pdfdir"),
-                                   options.datadir)
-    options.geocoding = _canonicalize(_get_config("files", "geocoding"),
-                                      options.datadir)
-    options.imagedir = _canonicalize(_get_config("files", "imagedir"),
-                                     options.datadir)
+    options.datadir = _canonicalize(
+        _get_config("files", "datadir"), os.getcwd())
+    options.pdfdir = _canonicalize(
+        _get_config("files", "pdfdir"), options.datadir)
+    options.geocoding = _canonicalize(
+        _get_config("files", "geocoding"), options.datadir)
+    options.imagedir = _canonicalize(
+        _get_config("files", "imagedir"), options.datadir)
     options.bike_route_geojson = _canonicalize(
         _get_config("files", "bike_route_geojson"))
-    options.graph_data = _canonicalize(_get_config("files", "graph_data"),
-                                       options.datadir)
+    options.graph_data = _canonicalize(
+        _get_config("files", "graph_data"), options.datadir)
     options.csvdir = _canonicalize(_get_config("files", "csvdir"), os.getcwd())
     options.layout = _canonicalize(_get_config("files", "layout"), os.getcwd())
-    options.fixtures = _canonicalize(_get_config("files", "fixtures"),
-                                     options.datadir)
-    options.dbdir = _canonicalize(_get_config("files", "db"),
-                                  options.datadir)
+    options.fixtures = _canonicalize(
+        _get_config("files", "fixtures"), options.datadir)
+    options.dbdir = _canonicalize(_get_config("files", "db"), options.datadir)
 
     options.template_source_dir = _canonicalize(
-        _get_config("templates", "sourcedir"),
-        os.getcwd())
+        _get_config("templates", "sourcedir"), os.getcwd())
     options.template_dest_dir = _canonicalize(
-        _get_config("templates", "destdir"),
-        os.getcwd())
+        _get_config("templates", "destdir"), os.getcwd())
 
     options.database = _get_config("database", "uri")
-    options.dumpdir = _canonicalize(_get_config("database", "dumpdir"),
-                                    options.datadir)
+    options.dumpdir = _canonicalize(
+        _get_config("database", "dumpdir"), options.datadir)
 
     options.func = options.command(options)
     return options

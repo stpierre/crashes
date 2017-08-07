@@ -48,8 +48,8 @@ class LocatorAdjustment(collections.Iterable):
 
     def __repr__(self):
         return "%s(xmin=%s, xmax=%s, ymin=%s, ymax=%s)" % (
-            self.__class__.__name__,
-            self.xmin, self.xmax, self.ymin, self.ymax)
+            self.__class__.__name__, self.xmin, self.xmax, self.ymin,
+            self.ymax)
 
     @staticmethod
     def _min(num1, num2):
@@ -78,10 +78,10 @@ class LocatorAdjustment(collections.Iterable):
 
     def contains(self, obj):
         """Whether or not an object is contained within the bounds."""
-        return ((self.ymin is None or obj.y0 > self.ymin) and
-                (self.ymax is None or obj.y1 < self.ymax) and
-                (self.xmin is None or obj.x0 > self.xmin) and
-                (self.xmax is None or obj.x1 < self.xmax))
+        return ((self.ymin is None or obj.y0 > self.ymin)
+                and (self.ymax is None or obj.y1 < self.ymax)
+                and (self.xmin is None or obj.x0 > self.xmin)
+                and (self.xmax is None or obj.x1 < self.xmax))
 
     def expand_limits(self, other):
         """Expand the limits of this object with the limits of another.
@@ -256,8 +256,15 @@ class PDFFinder(object):
     newline_re = re.compile(r'\n')
     _sentinel = object()
 
-    def __init__(self, name, locators, minpage=None, maxpage=None, type=None,
-                 multiple=False, default=_sentinel, serialize=None,
+    def __init__(self,
+                 name,
+                 locators,
+                 minpage=None,
+                 maxpage=None,
+                 type=None,
+                 multiple=False,
+                 default=_sentinel,
+                 serialize=None,
                  short_circuit=False):
         self.name = name
         self.locators = locators
@@ -297,9 +304,9 @@ class PDFFinder(object):
         within them, e.g., potentially AlignedWith and VAlignedWith
         Locators.)
         """
-        if (page is not None and (self.minpage or self.maxpage) and
-                ((self.minpage is not None and page < self.minpage) or
-                 (self.maxpage is not None and page > self.maxpage))):
+        if (page is not None and (self.minpage or self.maxpage)
+                and ((self.minpage is not None and page < self.minpage) or
+                     (self.maxpage is not None and page > self.maxpage))):
             return
 
         for locator in self.locators:
@@ -316,14 +323,16 @@ class PDFFinder(object):
                     locator_objs.append(obj)
                     missing_locators.remove(locator)
         if len(missing_locators):
-            LOG.debug("Missing locators for %s on page %s: %s",
-                      self.name, page, missing_locators)
+            LOG.debug("Missing locators for %s on page %s: %s", self.name,
+                      page, missing_locators)
             return
-        LOG.debug("Found bounds for %s on page %s: %s",
-                  self.name, page, self.bounds)
+        LOG.debug("Found bounds for %s on page %s: %s", self.name, page,
+                  self.bounds)
 
-        return [obj for obj in layout
-                if obj not in locator_objs and self.bounds.contains(obj)]
+        return [
+            obj for obj in layout
+            if obj not in locator_objs and self.bounds.contains(obj)
+        ]
 
     def get(self, layout, page=None):
         """Get the value described by this PDFFinder in the layout.
@@ -344,8 +353,8 @@ class PDFFinder(object):
                     longest = text
                     obj = candidate
             if longest:
-                LOG.debug("Found %s on page %s: %s (%s)",
-                          self.name, page, longest, obj)
+                LOG.debug("Found %s on page %s: %s (%s)", self.name, page,
+                          longest, obj)
                 return longest
             else:
                 LOG.debug("No %s found on page %s", self.name, page)
@@ -354,8 +363,8 @@ class PDFFinder(object):
             for candidate in candidates:
                 text = get_text(candidate)
                 logtext = self.newline_re.sub(r'\\n', text)
-                LOG.debug("%s: Checking text '%s' against type",
-                          self.name, logtext)
+                LOG.debug("%s: Checking text '%s' against type", self.name,
+                          logtext)
                 try:
                     retval = self.type(text)
                     LOG.debug("%s: Converted text '%s' to: %s" %
@@ -366,17 +375,16 @@ class PDFFinder(object):
                 except Exception as err:
                     LOG.debug("%s: Error converting text '%s' to type: %s",
                               self.name, logtext, err)
-            LOG.debug("No %s matches correct type on page %s", self.name,
-                      page)
+            LOG.debug("No %s matches correct type on page %s", self.name, page)
             raise NotFound()
         else:
             if len(candidates) > 1:
-                LOG.warning("Multiple candidates found for %s: %s",
-                            self.name, candidates)
+                LOG.warning("Multiple candidates found for %s: %s", self.name,
+                            candidates)
             obj = candidates[0]
             text = get_text(obj)
-            LOG.debug("Found %s on page %s: %s (%s)", self.name, page,
-                      text, obj)
+            LOG.debug("Found %s on page %s: %s (%s)", self.name, page, text,
+                      obj)
             return text
 
     def update(self, layout, page=None):
@@ -406,8 +414,8 @@ class PDFFinder(object):
         try:
             return self.serialize(self._data)
         except Exception as err:
-            LOG.warning("Failed to serialize %s '%s': %s",
-                        self.name, self._data, err)
+            LOG.warning("Failed to serialize %s '%s': %s", self.name,
+                        self._data, err)
             return None
 
 
@@ -446,10 +454,12 @@ def _parse_gender(text):
 class Parse(base.Command):
     """Extract data from all downloaded reports."""
 
-    arguments = [base.Argument("files", nargs='*'),
-                 base.Argument("--processes", type=int,
-                               default=multiprocessing.cpu_count()),
-                 base.Argument("--reparse-curated", action="store_true")]
+    arguments = [
+        base.Argument("files", nargs='*'),
+        base.Argument(
+            "--processes", type=int, default=multiprocessing.cpu_count()),
+        base.Argument("--reparse-curated", action="store_true")
+    ]
 
     def __init__(self, options):
         super(Parse, self).__init__(options)
@@ -478,22 +488,26 @@ class Parse(base.Command):
         if self.options.files:
             filelist = self.options.files
         elif self.options.reparse_curated:
-            reports = [r for r in db.collisions
-                       if r["road_location"] is not None and
-                       not r["case_no"].startswith("NDOR")]
+            reports = [
+                r for r in db.collisions
+                if r["road_location"] is not None
+                and not r["case_no"].startswith("NDOR")
+            ]
             filelist = [
                 os.path.join(self.options.pdfdir,
                              utils.case_no_to_filename(report.case_no))
-                for report in reports]
+                for report in reports
+            ]
         else:
             case_numbers = [
-                r["case_no"]
-                for r in db.collisions
-                if r.get("parsed") and not r["case_no"].startswith("NDOR")]
+                r["case_no"] for r in db.collisions
+                if r.get("parsed") and not r["case_no"].startswith("NDOR")
+            ]
             filelist = [
                 fpath
                 for fpath in glob.glob(os.path.join(self.options.pdfdir, "*"))
-                if utils.filename_to_case_no(fpath) not in case_numbers]
+                if utils.filename_to_case_no(fpath) not in case_numbers
+            ]
 
         LOG.debug("Parsing %s files", len(filelist))
 
@@ -503,12 +517,14 @@ class Parse(base.Command):
         nprocs = min(len(filelist), self.options.processes)
 
         LOG.debug("Building %s worker processes", nprocs)
-        processes = [ParseChildProcess(self._terminate,
-                                       self._work_queue,
-                                       self._result_queue,
-                                       self.options,
-                                       name="parse-child-%s" % i)
-                     for i in range(nprocs)]
+        processes = [
+            ParseChildProcess(
+                self._terminate,
+                self._work_queue,
+                self._result_queue,
+                self.options,
+                name="parse-child-%s" % i) for i in range(nprocs)
+        ]
 
         for fpath in filelist:
             self._work_queue.put(fpath)
@@ -595,79 +611,99 @@ class ParseChildProcess(multiprocessing.Process):
         objects.
         """
         location = PDFFinder(
-            "location",
-            [AlignedWith(
-                r'ROAD\s+ON\s+WHICH|ACCIDENT\s+OCCURRED|STREET/\s*HIGHWAY\s+NO',
-                fuzz=6),
-             RightOf(r'STREET/\s*HIGHWAY\s+NO'),
-             LeftOf('ONE-WAY')],
-            minpage=1, maxpage=1)
+            "location", [
+                AlignedWith(
+                    r'ROAD\s+ON\s+WHICH|ACCIDENT\s+OCCURRED|STREET/\s*HIGHWAY\s+NO',
+                    fuzz=6),
+                RightOf(r'STREET/\s*HIGHWAY\s+NO'),
+                LeftOf('ONE-WAY')
+            ],
+            minpage=1,
+            maxpage=1)
         date = PDFFinder(
-            "date",
-            [Below(r'of\s+Vehicles', fuzz=1),
-             Above(r'^COUNTY$')],
-            minpage=1, maxpage=1, type=_parse_date,
+            "date", [Below(r'of\s+Vehicles', fuzz=1),
+                     Above(r'^COUNTY$')],
+            minpage=1,
+            maxpage=1,
+            type=_parse_date,
             short_circuit=True)
         time = PDFFinder(
-            "time",
-            [RightOf(r'TIME\s+OF'),
-             AlignedWith(r'TIME\s+OF', fuzz=15),
-             VAlignedWith(r'In Military Time', fuzz=12),
-             Below(r'In Military Time')],
-            minpage=1, maxpage=1, type=_parse_time)
+            "time", [
+                RightOf(r'TIME\s+OF'),
+                AlignedWith(r'TIME\s+OF', fuzz=15),
+                VAlignedWith(r'In Military Time', fuzz=12),
+                Below(r'In Military Time')
+            ],
+            minpage=1,
+            maxpage=1,
+            type=_parse_time)
         report = PDFFinder(
-            "report",
-            [Below(
-                r'DESCRIPTION\s+OF\s+ACCIDENT\s+BASED|ROAD\s+ON\s+WHICH\s+ACCIDENT\s+OCCURRED'),
-             Above(r'OBJECT\s+DAMAGED|OFFICER\s+NO')],
-            minpage=2, type='longest', multiple=True,
+            "report", [
+                Below(
+                    r'DESCRIPTION\s+OF\s+ACCIDENT\s+BASED|ROAD\s+ON\s+WHICH\s+ACCIDENT\s+OCCURRED'
+                ),
+                Above(r'OBJECT\s+DAMAGED|OFFICER\s+NO')
+            ],
+            minpage=2,
+            type='longest',
+            multiple=True,
             serialize=" ".join)
         complete_str = (
             r'Complete\s+this\s+section\s+for\s+all\s+injured\s+persons')
         dob = PDFFinder(
-            "dob",
-            [VAlignedWith(r'DATE\s+OF\s+BIRTH', fuzz=25),
-             Below(complete_str),
-             RightOf(complete_str),
-             AlignedWith("^19$", fuzz=20)],
-            minpage=1, maxpage=1, type=_parse_date)
+            "dob", [
+                VAlignedWith(r'DATE\s+OF\s+BIRTH', fuzz=25),
+                Below(complete_str),
+                RightOf(complete_str),
+                AlignedWith("^19$", fuzz=20)
+            ],
+            minpage=1,
+            maxpage=1,
+            type=_parse_date)
         injury_severity_id = PDFFinder(
-            "injury_severity_id",
-            [Below(complete_str),
-             VAlignedWith(r'Sev\.', fuzz=10),
-             VAlignedWith('Injury', fuzz=10),
-             AlignedWith("^19$", fuzz=20)],
-            minpage=1, maxpage=1, type=int)
+            "injury_severity_id", [
+                Below(complete_str),
+                VAlignedWith(r'Sev\.', fuzz=10),
+                VAlignedWith('Injury', fuzz=10),
+                AlignedWith("^19$", fuzz=20)
+            ],
+            minpage=1,
+            maxpage=1,
+            type=int)
         injury_region_id = PDFFinder(
-            "injury_region_id",
-            [Below(complete_str),
-             VAlignedWith(r'Region', fuzz=10),
-             AlignedWith("^19$", fuzz=20)],
-            minpage=1, maxpage=1, type=int)
+            "injury_region_id", [
+                Below(complete_str),
+                VAlignedWith(r'Region', fuzz=10),
+                AlignedWith("^19$", fuzz=20)
+            ],
+            minpage=1,
+            maxpage=1,
+            type=int)
         initials = PDFFinder(
-            "initials",
-            [Below(complete_str),
-             Below(r"^\s*NAME\s*$", fuzz=2),
-             VAlignedWith(complete_str, fuzz=75),
-             AlignedWith("^19$", fuzz=20),
-             Above(r"MEDICAL\s+FACILITY\s+NAME")],
-            minpage=1, maxpage=1, type=self._munge_name)
+            "initials", [
+                Below(complete_str),
+                Below(r"^\s*NAME\s*$", fuzz=2),
+                VAlignedWith(complete_str, fuzz=75),
+                AlignedWith("^19$", fuzz=20),
+                Above(r"MEDICAL\s+FACILITY\s+NAME")
+            ],
+            minpage=1,
+            maxpage=1,
+            type=self._munge_name)
         gender = PDFFinder(
-            "gender",
-            [Below(complete_str),
-             VAlignedWith(r'M\s+F', fuzz=10),
-             AlignedWith("^19$", fuzz=20)],
-            minpage=1, maxpage=1, type=_parse_gender)
+            "gender", [
+                Below(complete_str),
+                VAlignedWith(r'M\s+F', fuzz=10),
+                AlignedWith("^19$", fuzz=20)
+            ],
+            minpage=1,
+            maxpage=1,
+            type=_parse_gender)
 
-        return [location,
-                date,
-                time,
-                report,
-                dob,
-                initials,
-                gender,
-                injury_severity_id,
-                injury_region_id]
+        return [
+            location, date, time, report, dob, initials, gender,
+            injury_severity_id, injury_region_id
+        ]
 
     def _parse_pdf(self, stream):
         """Parse a single PDF and return the date and description."""
@@ -695,10 +731,10 @@ class ParseChildProcess(multiprocessing.Process):
 
             for field in fields:
                 field.update(layout, page=page_num)
-                if (not field.value and field.short_circuit and
-                        page_num >= field.maxpage):
-                    LOG.warn("No %s found in %s, aborting parsing",
-                             field.name, stream.name)
+                if (not field.value and field.short_circuit
+                        and page_num >= field.maxpage):
+                    LOG.warn("No %s found in %s, aborting parsing", field.name,
+                             stream.name)
                     return dict([(f.name, f.value) for f in fields])
 
             page_num += 1
