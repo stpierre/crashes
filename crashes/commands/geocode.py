@@ -12,12 +12,11 @@ import textwrap
 
 import geocoder
 from six.moves import input
-import sqlalchemy
 import termcolor
 
 from crashes.commands import base
+from crashes import db
 from crashes import log
-from crashes import models
 
 
 LOG = log.getLogger(__name__)
@@ -48,13 +47,12 @@ def _save_geojson(data, filepath):
 
 def save_categorized_geojson(reports, geocoding_dir):
     """create categorized GeoJSON files."""
-    categories = set(r.road_location_name for r in reports)
+    categories = set(r["road_location"] for r in reports)
     by_loc = {c: new_geojson() for c in categories}
     all_collisions = new_geojson()
     for report in reports:
-        geojson = json.loads(report.geojson)
-        by_loc[report.road_location_name]["features"].append(geojson)
-        all_collisions["features"].append(geojson)
+        by_loc[report["road_location"]]["features"].append(report["geojson"])
+        all_collisions["features"].append(report["geojson"])
     for loc, data in by_loc.items():
         fpath = os.path.join(geocoding_dir, "%s.json" % loc.replace(" ", "_"))
         _save_geojson(data, fpath)
@@ -76,6 +74,8 @@ class Geocode(base.Command):
     jitter_max = 0.00015
     jitter_min = 0.00001
 
+    quit = object()
+
     def _random_jitter(self):
         val = (random.random() * (self.jitter_max - self.jitter_min) +
                self.jitter_min)
@@ -88,14 +88,13 @@ class Geocode(base.Command):
         for report in reports:
             adj = (self._random_jitter(), self._random_jitter())
             LOG.debug("Adjusting coordinates for %s by %s" %
-                      (report.case_no, adj))
-            geojson = json.loads(report.geojson)
-            geojson['geometry']['coordinates'] = map(
+                      (report["case_no"], adj))
+            report["geojson"]['geometry']['coordinates'] = map(
                 lambda c: operator.add(*c),
-                zip(geojson['geometry']['coordinates'], adj))
-            report.geojson = json.dumps(geojson)
-            report.latitude = geojson["geometry"]["coordinates"][1]
-            report.longitude = geojson["geometry"]["coordinates"][0]
+                zip(report["geojson"]['geometry']['coordinates'], adj))
+            report["latitude"] = report["geojson"]["geometry"]["coordinates"][1]
+            report["longitude"] = report["geojson"]["geometry"]["coordinates"][0]
+        db.collisions.update_many(reports)
         return retval
 
     def _parse_location(self, location):
@@ -153,18 +152,20 @@ class Geocode(base.Command):
         retval = None
         ans = None
         while True:
-            default, usable = self._parse_location(report.location)
+            default, usable = self._parse_location(report["location"])
             if not usable or retval:
                 # either the default location isn't immediately
                 # searchable; or this is our second time through the
                 # loop, so we have to prompt for user interactionn
                 print("Original: %s" %
-                      termcolor.colored(report.location, "green"))
+                      termcolor.colored(report["location"], "green"))
                 print("Default: %s" % termcolor.colored(default, "green"))
                 ans = input("Enter to %s, 's' to skip, or enter address: " %
                             ("accept" if retval else "search"))
-                if ans in ['s', 'S']:
+                if ans.upper() == 'S':
                     return None
+                if ans.upper() == 'Q':
+                    return self.quit
                 if retval and not ans:
                     return retval
             else:
@@ -177,7 +178,7 @@ class Geocode(base.Command):
                 LOG.error("Error finding %s: %s" %
                           (address, retval['properties']['status']))
             else:
-                retval = cleanup_geojson(retval, report.case_no)
+                retval = cleanup_geojson(retval, report["case_no"])
                 print("Address: %s" %
                       termcolor.colored(retval['properties']['address'],
                                         "green", attrs=["bold"]))
@@ -195,30 +196,27 @@ class Geocode(base.Command):
 
     def __call__(self):
         coded = 0
-        reports = self.db.query(models.Collision).filter(
-            models.Collision.road_location_name.isnot(None)).filter(
-                models.Collision.road_location_name != "not involved").filter(
-                    models.Collision.skip_geojson != True).filter(
-                        models.Collision.geojson.is_(None)).all()
-        for report in reports:
-            print(termcolor.colored("%-10s %50s" % (report.case_no,
-                                                    report.date),
-                                    'red', attrs=['bold']))
-            print(textwrap.fill(report.report))
-            geojson = self._get_coordinates(report)
-            if geojson is None:
-                report.skip_geojson = True
-            else:
-                report.geojson = json.dumps(geojson)
-                report.latitude = geojson["geometry"]["coordinates"][1]
-                report.longitude = geojson["geometry"]["coordinates"][0]
-                report.skip_geojson = False
-            coded += 1
-            self.db.commit()
-            print()
-            LOG.info("%s/%s coded (%.02f%%)" %
-                     (coded, len(reports),
-                      100.0 * coded / len(reports)))
+        for report in db.collisions:
+            if (report.get("road_location") not in (None, "not involved") and
+                    not report.get("skip_geojson") and
+                    report.get("geojson") is None):
+                print(termcolor.colored("%-10s %50s" % (report["case_no"],
+                                                        report["date"]),
+                                        'red', attrs=['bold']))
+                print(textwrap.fill(report["report"]))
+                geojson = self._get_coordinates(report)
+                if geojson is None:
+                    report["skip_geojson"] = True
+                elif geojson == self.quit:
+                    break
+                else:
+                    report["geojson"] = geojson
+                    report["latitude"] = geojson["geometry"]["coordinates"][1]
+                    report["longitude"] = geojson["geometry"]["coordinates"][0]
+                    report["skip_geojson"] = False
+                db.collisions.update(report)
+                coded += 1
+                print()
 
         if coded == 0:
             # no new geocoding, so we don't need to muck with the
@@ -226,19 +224,17 @@ class Geocode(base.Command):
             return 0
 
         # introduce jitter in cases with identical coordinates.
-        geocoded = self.db.query(models.Collision).filter(
-            models.Collision.geojson.isnot(None)).all()
-
         duplicates = {}
-        for report in geocoded:
-            geojson = json.loads(report.geojson)
-            key = (round(geojson['geometry']['coordinates'][0], 6),
-                   round(geojson['geometry']['coordinates'][1], 6))
-            duplicates.setdefault(key, []).append(report)
+        geocoded = []
+        for report in db.collisions:
+            if report.get("geojson"):
+                geocoded.append(report)
+                key = (round(report["geojson"]['geometry']['coordinates'][0], 6),
+                       round(report["geojson"]['geometry']['coordinates'][1], 6))
+                duplicates.setdefault(key, []).append(report)
 
         for reports in duplicates.values():
             if len(reports) > 1:
                 self._jitter_duplicates(reports)
-                self.db.commit()
 
         save_categorized_geojson(geocoded, self.options.geocoding)

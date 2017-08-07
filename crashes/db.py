@@ -283,6 +283,12 @@ class KeyedDatabase(Database):
         idx = self._by_key[record[self.key]]
         self[idx] = record
 
+    update = update_one
+
+    def update_many(self, records):
+        for record in records:
+            self.update(record)
+
     def upsert(self, record):
         if self.exists(record[self.key]):
             self.update_one(record)
