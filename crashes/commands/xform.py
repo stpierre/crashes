@@ -2,7 +2,6 @@
 
 import calendar
 import collections
-import copy
 import datetime
 import functools
 import json
@@ -13,11 +12,10 @@ import os
 import astral
 import numpy
 import pytz
-from sqlalchemy import func
 
 from crashes.commands import base
+from crashes import db
 from crashes import log
-from crashes import models
 
 LOG = log.getLogger(__name__)
 
@@ -96,20 +94,13 @@ class Xform(base.Command):
     def __init__(self, options):
         super(Xform, self).__init__(options)
         self._sun_cache = {}
-        self._template_data = {
-            "now": datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z"),
-            "report_count": self.db.query(
-                func.count(models.Collision.case_no)).one()[0],
-            "num_children": 0,
-            "under_11": 0,
-            "injured_count": 0,
-            "imagedir": _relpath(self.options.imagedir),
-            "db_dump": _relpath(self.options.dumpdir)}
+        self._template_data = {}
 
-    def _get_age(self, report):
+    @staticmethod
+    def _get_age(report):
         """Get the age of the cyclist in years for the given collision."""
-        if report.date and report.dob:
-            diff = report.date - report.dob
+        if report["date"] and report["dob"]:
+            diff = report["date"] - report["dob"]
             return diff.days / 365.25
         else:
             return None
@@ -129,12 +120,20 @@ class Xform(base.Command):
     def _get_narrow_age_range(self, report_or_age):
         return self._get_age_range(report_or_age, self.narrow_age_ranges)
 
-    def _get_relevant_crashes(self, unknown=True):
-        filters = [models.Collision.road_location_name != "not involved"]
+    @staticmethod
+    def _get_relevant_crashes(unknown=True):
+        ignore = [None, "not involved"]
         if not unknown:
-            filters.append(
-                models.Collision.road_location_name != "unknown")
-        return self.db.query(models.Collision).filter(*filters).all()
+            ignore.append("unknown")
+        for report in db.collisions:
+            if report.get("road_location") not in ignore:
+                yield report
+
+    @staticmethod
+    def _get_bike_traffic():
+        for record in db.traffic:
+            if record["type"] == "bike":
+                yield record
 
     def _xform_timings(self):
         """Collect data on crashes per month and year."""
@@ -145,24 +144,19 @@ class Xform(base.Command):
 
         traffic_raw_counts = collections.defaultdict(int)
         traffic_num_readings = collections.defaultdict(int)
-        first_traffic_reading = self.db.query(
-            func.min(models.Traffic.date)).filter(
-                models.Traffic.type == "bike").one()[0]
-        last_traffic_reading = self.db.query(
-            func.max(models.Traffic.date)).filter(
-                models.Traffic.type == "bike").one()[0]
+        first_traffic_reading = min(t["date"] for t in self._get_bike_traffic())
+        last_traffic_reading = max(t["date"] for t in self._get_bike_traffic())
 
-        for record in self.db.query(models.Traffic).filter(
-                models.Traffic.type == "bike").all():
-            traffic_raw_counts[record.date.month] += record.count
-            traffic_num_readings[record.date.month] += 1
+        for record in self._get_bike_traffic():
+            traffic_raw_counts[record["date"].month] += record["count"]
+            traffic_num_readings[record["date"].month] += 1
 
-        relevant = self._get_relevant_crashes()
+        relevant = list(self._get_relevant_crashes())
         for report in relevant:
-            month = datetime.date(report.date.year, report.date.month, 1)
+            month = datetime.date(report["date"].year, report["date"].month, 1)
             collision_counts[month] += 1
-            yearly_counts[report.date.year] += 1
-            monthly_aggregate[report.date.month] += 1
+            yearly_counts[report["date"].year] += 1
+            monthly_aggregate[report["date"].month] += 1
 
         labels = []
         series = []
@@ -186,7 +180,7 @@ class Xform(base.Command):
 
         cur_year = datetime.date.today().year
         expected = 0
-        last = self.db.query(func.max(models.Collision.date)).one()[0]
+        last = max(c["date"] for c in db.collisions if c.get("date"))
 
         rate_labels = []
         monthly_rate = []
@@ -334,7 +328,7 @@ class Xform(base.Command):
         loc_by_age = {}
         total_by_age = collections.defaultdict(int)
         for report in self._get_relevant_crashes():
-            location = report.road_location_name.title()
+            location = report["road_location"].title()
             age = self._get_age(report)
             if age:
                 age_range = self._get_narrow_age_range(age)
@@ -402,16 +396,15 @@ class Xform(base.Command):
 
         traffic_raw_counts = [0] * 24
         traffic_num_readings = [0] * 24
-        for record in self.db.query(models.Traffic).filter(
-                models.Traffic.type == "bike").all():
-            traffic_raw_counts[record.start.hour] += record.count
-            traffic_num_readings[record.start.hour] += 1
+        for record in self._get_bike_traffic():
+            traffic_raw_counts[record["start"].hour] += record["count"]
+            traffic_num_readings[record["start"].hour] += 1
 
         times = [0] * 24
         for report in self._get_relevant_crashes():
-            if report.time is None:
+            if report["time"] is None:
                 continue
-            times[report.time.hour] += 1 / self._template_data['report_years']
+            times[report["time"].hour] += 1 / self._template_data['report_years']
 
         rates = []
         labels = []
@@ -439,8 +432,8 @@ class Xform(base.Command):
         injuries_by_sev = collections.defaultdict(int)
         cases_by_loc = collections.defaultdict(int)
         for report in self._get_relevant_crashes(unknown=False):
-            loc = report.road_location_name.title()
-            sev = report.injury_severity_id or 5
+            loc = report["road_location"].title()
+            sev = report.get("injury_severity", 5)
             if sev != 5:
                 self._template_data['injured_count'] += 1
             injuries_by_sev[sev] += 1
@@ -459,8 +452,7 @@ class Xform(base.Command):
                                       key=operator.itemgetter(1))):
             labels.append(loc)
             for i in range(1, 5):
-                sev_name = self.db.query(models.InjurySeverity).filter(
-                    models.InjurySeverity.id == i).one().desc
+                sev_name = db.injury_severity[i]["desc"]
                 count = injuries[loc][i]
                 sev_rate = 100 * float(count) / cases_by_loc[loc]
                 series[i - 1].append(sev_rate)
@@ -484,8 +476,9 @@ class Xform(base.Command):
 
         severities = collections.defaultdict(int)
         for report in self._get_relevant_crashes():
-            if report.injury_severity:
-                severities[report.injury_severity.desc] += 1
+            if report.get("injury_severity"):
+                description = db.injury_severity[report["injury_severity"]]["desc"]
+                severities[description] += 1
 
         total = sum(severities.values())
         data = {"labels": [], "series": []}
@@ -501,11 +494,11 @@ class Xform(base.Command):
 
         regions = collections.defaultdict(int)
         for report in self._get_relevant_crashes():
-            if report.case_no.startswith("NDOR"):
+            if report["case_no"].startswith("NDOR"):
                 continue
-            sev = report.injury_severity or 5
-            if report.injury_region:
-                regions[report.injury_region.desc] += 1
+            sev = report.get("injury_severity", 5)
+            if report.get("injury_region"):
+                regions[db.injury_region[report["injury_region"]]["desc"]] += 1
             elif sev != 5:
                 # injury reported, but no injury region
                 regions['Unknown'] += 1
@@ -532,14 +525,13 @@ class Xform(base.Command):
         """Create data for pie chart of collisions by location."""
         LOG.info("Transforming data on proportions of collision locations")
 
-        statuses = self.db.query(
-            models.Location.name, func.count(models.Collision.case_no)).filter(
-                models.Location.name != "not involved",
-                models.Location.name != "unknown").join(
-                    models.Collision).group_by(models.Location).all()
-        total = sum(s[1] for s in statuses)
+        statuses = collections.defaultdict(int)
+        for report in self._get_relevant_crashes(unknown=False):
+            statuses[report["road_location"]] += 1
+
+        total = sum(statuses.values())
         data = {"labels": [], "series": []}
-        for name, num_cases in reversed(sorted(statuses,
+        for name, num_cases in reversed(sorted(statuses.items(),
                                                key=operator.itemgetter(1))):
             data["labels"].append("%s: %d (%0.1f%%)" % (
                 name.title(), num_cases, float(num_cases) / total * 100))
@@ -550,9 +542,9 @@ class Xform(base.Command):
         """Create data for pie chart of collisions by gender."""
         LOG.info("Transforming data on collisions by gender")
 
-        by_gender = collections.Counter(r.gender
+        by_gender = collections.Counter(r["gender"]
                                         for r in self._get_relevant_crashes()
-                                        if r.gender is not None)
+                                        if r.get("gender") is not None)
         total = sum(by_gender.values())
 
         data = {"labels": [], "series": []}
@@ -571,11 +563,10 @@ class Xform(base.Command):
         """Create data for pie chart of hit-and-runs."""
         LOG.info("Transforming data on hit-and-runs")
 
-        hit_and_runs = dict(self.db.query(
-            models.Collision.hit_and_run_status_name,
-            func.count(models.Collision.case_no)).filter(
-                models.Collision.hit_and_run_status_name.isnot(None)).group_by(
-                    models.Collision.hit_and_run_status_name).all())
+        hit_and_runs = collections.defaultdict(int)
+        for report in db.collisions:
+            if report.get("hit_and_run_status") is not None:
+                hit_and_runs[report["hit_and_run_status"]] += 1
 
         total_hnrs = sum(hit_and_runs.values())
 
@@ -632,10 +623,10 @@ class Xform(base.Command):
         by_month = {}
 
         for report in self._get_relevant_crashes():
-            if report.date and report.time:
+            if report["date"] and report["time"]:
                 crashtime = datetime.datetime(
-                    report.date.year, report.date.month, report.date.month,
-                    report.time.hour, report.time.minute, report.time.second
+                    report["date"].year, report["date"].month, report["date"].month,
+                    report["time"].hour, report["time"].minute, report["time"].second
                 ).replace(tzinfo=self.tz)
             else:
                 continue
@@ -683,17 +674,16 @@ class Xform(base.Command):
 
         traffic_by_phase = collections.defaultdict(float)
         phase_duration = collections.defaultdict(int)
-        for record in self.db.query(models.Traffic).filter(
-                models.Traffic.type == "bike").all():
-            time = datetime.datetime(year=record.date.year,
-                                     month=record.date.month,
-                                     day=record.date.day,
-                                     hour=record.start.hour,
-                                     minute=record.start.minute,
-                                     second=record.start.second,
+        for record in self._get_bike_traffic():
+            time = datetime.datetime(year=record["date"].year,
+                                     month=record["date"].month,
+                                     day=record["date"].day,
+                                     hour=record["start"].hour,
+                                     minute=record["start"].minute,
+                                     second=record["start"].second,
                                      tzinfo=self.tz)
             phase = self._get_daylight_phase(time)
-            traffic_by_phase[phase] += record.count
+            traffic_by_phase[phase] += record["count"]
             # this is technically not quite accurate, but since we
             # have traffic readings in 15-minute chunks we assign each
             # chunk to a single day phase. So even if the sun sets
@@ -725,26 +715,33 @@ class Xform(base.Command):
 
     def _pre_xform_template_data(self):
         """Create template data for rendering index.html."""
-        self._template_data.update({"unparseable_count": 0,
-                                    "ndor_count": 0})
+        self._template_data.update({
+            "now": datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z"),
+            "report_count": len(db.collisions),
+            "num_children": 0,
+            "under_11": 0,
+            "injured_count": 0,
+            "imagedir": _relpath(self.options.imagedir),
+            "db_dump": _relpath(self.options.dumpdir),
+            "unparseable_count": 0,
+            "ndor_count": 0})
         first_report = None
         last_report = None
         post_2011_reports = 0
         bike_report_count = 0
-        for report in self.db.query(models.Collision).all():
-            if report.date is None:
+        for report in db.collisions:
+            if report["date"] is None:
                 self._template_data['unparseable_count'] += 1
                 continue
-            if first_report is None or report.date < first_report:
-                first_report = report.date
-            if last_report is None or report.date > last_report:
-                last_report = report.date
-            if report.case_no.startswith("NDOR"):
+            if first_report is None or report["date"] < first_report:
+                first_report = report["date"]
+            if last_report is None or report["date"] > last_report:
+                last_report = report["date"]
+            if report["case_no"].startswith("NDOR"):
                 self._template_data['ndor_count'] += 1
-            if report.date.year > 2011:
+            if report["date"].year > 2011:
                 post_2011_reports += 1
-                if (report.road_location_name and
-                        report.road_location_name != "not involved"):
+                if report.get("road_location") not in (None, "not involved"):
                     bike_report_count += 1
 
         self._template_data["first_report"] = first_report.strftime(
@@ -756,10 +753,13 @@ class Xform(base.Command):
         self._template_data["bike_pct"] = (
             100.0 * self._template_data["bike_reports"] /
             self._template_data["post_2011_reports"])
-        self._template_data['statuses'] = dict(self.db.query(
-            models.Location.name, func.count(models.Collision.case_no)).join(
-                models.Collision).group_by(models.Location).all())
-        status_counts = dict(self._template_data["statuses"])
+
+        status_counts = collections.defaultdict(int)
+        for report in db.collisions:
+            if report.get("road_location") not in (None, "not involved", "unknown"):
+                status_counts[report["road_location"]] += 1
+
+        self._template_data['statuses'] = dict(status_counts)
         self._template_data['total_road'] = (
             status_counts['road'] + status_counts['intersection'])
         self._template_data['total_sidewalk'] = (
@@ -772,12 +772,11 @@ class Xform(base.Command):
         report_time_period = datetime.date.today() - first_report
         self._template_data['report_years'] = report_time_period.days / 365.25
 
-        self._template_data["status_descriptions"] = [
-            (loc.name.title(), loc.desc)
-            for loc in self.db.query(
-                    models.Location).filter(
-                        models.Location.name != "not involved").order_by(
-                            models.Location.name).all()]
+        self._template_data["status_descriptions"] = sorted(
+            [(name.title(), loc["desc"])
+             for name, loc in db.location.items()
+             if name != "not involved"],
+            key=operator.itemgetter(0))
 
     def _post_xform_template_data(self):
         self._template_data['pct_children'] = (
