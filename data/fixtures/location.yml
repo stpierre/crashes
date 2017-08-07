@@ -22,7 +22,8 @@
 - name: bike lane
   shortcut: L
   desc: >
-    Collision happened while a person on a bicycle was riding in a bike lane.
+    Collision happened while a person on a bicycle was riding in a
+    bike lane, including in an intersection.
 
 - name: bike trail crossing
   shortcut: T
@@ -50,7 +51,8 @@
   shortcut: I
   desc: >
     Collision happened while a person on a bicycle was riding through
-    an intersection on the road, not using a crosswalk.
+    an intersection on the road, not using a crosswalk. Does not
+    include cyclists who entered the intersection from a bike lane.
 
 - name: elsewhere
   shortcut: E

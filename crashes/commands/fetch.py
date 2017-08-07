@@ -44,6 +44,8 @@ class Fetch(base.Command):
     arguments = [
         base.Argument("--start",
                       type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
+        base.Argument("--end",
+                      type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
         base.Argument("--autostart", action="store_true"),
         base.Argument("--refetch-curated", action="store_true")
     ]
@@ -115,12 +117,14 @@ class Fetch(base.Command):
             if row.td and row.td.a:
                 cols = row.find_all("td")
                 case_no = cols[0].a.string.strip()
-                if not db.collisions.exists(case_no):
+                record = db.collisions.get(case_no)
+                hit_and_run = "H&R" in cols[4].string
+                if record is None:
                     db.collisions.append(
                         {"case_no": case_no,
                          "date": datetime.datetime.strptime(
                              cols[2].string.strip(), "%m-%d-%Y").date(),
-                         "hit_and_run": "H&R" in cols[4].string})
+                         "hit_and_run": hit_and_run})
 
                     submit = cols[5].input
                     if submit:
@@ -130,12 +134,23 @@ class Fetch(base.Command):
 
                         self._parse_tickets(case_no, ticket_url,
                                             ticket_post_data)
+                elif hit_and_run != record.get("hit_and_run"):
+                    LOG.info("Setting hit-and-run status for %s: %s (was %s)",
+                             case_no, hit_and_run,
+                             record.get("hit_and_run"))
+                    record["hit_and_run"] = hit_and_run
+                    db.collisions.update_one(record)
 
                 yield cols[0].a['href'].strip()
 
     def _dates_in_range(self):
-        """Generate all dates in the desired range, not including today."""
-        end = datetime.date.today()
+        """Generate all dates in the desired range, not including
+        today."""
+        if self.options.end:
+            end = self.options.end.date()
+        else:
+            end = datetime.date.today()
+
         if self.options.autostart:
             last = max(r["date"] for r in db.collisions if r.get("date"))
             LOG.debug("Last report was fetched from %s", last)

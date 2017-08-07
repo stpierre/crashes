@@ -4,9 +4,11 @@ from __future__ import print_function
 
 import collections
 import logging
+import operator
 import re
 import textwrap
 
+from backports.shutil_get_terminal_size import get_terminal_size
 from six.moves import input
 import termcolor
 
@@ -15,13 +17,15 @@ from crashes import db
 
 
 LOG = logging.getLogger(__name__)
+ROWS = get_terminal_size()[0]
 
 CurationStatus = collections.namedtuple("CurationStatus",
                                         ("name", "description"))
 
 
 class StatusDict(collections.MutableMapping):
-    def __init__(self):
+    def __init__(self, prompt="Status"):
+        self._prompt = prompt
         self._order = []
         self._end = ["K", "Q", "?"]
         self._statuses = {"K": CurationStatus(None, "Skip"),
@@ -49,23 +53,29 @@ class StatusDict(collections.MutableMapping):
 
     @property
     def help(self):
+        longest_key = min(1, max(len(str(key))
+                                 for key in self._statuses.keys()))
+        indent = " " * (longest_key + 2)
         rv = []
-        for key, status in self.items():
+        for key in self:
+            status = self._statuses[key]
             if status.name:
-                rv.append("%s (%s): %s" % (key, status.name, status.description))
+                line = "%s (%s): %s" % (key, status.name, status.description)
             else:
-                rv.append("%s: %s" % (key, status.description))
+                line = "%s: %s" % (key, status.description)
+            rv.append(textwrap.fill(line, width=ROWS, subsequent_indent=indent))
         return "\n".join(rv)
 
     @property
     def choices(self):
-        return "/".join(str(k) for k in self.keys())
+        return "/".join(str(k) for k in self)
 
     def input(self, default=None):
         if default:
-            prompt = "Status [%s, default=%s] " % (self.choices, default)
+            prompt = "%s [%s, default=%s] " % (self._prompt, self.choices,
+                                               default)
         else:
-            prompt = "Status [%s]: " % self.choices
+            prompt = "%s [%s]: " % (self._prompt, self.choices)
         while True:
             ans = input(prompt).upper()
             if not ans and default:
@@ -80,20 +90,13 @@ class StatusDict(collections.MutableMapping):
                 return self[ans].name
 
 
-class Curate(base.Command):
-    """Find accident reports that may have involved a bicycle."""
-
-    search_re = re.compile(r'\b(bicycle|bike|(?:bi)?cyclist)\b', re.I)
-    highlight_re = re.compile(
-        r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
-        r'crosswalk|sidewalk|intersection)',
-        re.I)
-
-    results_column = "road_location"
-    status_fixture = db.location
+class CurationStep(object):
+    results_column = None
+    status_fixture = None
+    order = None
+    prompt = "Status"
 
     def __init__(self, options):
-        super(Curate, self).__init__(options)
         # NOTE(stpierre): we have to defer the population of
         # self._statuses until after the constructor is called, since
         # it depends on database initialization to read the fixture
@@ -104,7 +107,7 @@ class Curate(base.Command):
     @property
     def statuses(self):
         if self._statuses is None:
-            self._statuses = StatusDict()
+            self._statuses = StatusDict(self.prompt)
             for name, status in self.status_fixture.items():
                 self._statuses[status["shortcut"]] = CurationStatus(
                     name, status["desc"])
@@ -113,47 +116,99 @@ class Curate(base.Command):
     def _get_default(self, report):
         return None
 
-    def _print_additional_info(self, report):
+    def print_additional_info(self, report):
         pass
 
-    def _get_answer(self, report):
+    def get_answer(self, report):
         return self.statuses.input(default=self._get_default(report))
 
     def curate_case(self, report):
         return True
 
+
+class LocationCuration(CurationStep):
+    """Determine where a collision happened."""
+
+    results_column = "road_location"
+    status_fixture = db.location
+    prompt = "Road location"
+    order = 0
+
+
+class HitnrunCuration(CurationStep):
+    """Determine who hit-and-ran."""
+
+    results_column = "hit_and_run_status"
+    status_fixture = db.hit_and_run_status
+    prompt = "Hit and run status"
+    order = 10
+
+    def _get_default(self, _):
+        # not trying to be biased here, this is just a sensible default :(
+        return "D"
+
+    def curate_case(self, report):
+        return (report.get("road_location") not in (None, 'not involved') and
+                report.get("hit_and_run", False))
+
+
+class Curate(base.Command):
+    """Do manual curation of accident reports."""
+
+    fmt = "%%-10s %%%ds" % (ROWS - 12)
+    search_re = re.compile(r'\b(bicycle|bike|(?:bi)?cyclist)\b', re.I)
+    highlight_re = re.compile(
+        r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
+        r'crosswalk|sidewalk|intersection)',
+        re.I)
+
+    def __init__(self, options):
+        super(Curate, self).__init__(options)
+        self.steps = []
+        for name, obj in globals().items():
+            if (not name.startswith("_") and
+                    isinstance(obj, type) and
+                    issubclass(obj, CurationStep) and
+                    obj != CurationStep):
+                self.steps.append(obj(options))
+        self.steps.sort(key=operator.attrgetter("order"))
+
+    def _print_report(self, report):
+        split = self.highlight_re.split(report["report"])
+
+        print(termcolor.colored(self.fmt % (report["case_no"], report["date"]),
+                                'red', attrs=['bold']))
+        # colorize matches in the output to make it easier to curate
+        for i in range(1, len(split), 2):
+            split[i] = termcolor.colored(split[i], 'green', attrs=["bold"])
+        print(textwrap.fill("".join(split).replace("\n", ""), width=ROWS))
+
+    def _curate_one(self, report):
+        report_printed = False
+        for step in self.steps:
+            if not report.get(step.results_column) and step.curate_case(report):
+                if not report_printed:
+                    self._print_report(report)
+                    report_printed = True
+                step.print_additional_info(report)
+                ans = step.get_answer(report)
+                if ans:
+                    report[step.results_column] = ans
+                    db.collisions.update_one(report)
+
     def __call__(self):
         complete = 0
-        to_curate = []
+
+        total = len(db.collisions)
+
         for report in db.collisions:
-            if report.get(self.results_column) is None:
-                if report["report"] is None:
-                    LOG.debug("%s has no report, skipping", report["case_no"])
-                elif not self.search_re.search(report["report"]):
-                    LOG.debug("%s doesn't match the search regex, skipping",
-                              report["case_no"])
-                elif self.curate_case(report):
-                    to_curate.append(report)
-                else:
-                    LOG.debug("Skipping curation on %s", report["case_no"])
-
-        for report in to_curate:
-            split = self.highlight_re.split(report["report"])
-
-            # manually curate collisions
-            print(termcolor.colored("%-10s %50s" % (report["case_no"],
-                                                    report["date"]),
-                                    'red', attrs=['bold']))
-            # colorize matches in the output to make it easier to curate
-            for i in range(1, len(split), 2):
-                split[i] = termcolor.colored(split[i], 'green', attrs=["bold"])
-            print(textwrap.fill("".join(split)))
-            self._print_additional_info(report)
-            ans = self._get_answer(report)
-            if ans:
-                complete += 1
-                report[self.results_column] = ans
-                db.collisions.update_one(report)
-            LOG.info("%s/%s curated (%.02f%%)" %
-                     (complete, len(to_curate),
-                      100 * complete / float(len(to_curate))))
+            if report["report"] is None:
+                LOG.debug("%s has no report, skipping", report["case_no"])
+            elif not self.search_re.search(report["report"]):
+                LOG.debug("%s doesn't match the search regex, skipping",
+                          report["case_no"])
+            else:
+                self._curate_one(report)
+                LOG.info("%s/%s curated (%.02f%%)",
+                         complete, total, 100.0 * complete / total)
+            complete += 1

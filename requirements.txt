@@ -11,3 +11,4 @@ numpy
 PyYAML
 sqlalchemy
 unicodecsv
+backports.shutil_get_terminal_size

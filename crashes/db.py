@@ -233,50 +233,61 @@ class KeyedDatabase(Database):
         super(KeyedDatabase, self).__init__(filename)
         self.key = key
 
+    def _save(self):
+        super(KeyedDatabase, self)._save()
+
     def _load(self):
         super(KeyedDatabase, self)._load()
         if self._by_key is None:
-            self._by_key = {d[self.key]: d for d in self._data}
+            self._by_key = {d[self.key]: i for i, d in enumerate(self._data)}
 
-    def __getitem__(self, key):
+    def __getitem__(self, idx):
         self._load()
-        if key in self._by_key:
-            data = self._by_key[key]
-        else:
-            data = self._data[key]
+        if idx in self._by_key:
+            idx = self._by_key[idx]
+        try:
+            data = self._data[idx]
+        except TypeError:
+            raise KeyError(idx)
         return self._deserialize(data)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, idx, value):
         self._load()
-        if key in self._by_key:
-            idx = self._data.index(self._by_key[key])
-        else:
-            idx = key
-            key = value[self.key]
+        if idx in self._by_key:
+            idx = self._by_key[idx]
         super(KeyedDatabase, self).__setitem__(idx, value)
-        self._by_key[value[self.key]] = value
+        self._by_key[value[self.key]] = idx
 
-    def __delitem__(self, key):
-        value = self._by_key[key]
-        super(KeyedDatabase, self).__delitem__(key)
-        del self._by_key[value[self.key]]
+    def __delitem__(self, idx):
+        self._load()
+        if idx in self._by_key:
+            idx = self._by_key[idx]
+            del self._by_key[idx]
+        super(KeyedDatabase, self).__delitem__(idx)
 
     def insert(self, idx, value):
         super(KeyedDatabase, self).insert(idx, value)
-        self._by_key[value[self.key]] = value
+        self._by_key[value[self.key]] = idx
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except (KeyError, IndexError):
+            return default
 
     def exists(self, key):
         self._load()
         return key in self._by_key
 
     def update_one(self, record):
-        self[record[self.key]] = record
+        idx = self._by_key[record[self.key]]
+        self[idx] = record
 
     def upsert(self, record):
         if self.exists(record[self.key]):
             self.update_one(record)
         else:
-            return self.insert(record)
+            return self.append(record)
 
 
 _db_path = None
