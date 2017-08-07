@@ -2,10 +2,6 @@
 #
 # Update the downloaded and curated data
 
-if [[ ! -e crashes.sqlite ]]; then
-    crashes database restore
-fi
-
 crashes -v fetch --autostart
 
 echo "Parsing new PDFs"
@@ -21,5 +17,3 @@ if [ -t 1 ]; then
     crashes results
     crashes csvify
 fi
-
-crashes database dump
