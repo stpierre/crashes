@@ -5,6 +5,7 @@ import collections
 import datetime
 import functools
 import json
+import logging
 import math
 import operator
 import os
@@ -15,9 +16,8 @@ import pytz
 
 from crashes.commands import base
 from crashes import db
-from crashes import log
 
-LOG = log.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def _relpath(path):
@@ -27,33 +27,36 @@ def _relpath(path):
 
 @functools.total_ordering
 class AgeRange(object):
+    # pylint: disable=redefined-builtin
     def __init__(self, min=None, max=None):
-        self._min = min or 0
-        self._max = max
+        self.min = min or 0
+        self.max = max
+
+    # pylint: enable=redefined-builtin
 
     def contains(self, other):
         if isinstance(other, AgeRange):
-            return self.contains(other._min) and self.contains(other._max)
-        return ((self._max is None and other >= self._min)
-                or (self._min <= other <= self._max))
+            return self.contains(other.min) and self.contains(other.max)
+        return ((self.max is None and other >= self.min)
+                or (self.min <= other <= self.max))
 
     def __str__(self):
-        if self._max:
-            return "%s-%s" % (self._min, self._max)
+        if self.max:
+            return "%s-%s" % (self.min, self.max)
         else:
-            return "%s+" % self._min
+            return "%s+" % self.min
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, str(self))
 
     def __eq__(self, other):
-        return self._min == other._min and self._max == other._max
+        return self.min == other.min and self.max == other.max
 
     def __gt__(self, other):
-        return self._min > other._min and self._max > other._max
+        return self.min > other.min and self.max > other.max
 
     def __lt__(self, other):
-        return self._min < other._min and self._max < other._max
+        return self.min < other.min and self.max < other.max
 
 
 def auto_percent_with_abs(total):
@@ -183,8 +186,8 @@ class Xform(base.Command):
             "activate_tooltips": [[False] * 12]
         }
         avg_per_month = {}
-        min_avg = None
-        max_avg = None
+        min_avg = ()
+        max_avg = ()
 
         cur_year = datetime.date.today().year
         expected = 0
@@ -194,8 +197,8 @@ class Xform(base.Command):
         monthly_rate = []
         monthly_traffic_counts = []
         monthly_collision_rate = []
-        lowest_rate = None
-        highest_rate = None
+        lowest_rate = ()
+        highest_rate = ()
         for i in range(1, 13):
             today = datetime.date.today()
             month = datetime.date(today.year, i, 1)
@@ -239,9 +242,9 @@ class Xform(base.Command):
             cpmrir = cpm / (traffic_count / 1000.0)
             monthly_collision_rate.append(cpmrir)
 
-            if lowest_rate is None or cpmrir < lowest_rate[0]:
+            if not lowest_rate or cpmrir < lowest_rate[0]:
                 lowest_rate = (cpmrir, month)
-            if highest_rate is None or cpmrir > highest_rate[0]:
+            if not highest_rate or cpmrir > highest_rate[0]:
                 highest_rate = (cpmrir, month)
 
             # calculate average data
@@ -251,9 +254,9 @@ class Xform(base.Command):
             average_data["tooltips"][0].append(
                 "%s: %0.1f average\n%d total\n%0.1f%% of total" %
                 (month_name, avg, count, 100 * float(count) / len(relevant)))
-            if min_avg is None or avg < min_avg[0]:
+            if not min_avg or avg < min_avg[0]:
                 min_avg = (avg, month)
-            if max_avg is None or avg > max_avg[0]:
+            if not max_avg or avg > max_avg[0]:
                 max_avg = (avg, month)
 
             # calculate multiplier for predicting the current year's
@@ -270,12 +273,13 @@ class Xform(base.Command):
                 month_portion = float(last.day) / days_in_month
                 expected += avg_per_month[end.month] * month_portion
 
-        average_data["activate_tooltips"][0][min_avg[1].month - 1] = True
-        average_data["tooltips"][0][min_avg[1].month
-                                    - 1] += ("\nLeast collisions per month")
-        average_data["activate_tooltips"][0][max_avg[1].month - 1] = True
-        average_data["tooltips"][0][max_avg[1].month
-                                    - 1] += ("\nMost collisions per month")
+        min_month = min_avg[1].month - 1
+        average_data["activate_tooltips"][0][min_month] = True
+        average_data["tooltips"][0][
+            min_month] += "\nLeast collisions per month"
+        max_month = max_avg[1].month - 1
+        average_data["activate_tooltips"][0][max_month] = True
+        average_data["tooltips"][0][max_month] += "\nMost collisions per month"
         average_data["labels"] = rate_labels
 
         self._save_data("monthly_average.json", average_data)
@@ -379,7 +383,7 @@ class Xform(base.Command):
                 else:
                     abs_proportion = 0
                 proportion = abs_proportion
-                if len(series):
+                if series:
                     proportion += series[-1][len(loc_series)]
                 loc_series.append(proportion)
                 loc_tooltips.append("%s: %0.1f%%\n%d collisions" %
@@ -619,13 +623,13 @@ class Xform(base.Command):
             self._sun_cache[date] = self.city.sun(date=date, local=True)
         return self._sun_cache[date]
 
-    def _get_daylight_phase(self, dt):
-        sun = self.sun_phases(dt)
-        if dt < sun["dawn"] or dt > sun["dusk"]:
+    def _get_daylight_phase(self, when):
+        sun = self.sun_phases(when)
+        if when < sun["dawn"] or when > sun["dusk"]:
             return "night"
-        elif dt < sun["sunrise"]:
+        elif when < sun["sunrise"]:
             return "dawn"
-        elif dt > sun["sunset"]:
+        elif when > sun["sunset"]:
             return "dusk"
         else:
             return "day"
@@ -815,7 +819,7 @@ class Xform(base.Command):
     def _save_data(self, filename, data):
         """Save JSON to the given filename."""
         path = os.path.join(self.options.graph_data, filename)
-        LOG.info("Writing graph data to %s" % path)
+        LOG.info("Writing graph data to %s", path)
         json.dump(data, open(path, "w"))
 
     def __call__(self):
@@ -835,5 +839,5 @@ class Xform(base.Command):
         self._post_xform_template_data()
 
         tmpl_path = os.path.join(self.options.datadir, "template_data.json")
-        LOG.info("Writing template data to %s" % tmpl_path)
+        LOG.info("Writing template data to %s", tmpl_path)
         json.dump(self._template_data, open(tmpl_path, "w"))

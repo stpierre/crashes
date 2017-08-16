@@ -74,8 +74,8 @@ class Fetch(base.Command):
             exceptions=(requests.exceptions.ConnectionError, ),
             times=self.options.fetch_retries)
         if response.status_code != 200:
-            LOG.warning("Failed to fetch tickets for %s: %s" %
-                        (case_no, response.status_code))
+            LOG.warning("Failed to fetch tickets for %s: %s", case_no,
+                        response.status_code)
             return None
 
         page_data = bs4.BeautifulSoup(response.text, "html.parser")
@@ -86,11 +86,11 @@ class Fetch(base.Command):
             if "person cited" in row.text.lower():
                 headers = row.find_all("th")
                 current_person = self._munge_name(headers[1].string)
-                LOG.debug("Found tickets for %s" % current_person)
+                LOG.debug("Found tickets for %s", current_person)
             elif "cited for" in row.text.lower():
                 data = row.find_all("td")
                 charge = data[3].b.text.strip()
-                LOG.debug("Found ticket for %s: %s" % (current_person, charge))
+                LOG.debug("Found ticket for %s: %s", current_person, charge)
                 db.tickets.append({
                     "case_no": case_no,
                     "initials": current_person,
@@ -186,11 +186,11 @@ class Fetch(base.Command):
         case_no = utils.filename_to_case_no(filename)
 
         if not force and db.collisions[case_no].get("parsed"):
-            LOG.debug("Already parsed %s, skipping" % case_no)
+            LOG.debug("Already parsed %s, skipping", case_no)
         elif os.path.exists(filepath):
-            LOG.debug("%s already exists, skipping" % filepath)
+            LOG.debug("%s already exists, skipping", filepath)
         else:
-            LOG.debug("Downloading %s to %s" % (url, filepath))
+            LOG.debug("Downloading %s to %s", url, filepath)
             response = retry(
                 requests.get,
                 args=(url, ),
@@ -199,12 +199,12 @@ class Fetch(base.Command):
                             requests.exceptions.ChunkedEncodingError),
                 times=self.options.fetch_retries)
             if response.status_code != 200:
-                raise Exception("Failed to download report %s: %s" %
-                                (url, response.status_code))
+                raise Exception("Failed to download report %s: %s", url,
+                                response.status_code)
             with open(filepath, 'wb') as outfile:
                 for chunk in response.iter_content():
                     outfile.write(chunk)
-            LOG.debug("Wrote data from %s to %s" % (url, filepath))
+            LOG.debug("Wrote data from %s to %s", url, filepath)
             time.sleep(
                 random.randint(self.options.sleep_min, self.options.sleep_max))
 
@@ -231,6 +231,6 @@ class Fetch(base.Command):
         for date in self._dates_in_range():
             time.sleep(
                 random.randint(self.options.sleep_min, self.options.sleep_max))
-            LOG.info("Fetching reports from %s" % date.isoformat())
+            LOG.info("Fetching reports from %s", date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url)

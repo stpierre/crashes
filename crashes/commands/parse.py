@@ -1,9 +1,12 @@
 """Extract the description from all downloaded reports."""
 
+from __future__ import print_function
+
 import collections
 import datetime
 import glob
 import json
+import logging
 import multiprocessing
 import os
 import re
@@ -23,7 +26,7 @@ from crashes import db
 from crashes import log
 from crashes import utils
 
-LOG = log.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def get_text(obj):
@@ -256,16 +259,17 @@ class PDFFinder(object):
     newline_re = re.compile(r'\n')
     _sentinel = object()
 
-    def __init__(self,
-                 name,
-                 locators,
-                 minpage=None,
-                 maxpage=None,
-                 type=None,
-                 multiple=False,
-                 default=_sentinel,
-                 serialize=None,
-                 short_circuit=False):
+    def __init__(
+            self,
+            name,
+            locators,
+            minpage=None,
+            maxpage=None,
+            type=None,  # pylint: disable=redefined-builtin
+            multiple=False,
+            default=_sentinel,
+            serialize=None,
+            short_circuit=False):
         self.name = name
         self.locators = locators
         self.minpage = minpage
@@ -322,7 +326,7 @@ class PDFFinder(object):
                               locator, self.name, page, obj, logtext)
                     locator_objs.append(obj)
                     missing_locators.remove(locator)
-        if len(missing_locators):
+        if missing_locators:
             LOG.debug("Missing locators for %s on page %s: %s", self.name,
                       page, missing_locators)
             return
@@ -333,6 +337,41 @@ class PDFFinder(object):
             obj for obj in layout
             if obj not in locator_objs and self.bounds.contains(obj)
         ]
+
+    def _get_longest(self, candidates, page):
+        longest = ''
+        obj = None
+        for candidate in candidates:
+            text = get_text(candidate)
+            if len(text) > len(longest):
+                longest = text
+                obj = candidate
+        if longest:
+            LOG.debug("Found %s on page %s: %s (%s)", self.name, page, longest,
+                      obj)
+            return longest
+        else:
+            LOG.debug("No %s found on page %s", self.name, page)
+            raise NotFound()
+
+    def _get_type(self, candidates, page):
+        for candidate in candidates:
+            text = get_text(candidate)
+            logtext = self.newline_re.sub(r'\\n', text)
+            LOG.debug("%s: Checking text '%s' against type", self.name,
+                      logtext)
+            try:
+                retval = self.type(text)
+                LOG.debug("%s: Converted text '%s' to: %s", self.name, logtext,
+                          retval)
+                LOG.debug("Found %s on page %s: %s (%s)", self.name, page,
+                          retval, candidate)
+                return retval
+            except Exception as err:  # pylint: disable=broad-except
+                LOG.debug("%s: Error converting text '%s' to type: %s",
+                          self.name, logtext, err)
+        LOG.debug("No %s matches correct type on page %s", self.name, page)
+        raise NotFound()
 
     def get(self, layout, page=None):
         """Get the value described by this PDFFinder in the layout.
@@ -345,38 +384,9 @@ class PDFFinder(object):
             LOG.debug("No %s found on page %s", self.name, page)
             raise NotFound()
         if self.type == 'longest':
-            longest = ''
-            obj = None
-            for candidate in candidates:
-                text = get_text(candidate)
-                if len(text) > len(longest):
-                    longest = text
-                    obj = candidate
-            if longest:
-                LOG.debug("Found %s on page %s: %s (%s)", self.name, page,
-                          longest, obj)
-                return longest
-            else:
-                LOG.debug("No %s found on page %s", self.name, page)
-                raise NotFound()
+            return self._get_longest(candidates, page)
         elif self.type:
-            for candidate in candidates:
-                text = get_text(candidate)
-                logtext = self.newline_re.sub(r'\\n', text)
-                LOG.debug("%s: Checking text '%s' against type", self.name,
-                          logtext)
-                try:
-                    retval = self.type(text)
-                    LOG.debug("%s: Converted text '%s' to: %s" %
-                              (self.name, logtext, retval))
-                    LOG.debug("Found %s on page %s: %s (%s)" %
-                              (self.name, page, retval, candidate))
-                    return retval
-                except Exception as err:
-                    LOG.debug("%s: Error converting text '%s' to type: %s",
-                              self.name, logtext, err)
-            LOG.debug("No %s matches correct type on page %s", self.name, page)
-            raise NotFound()
+            return self._get_type(candidates, page)
         else:
             if len(candidates) > 1:
                 LOG.warning("Multiple candidates found for %s: %s", self.name,
@@ -413,7 +423,7 @@ class PDFFinder(object):
             return None
         try:
             return self.serialize(self._data)
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-except
             LOG.warning("Failed to serialize %s '%s': %s", self.name,
                         self._data, err)
             return None
@@ -483,17 +493,17 @@ class Parse(base.Command):
             except queue.Empty:
                 break
 
-    def __call__(self):
+    def _build_filelist(self):
         LOG.debug("Building list of files to parse...")
         if self.options.files:
-            filelist = self.options.files
+            return self.options.files
         elif self.options.reparse_curated:
             reports = [
                 r for r in db.collisions
                 if r["road_location"] is not None
                 and not r["case_no"].startswith("NDOR")
             ]
-            filelist = [
+            return [
                 os.path.join(self.options.pdfdir,
                              utils.case_no_to_filename(report.case_no))
                 for report in reports
@@ -503,12 +513,14 @@ class Parse(base.Command):
                 r["case_no"] for r in db.collisions
                 if r.get("parsed") and not r["case_no"].startswith("NDOR")
             ]
-            filelist = [
+            return [
                 fpath
                 for fpath in glob.glob(os.path.join(self.options.pdfdir, "*"))
                 if utils.filename_to_case_no(fpath) not in case_numbers
             ]
 
+    def __call__(self):
+        filelist = self._build_filelist()
         LOG.debug("Parsing %s files", len(filelist))
 
         if len(filelist) < self.options.processes:
@@ -536,7 +548,7 @@ class Parse(base.Command):
             process.start()
 
         LOG.debug("Collecting results from result queue")
-        while len(processes):
+        while processes:
             try:
                 # first, collect results that are available with a
                 # very short timeout
@@ -564,7 +576,7 @@ class Parse(base.Command):
             except (SystemExit, KeyboardInterrupt):
                 LOG.info("Stopping %s processes", len(processes))
                 self._terminate.set()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 self._terminate.set()
                 LOG.error("Uncaught exception: %s", traceback.format_exc())
 
@@ -613,7 +625,8 @@ class ParseChildProcess(multiprocessing.Process):
         location = PDFFinder(
             "location", [
                 AlignedWith(
-                    r'ROAD\s+ON\s+WHICH|ACCIDENT\s+OCCURRED|STREET/\s*HIGHWAY\s+NO',
+                    r'ROAD\s+ON\s+WHICH|ACCIDENT\s+OCCURRED|'
+                    r'STREET/\s*HIGHWAY\s+NO',
                     fuzz=6),
                 RightOf(r'STREET/\s*HIGHWAY\s+NO'),
                 LeftOf('ONE-WAY')
@@ -639,9 +652,8 @@ class ParseChildProcess(multiprocessing.Process):
             type=_parse_time)
         report = PDFFinder(
             "report", [
-                Below(
-                    r'DESCRIPTION\s+OF\s+ACCIDENT\s+BASED|ROAD\s+ON\s+WHICH\s+ACCIDENT\s+OCCURRED'
-                ),
+                Below(r'DESCRIPTION\s+OF\s+ACCIDENT\s+BASED|'
+                      r'ROAD\s+ON\s+WHICH\s+ACCIDENT\s+OCCURRED'),
                 Above(r'OBJECT\s+DAMAGED|OFFICER\s+NO')
             ],
             minpage=2,

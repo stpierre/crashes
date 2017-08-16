@@ -92,6 +92,7 @@ class StatusDict(collections.MutableMapping):
                 return self[ans].name
 
 
+# pylint: disable=unused-argument,no-self-use
 class CurationStep(object):
     results_column = None
     status_fixture = None
@@ -126,6 +127,9 @@ class CurationStep(object):
 
     def curate_case(self, report):
         return True
+
+
+# pylint: enable=unused-argument,no-self-use
 
 
 class LocationCuration(CurationStep):

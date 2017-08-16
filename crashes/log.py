@@ -3,12 +3,6 @@
 import logging
 
 
-def getLogger(name=None):
-    if name == "__main__":
-        name = "crashes.cli"
-    return logging.getLogger(name)
-
-
 def setup_logging(verbose, prefix=None, deconfigure=True):
     """Configure logging according to the verbosity level."""
     if deconfigure:
@@ -32,7 +26,7 @@ def setup_logging(verbose, prefix=None, deconfigure=True):
     stderr.setFormatter(logging.Formatter(": ".join(fmt)))
     logging.root.setLevel(level)
     logging.root.addHandler(stderr)
-    logging.root.debug("Set verbose to %s" % verbose)
+    logging.root.debug("Set verbose to %s", verbose)
 
     # requests is very noisy, quiet it down
     req_log = logging.getLogger("requests")

@@ -78,7 +78,7 @@ class DatetimeSerializer(Serializer):
     cls = datetime.datetime
     fmt = "%Y-%m-%dT%H:%M:%S"
 
-    def converter(self, obj):
+    def converter(self, obj):  # pylint: disable=no-self-use
         return obj
 
     def encode(self, value):
@@ -105,16 +105,17 @@ class DateSerializer(DatetimeSerializer):
 
 
 class Fixture(collections.Mapping):
-    def __init__(self, filename, key="id"):
+    def __init__(  # pylint: disable=super-init-not-called
+            self, filename, key="id"):
         self.filename = filename
         self.key = key
         self._data = None
 
     @property
     def _filepath(self):
-        if _fixture_path is None:
+        if _FIXTURE_PATH is None:
             raise DatabaseNotReady(self.filename)
-        return os.path.join(_fixture_path, self.filename)
+        return os.path.join(_FIXTURE_PATH, self.filename)
 
     def _load_data(self):
         if self._data is None:
@@ -144,16 +145,16 @@ class Fixture(collections.Mapping):
 class Database(collections.MutableSequence):
     serializers = [DatetimeSerializer(), DateSerializer(), TimeSerializer()]
 
-    def __init__(self, filename):
+    def __init__(self, filename):  # pylint: disable=super-init-not-called
         self.filename = filename
         self._data = None
         self._by_key = None
 
     @property
     def _filepath(self):
-        if _db_path is None:
+        if _DB_PATH is None:
             raise DatabaseNotReady(self.filename)
-        return os.path.join(_db_path, self.filename)
+        return os.path.join(_DB_PATH, self.filename)
 
     def _load(self):
         if self._data is None:
@@ -208,9 +209,9 @@ class Database(collections.MutableSequence):
         self._load()
         return len(self._data)
 
-    def insert(self, idx, value):
+    def insert(self, index, value):
         self._load()
-        self._data.insert(idx, self._serialize(value))
+        self._data.insert(index, self._serialize(value))
         self._save()
 
     def __str__(self):
@@ -232,9 +233,6 @@ class KeyedDatabase(Database):
     def __init__(self, filename, key):
         super(KeyedDatabase, self).__init__(filename)
         self.key = key
-
-    def _save(self):
-        super(KeyedDatabase, self)._save()
 
     def _load(self):
         super(KeyedDatabase, self)._load()
@@ -296,8 +294,10 @@ class KeyedDatabase(Database):
             return self.append(record)
 
 
-_db_path = None
-_fixture_path = None
+_DB_PATH = None
+_FIXTURE_PATH = None
+
+# pylint: disable=invalid-name
 
 # fixtures
 injury_region = Fixture("injury_region.yml")
@@ -312,8 +312,8 @@ traffic = Database("traffic.json")
 
 
 def init(db_path, fixture_path):
-    global _db_path, _fixture_path
+    global _DB_PATH, _FIXTURE_PATH  # pylint: disable=global-statement
     LOG.debug("Preloading databases")
 
-    _db_path = db_path
-    _fixture_path = fixture_path
+    _DB_PATH = db_path
+    _FIXTURE_PATH = fixture_path

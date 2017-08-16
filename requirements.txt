@@ -1,16 +1,16 @@
-beautifulsoup4
-requests
--e git+https://github.com/euske/pdfminer.git#egg=pdfminer
-six
-termcolor
-jinja2
-geocoder
-astral
+beautifulsoup4==4.4.1
+requests==2.9.1
+-e git+https://github.com/euske/pdfminer.git@8150458718e9024c80b00e74965510b20206e588#egg=pdfminer
+six==1.10.0
+termcolor==1.1.0
+jinja2==2.8
+geocoder==1.12.0
+astral==1.4
 pytz
-numpy
-PyYAML
-sqlalchemy
-unicodecsv
-backports.shutil_get_terminal_size
-yapf
-prospector
+numpy==1.12.0
+PyYAML==3.12
+unicodecsv==0.14.1
+backports.shutil_get_terminal_size==1.0.0
+yapf==0.16.3
+prospector==0.12.7
+mccabe==0.6.1

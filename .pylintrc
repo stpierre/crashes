@@ -1,0 +1,11 @@
+[messages control]
+disable=
+    locally-disabled,
+    locally-enabled,
+    missing-docstring,
+    too-few-public-methods,
+    fixme,
+    no-else-return,
+
+[basic]
+good-names = _,i,rv,tz

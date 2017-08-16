@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import copy
 import json
+import logging
 import operator
 import os
 import random
@@ -16,9 +17,8 @@ import termcolor
 
 from crashes.commands import base
 from crashes import db
-from crashes import log
 
-LOG = log.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def new_geojson():
@@ -38,8 +38,8 @@ def cleanup_geojson(geojson, case_no):
 
 
 def _save_geojson(data, filepath):
-    LOG.debug("Saving geocoding data (%s features) to %s" %
-              (len(data['features']), filepath))
+    LOG.debug("Saving geocoding data (%s features) to %s",
+              len(data['features']), filepath)
     return json.dump(data, open(filepath, 'w'))
 
 
@@ -85,11 +85,12 @@ class Geocode(base.Command):
         retval = []
         for report in reports:
             adj = (self._random_jitter(), self._random_jitter())
-            LOG.debug("Adjusting coordinates for %s by %s" %
-                      (report["case_no"], adj))
-            report["geojson"]['geometry']['coordinates'] = map(
-                lambda c: operator.add(*c),
-                zip(report["geojson"]['geometry']['coordinates'], adj))
+            LOG.debug("Adjusting coordinates for %s by %s", report["case_no"],
+                      adj)
+            report["geojson"]['geometry']['coordinates'] = [
+                operator.add(*c)
+                for c in zip(report["geojson"]['geometry']['coordinates'], adj)
+            ]
             report["latitude"] = report["geojson"]["geometry"]["coordinates"][
                 1]
             report["longitude"] = report["geojson"]["geometry"]["coordinates"][
@@ -112,7 +113,7 @@ class Geocode(base.Command):
             # splitting failed, try to split on dash
             streets = self.dash_split.split(location)
         if len(streets) == 2:
-            LOG.debug("Location %s seems to be an intersection" % location)
+            LOG.debug("Location %s seems to be an intersection", location)
             # many locations are expressed as A/B-C, where A is the street
             # that the cyclist was proceeding along, from B to C. (Or
             # B-C/A.) Handle that.
@@ -137,15 +138,15 @@ class Geocode(base.Command):
                                               self.quote_re.sub(
                                                   r'\1 ', retval)))
 
-            LOG.debug("Transformed address from %s to %s" % (location, retval))
+            LOG.debug("Transformed address from %s to %s", location, retval)
             return retval, True
         elif self.address_re.search(location):
             # not an intersection, but an address, so use as-is
-            LOG.debug("Location %s seems to be an address" % location)
+            LOG.debug("Location %s seems to be an address", location)
             return location, True
         else:
             # only one street found, so this is useless
-            LOG.debug("Location %s is not automatically parseable" % location)
+            LOG.debug("Location %s is not automatically parseable", location)
             return location, False
 
     def _get_coordinates(self, report):
@@ -170,13 +171,13 @@ class Geocode(base.Command):
                     return retval
             else:
                 LOG.debug("Transformed address %s is immediately usable in "
-                          "search" % default)
+                          "search", default)
             address = (ans or default) + ", Lincoln, NE"
             loc = geocoder.google(address)
             retval = loc.geojson
             if not retval['properties']['ok']:
-                LOG.error("Error finding %s: %s" %
-                          (address, retval['properties']['status']))
+                LOG.error("Error finding %s: %s", address,
+                          retval['properties']['status'])
             else:
                 retval = cleanup_geojson(retval, report["case_no"])
                 print("Address: %s" % termcolor.colored(
@@ -186,11 +187,11 @@ class Geocode(base.Command):
         fpath = os.path.join(self.options.geocoding, filename)
         if not create or os.path.exists(fpath):
             retval = json.load(open(fpath))
-            LOG.debug("Loaded geocoding data (%s features) from %s" %
-                      (len(retval['features']), fpath))
+            LOG.debug("Loaded geocoding data (%s features) from %s",
+                      len(retval['features']), fpath)
         else:
             retval = new_geojson()
-            LOG.debug("Created new GeoJSON dataset for %s" % fpath)
+            LOG.debug("Created new GeoJSON dataset for %s", fpath)
         return retval
 
     def __call__(self):

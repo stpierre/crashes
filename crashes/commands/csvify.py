@@ -28,7 +28,8 @@ def _ticket_row_sort(row):
     case_no = row[0]
     report = db.collisions[case_no]
     date = report.get("date") or datetime.date.fromtimestamp(0)
-    time = report.get("time") or datetime.time()
+    time = (report.get("time")
+            if report.get("time") is not None else datetime.time())
     return (date, time)
 
 

@@ -2,6 +2,7 @@
 
 import argparse
 import inspect
+import logging
 import os
 import pkgutil
 import sys
@@ -13,7 +14,7 @@ from crashes.commands import base
 from crashes import db
 from crashes import log
 
-LOG = log.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 # config defaults
 DEFAULTS = {
@@ -74,15 +75,16 @@ def parse_args():
 
     # collect commands
     subparsers = parser.add_subparsers()
-    for loader, name, _ in pkgutil.walk_packages(commands.__path__):
-        module = loader.find_module(name).load_module(name)
+    for loader, mod_name, _ in pkgutil.walk_packages(commands.__path__):
+        module = loader.find_module(mod_name).load_module(mod_name)
 
-        for name, cls in inspect.getmembers(module):
+        for cls_name, cls in inspect.getmembers(module):
             if (not isinstance(cls, type) or not issubclass(cls, base.Command)
-                    or name.startswith('__')):
+                    or cls_name.startswith('__')):
                 continue
 
-            cmd_parser = subparsers.add_parser(name.lower(), help=cls.__doc__)
+            cmd_parser = subparsers.add_parser(
+                cls_name.lower(), help=cls.__doc__)
             cmd_parser.set_defaults(command=cls)
             for arg in cls.arguments:
                 arg.add_to_parser(cmd_parser)
@@ -142,16 +144,16 @@ def main():
     db.init(options.dbdir, options.fixtures)
 
     if not os.path.exists(options.datadir):
-        LOG.info("Creating datadir %s" % options.datadir)
+        LOG.info("Creating datadir %s", options.datadir)
         os.makedirs(options.datadir)
     if not os.path.exists(options.pdfdir):
-        LOG.info("Creating pdfdir %s" % options.pdfdir)
+        LOG.info("Creating pdfdir %s", options.pdfdir)
         os.makedirs(options.pdfdir)
     if not os.path.exists(options.imagedir):
-        LOG.info("Creating imagedir %s" % options.imagedir)
+        LOG.info("Creating imagedir %s", options.imagedir)
         os.makedirs(options.imagedir)
     if not os.path.exists(options.geocoding):
-        LOG.info("Creating geocoding directory %s" % options.geocoding)
+        LOG.info("Creating geocoding directory %s", options.geocoding)
         os.makedirs(options.geocoding)
 
     return options.func()
