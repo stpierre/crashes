@@ -1,0 +1,1172 @@
+objects:
+  report:
+    num_vehicles:
+      coordinates: [23.07, 899.32, 44.58, 914.20]
+      type: Integer
+    district:
+      coordinates: [138.74, 894.14, 211.6, 908.48]
+    case_no:
+      coordinates: [235.227, 895.13, 379.36, 909.44]
+    hit_and_run_yes:
+      coordinates: [391.19, 892.74, 402.78, 904.87]
+      type: BooleanChoice
+    hit_and_run_no:
+      coordinates: [425.17, 892.45, 437.266, 904.87]
+      type: BooleanChoice
+    date:
+      coordinates: [91.078, 867.73, 234.2, 882.07]
+      type: Date
+    friday:
+      coordinates: [314.167, 868.22, 323.697, 878.22]
+      type: &day_of_week_type
+        class: MultipleChoice
+        choices:
+          - sunday
+          - monday
+          - tuesday
+          - wednesday
+          - thursday
+          - friday
+          - saturday
+    state_use_only_1:
+      coordinates: [465.875, 857.94, 559.66, 884.15]
+    accident_time:
+      coordinates: [387.685, 868.31, 456.97, 882.65]
+      type: Time
+    police_notified_time:
+      coordinates: [387.34, 849.48, 456.635, 863.82]
+      type: Time
+    county:
+      coordinates: [130.01, 847.06, 331.796, 861.47]
+    city:
+      coordinates: [114.369, 828.8, 383.697, 843.14]
+    private_property_yes:
+      coordinates: [431.23, 829.53, 442.816, 839.39]
+      type: BooleanChoice
+    private_property_no:
+      coordinates: [445.86, 829.53, 457.45, 839.39]
+      type: BooleanChoice
+    one_way_yes:
+      coordinates: [430.494, 809.23, 442.075, 818.81]
+      type: BooleanChoice
+    one_way_no:
+      coordinates: [445.86, 809.13, 457.45, 818.81]
+      type: BooleanChoice
+    street_location:
+      coordinates: [177.845, 810.58, 384.16, 824.92]
+    intersecting_roadway:
+      coordinates: [51.222, 752.43, 266.5, 766.77]
+    distance_from_landmark:
+      coordinates: [274.78, 753.41, 332.45, 767.75]
+    distance_in_miles:
+      coordinates: [303.117, 768.03, 314.793, 780.16]
+      type: &distance_unit_type
+        class: MultipleChoice
+        choices:
+          - distance_in_miles
+          - distance_in_feet
+    distance_in_feet:
+      coordinates: [270.06, 768.03, 281.653, 780.16]
+      type: *distance_unit_type
+    nearest_landmark:
+      coordinates: [401.05, 752.92, 564.13, 767.26]
+    sunday:
+      coordinates: [243.817, 868.22, 253.25, 878.22]
+      type: *day_of_week_type
+    monday:
+      coordinates: [257.765, 868.22, 267.21, 878.22]
+      type: *day_of_week_type
+    tuesday:
+      coordinates: [272.307, 868.22, 281.75, 878.22]
+      type: *day_of_week_type
+    wednesday:
+      coordinates: [285.96, 868.22, 295.41, 878.22]
+      type: *day_of_week_type
+    thursday:
+      coordinates: [300.06, 868.22, 309.515, 878.22]
+      type: *day_of_week_type
+    saturday:
+      coordinates: [327.96, 868.22, 337.403, 878.22]
+      type: *day_of_week_type
+    work_zone_r1:
+      coordinates: [92.828, 693.01, 107.16, 707.35]
+      type:
+        class: IntegerMapping
+        values:
+          1: "No"
+          2: Unknown
+          3: "Yes"
+    weather_conditions_a:
+      coordinates: [23.5504, 871.17, 45.06, 886.05]
+      type:
+        class: IntegerMapping
+        values:
+          1: Clear
+          2: Cloudy
+          3: Fog, smog, smoke
+          4: Rain
+          5: Sleet, hail, freezing rain
+          6: Snow
+          7: Severe crosswinds
+          8: Blowing sand, soil, dirt, snow
+          9: Other
+          10: Unknown
+    temperature_b:
+      coordinates: [23.5504, 816.84, 45.06, 831.72]
+      type: Integer
+    light_condition_c:
+      coordinates: [23.57, 792.13, 45.08, 807.01]
+      type:
+        class: IntegerMapping
+        values:
+          1: Daylight
+          2: Dawn
+          3: Dusk
+          4: Dark - lighted roadway
+          5: Dark - roadway not lighted
+          6: Dark - unknown roadway lighting
+          7: Other
+          8: Unknown
+    road_character_d:
+      coordinates: [23.57, 764.47, 45.08, 779.35]
+      type:
+        class: IntegerMapping
+        values:
+          1: Straight and level
+          2: Straight and on slope
+          3: Straight and on hilltop
+          4: Curved and level
+          5: Curved and on slope
+          6: Curved and on hilltop
+    school_bus_related_l:
+      coordinates: [567.93, 894.56, 589.44, 909.44]
+      type:
+        class: IntegerMapping
+        values:
+          1: "No"
+          2: Yes, school bus directly involved
+          3: Yes, school bus indirectly involved
+          4: Unknown
+    state_use_only_2:
+      coordinates: [467.724, 837.26, 538.85, 849.39]
+    non_motorist_location_s1:
+      coordinates: [250.66, 692.52, 265.0, 706.86]
+      type:
+        class: IntegerMapping
+        values:
+          1: Marked crosswalk at intersection
+          2: At intersection but no crosswalk
+          3: Non-intersection crosswalk
+          4: Driveway access crosswalk
+          5: In roadway
+          6: Not in roadway
+          7: Median (but not on shoulder)
+          8: Island
+          9: Shoulder
+          10: Sidewalk
+          11: Within 10 feet of roadway (but not shoulder, median, sidewalk, or island)
+          12: Beyond 10 feet of roadway (within trafficway)
+          13: Outside trafficway
+          14: Shared-use path or trail
+          15: Unknown
+    non_motorist_action_s2:
+      coordinates: [270.8, 692.75, 285.143, 707.09]
+      type:
+        class: IntegerMapping
+        values:
+          1: Entering or crossing specified location
+          2: Walking, running, jogging, playing, cycling
+          3: Working
+          4: Pushing vehicle
+          5: Approaching or leaving vehicle
+          6: Playing or working on vehicle
+          7: Standing
+          8: Other
+          9: Unknown
+    non_motorist_condition_s3:
+      coordinates: [291.18, 692.75, 305.52, 707.09]
+      type: &condition_type
+        class: IntegerMapping
+        values:
+          1: Apparently normal
+          2: Physical impairment
+          3: Emotional (depressed, angry, disturbed, etc.)
+          4: Illness
+          5: Feel asleep, fainted, fatigued, etc.
+          6: Under influence of medications/drugs/alcohol
+          7: Other
+          8: Unknown
+    non_motorist_alcohol_drugs_s4:
+      coordinates: [311.06, 692.75, 325.403, 707.09]
+      type: &alcohol_drugs_suspected_type
+        class: IntegerMapping
+        values:
+          1: Neither alcohol nor drugs suspected
+          2: Yes - alcohol suspected
+          3: Yes - drugs suspected
+          4: Yes - alcohol and drugs suspected
+          5: Unknown
+    non_motorist_error_s5a:
+      coordinates: [330.71, 692.75, 345.055, 707.09]
+      type: &non_motorist_error_type
+        class: IntegerMapping
+        values:
+          1: Improper crossing
+          2: Darting
+          3: Lying and/or illegally in roadway
+          4: Failure to yield right of way
+          5: Not visible (dark clothing)
+          6: Inattentive (talking, eating, etc.)
+          7: Failure to obey traffic signs, signal, officer
+          8: Wrong side of road
+          9: Other
+          10: Unknown
+    non_motorist_error_s5b:
+      coordinates: [350.61, 692.75, 364.95, 707.09]
+      type: *non_motorist_error_type
+    non_motorist_equip_s6a:
+      coordinates: [370.49, 692.75, 384.83, 707.09]
+      type: &non_motorist_equip_type
+        class: IntegerMapping
+        values:
+          1: None used
+          2: Helmet used
+          3: Protective pads used (elbows, knees, shins, etc.)
+          4: Reflective clothing
+          5: Lighting
+          6: Not applicable
+          7: Other
+          8: Unknown
+    non_motorist_equip_s6b:
+      coordinates: [390.37, 692.75, 404.71, 707.09]
+      type: *non_motorist_equip_type
+    v1_license_plate:
+      coordinates: [133.193, 567.44, 370.83, 580.86]
+    v1_license_plate_state:
+      coordinates: [532.92, 565.66, 562.25, 580.0]
+    v1_license_plate_year:
+      coordinates: [425.52, 567.01, 475.227, 581.35]
+    vi_license_plate_pa:
+      coordinates: [87.24, 566.95, 113.092, 581.29]
+    v1_vin:
+      coordinates: [96.999, 529.73, 378.28, 544.07]
+    v1_year:
+      coordinates: [110.38, 546.32, 154.24, 559.11]
+    v1_make:
+      coordinates: [171.71, 545.89, 238.512, 559.1]
+    v1_model:
+      coordinates: [243.25, 545.03, 310.357, 559.37]
+    v1_style:
+      coordinates: [315.7, 545.89, 384.69, 560.23]
+    v1_color:
+      coordinates: [388.093, 545.89, 455.19, 560.23]
+    v1_owner:
+      coordinates: [50.69, 604.76, 344.117, 615.12]
+    v1_owner_phone:
+      coordinates: [351.403, 603.72, 454.953, 617.14]
+    v1_local_num:
+      coordinates: [470.153, 603.48, 564.29, 614.62]
+    v1_driver_owner_address:
+      coordinates: [54.37, 584.92, 379.28, 595.5]
+    v1_insurance_co:
+      coordinates: [390.42, 528.48, 563.72, 539.88]
+    v1_insurance_policy_num:
+      coordinates: [392.06, 510.12, 564.17, 521.08]
+    v1_damage_o:
+      coordinates: [23.2104, 531.12, 44.72, 546.0]
+      type: &damage_extent_type
+        class: IntegerMapping
+        values:
+          1: None/minor damage
+          2: Functional damage
+          3: Disabling damage (requires towing from scene)
+          4: Severe/vehicle totaled
+          5: Unknown
+    v1_damage_value:
+      coordinates: [510.04, 547.39, 563.73, 561.73]
+    v1_totaled:
+      coordinates: [459.68, 547.88, 471.274, 560.01]
+      type: Boolean
+    v1_disposition_q:
+      coordinates: [23.2698, 379.685, 44.7796, 394.56]
+      type: &vehicle_disposition_type
+        class: IntegerMapping
+        values:
+          1: Towed - due to damages
+          2: Towed - other reasons
+          3: Left at scene
+          4: Driven away
+          5: Unknown
+    v1_towed_to:
+      coordinates: [48.99, 509.367, 211.567, 521.9]
+    v1_towed_by:
+      coordinates: [215.74, 509.79, 377.23, 521.5]
+    v1_first_event_1:
+      coordinates: [567.93, 613.92, 589.44, 628.81]
+      type: &event_type
+        class: IntegerMapping
+        values:
+          1: Overturn/rollover
+          2: Fire/explosion
+          3: Immersion
+          4: Jackknife
+          5: Cargo/equipment loss or shift
+          6: Equipment failure (blown tire, brake failure, etc.)
+          7: Separation of units
+          8: Ran off road right
+          9: Ran off road left
+          10: Cross median/centerline
+          11: Downhill runaway
+          12: Other non-collision
+          13: Unknown non-collision
+          14: Pedestrian
+          15: Bicycle (pedalcycle)
+          16: Railway vehicle (train, engine, etc.)
+          17: Animal
+          18: Motor vehicle in transport
+          19: Parked motor vehicle
+          20: Work zone maintenance equipment
+          21: Other movable object
+          22: Unknown movable object
+          23: Impact attenuator/crash cushion
+          24: Bridge overhead structure
+          25: Bridge pier or abutment
+          26: Bridge parapet end
+          27: Bridge rail
+          28: Guardrail face
+          29: Guardrail end
+          30: Median barrier
+          31: Highway traffic sign post
+          32: Overhead sign support
+          33: Light/luminaire support
+          34: Utility pole
+          35: Other post, pole or support
+          36: Culvert
+          37: Curb
+          38: Ditch
+          39: Embankment
+          40: Fence
+          41: Mailbox
+          42: Tree
+          43: Other fixed object (wall, building, tunnel, etc.)
+          44: Work zone maintenance equipment
+          45: Unknown fixed object
+          46: Other
+          47: Unknown
+    v1_second_event_2:
+      coordinates: [567.49, 590.71, 589.0, 605.59]
+      type: *event_type
+    v1_most_harmful_event_5:
+      coordinates: [567.49, 521.09, 589.0, 535.97]
+      type: *event_type
+    v1_traffic_control_n:
+      coordinates: [22.3598, 631.73, 43.861, 646.61]
+      type: &traffic_control_type
+        class: IntegerMapping
+        values:
+          1: No controls
+          2: Traffic control signal
+          3: Flashing traffic control signal
+          4: School zone sign
+          5: Stop sign
+          6: Yield sign
+          7: Warning sign
+          8: Railroad crossing device
+          9: Unknown
+    v1_speed_limit_6:
+      coordinates: [568.4, 498.536, 589.91, 513.41]
+      type: Integer
+    v1_drivers_license_num:
+      coordinates: [134.184, 660.98, 423.02, 675.32]
+    v1_drivers_license_state:
+      coordinates: [469.403, 660.52, 499.736, 674.86]
+    v1_driver_phone:
+      coordinates: [350.385, 641.0, 454.96, 654.42]
+    v1_driver_name:
+      coordinates: [50.69, 640.43, 343.04, 652.73]
+    v1_driver_address:
+      coordinates: [50.28, 623.24, 417.214, 633.92]
+    v1_driver_dob:
+      coordinates: [469.32, 622.82, 563.78, 637.16]
+      type: Date
+    v1_driver_condition_p:
+      coordinates: [23.2698, 456.26, 44.7796, 471.143]
+      type: *condition_type
+    v1_driver_contributing_circumstances_m:
+      coordinates: [22.58, 736.81, 44.09, 751.69]
+      type: &motorist_error
+        class: IntegerMapping
+        values:
+          1: No improper driving
+          2: Failed to yield right of way
+          3: Disregarded traffic signs, signals, road markings
+          4: Exceeded authorized speed limit
+          5: Driving too fast for conditions
+          6: Made improper turn
+          7: Wrong side or wrong way
+          8: Followed too closely
+          9: Failure to keep in proper lane or running off road
+          10: Operating vehicle in erratic, reckless, careless, negligent, or aggressive manner
+          11: Swerving or avoiding due to wind, slippery surface, vehicle, object, non-motorist in roadway, etc.
+          12: Over-correcting/over-steering
+          13: Visibility obstructed
+          14: Inattention
+          15: Mobile phone distraction
+          16: Distracted - other
+          17: Fatigued/asleep
+          18: Operating defective equipment
+          19: Other improper action
+          20: Unknown
+    v1_driver_citation_pending:
+      coordinates: [432.96, 590.81, 444.55, 602.94]
+      type: &v1_citation_type
+        class: MultipleChoice
+        choices:
+          - v1_driver_citation_pending
+          - v1_driver_citation_no
+          - v1_driver_citation_yes
+    v1_driver_citation_no:
+      coordinates: [433.34, 584.43, 444.935, 596.56]
+      type: *v1_citation_type
+    v1_driver_citation_yes:
+      coordinates: [381.793, 583.81, 393.296, 595.93]
+      type: *v1_citation_type
+    v1_driver_citation_num:
+      coordinates: [469.74, 584.55, 516.27, 595.9]
+    investigation_at_scene_yes:
+      coordinates: [486.83, 893.99, 498.42, 906.12]
+      type: BooleanChoice
+    investigation_at_scene_no:
+      coordinates: [522.46, 893.99, 534.05, 906.12]
+      type: BooleanChoice
+    injury1_vehicle_num:
+      coordinates: [24.56, 280.52, 44.9596, 294.866]
+    injury1_name_address:
+      coordinates: [48.921, 289.24, 371.58, 303.58]
+    injury1_local_num:
+      coordinates: [48.921, 269.117, 115.049, 283.45]
+    injury1_sex:
+      coordinates: [574.17, 291.46, 588.69, 305.85]
+    injury1_dob:
+      coordinates: [377.057, 289.24, 469.52, 303.58]
+      type: Date
+    injury1_seat_pos:
+      coordinates: [473.5, 291.45, 493.893, 305.796]
+      type: &seat_position_type
+        class: IntegerMapping
+        values:
+          1: Front driver side
+          2: Front middle
+          3: Front passenger side
+          4: Middle row driver side
+          5: Middle row middle
+          6: Middle row passenger side
+          7: Back driver side
+          8: Back middle
+          9: Back passenger side
+          10: Other enclosed passenger/cargo area
+          11: Other unenclosed passenger/cargo area
+          12: Riding on vehicle exterior
+          13: Sleeper section of truck cab
+          14: Trailing unit
+          15: Moped
+          16: Motorcycle operator
+          17: Motorcycle passenger
+          18: Pedestrian
+          19: Bicycle (pedalcycle)
+          20: Unknown
+    injury1_ejected:
+      coordinates: [496.625, 291.46, 511.54, 305.85]
+      type: &ejected_type
+        class: IntegerMapping
+        values:
+          1: Not ejected or trapped
+          2: Partially ejected
+          3: Totally ejected
+          4: Trapped - Occupant removed without use of equipment
+          5: Trapped - Equipment used in extrication
+          6: Unknown
+    injury1_body_region:
+      coordinates: [515.51, 291.45, 535.23, 305.796]
+      type: &body_region_type
+        class: IntegerMapping
+        values:
+          1: Head
+          2: Face
+          3: Neck
+          4: Chest
+          5: Back/spine
+          6: Shoulder/upper arm
+          7: Elbow/lower arm/hand
+          8: Abdomen/pelvis
+          9: Hip/upper leg
+          10: Knee/lower leg/foot
+          11: Entire body
+          12: Unknown
+    injury1_transported:
+      coordinates: [556.03, 291.46, 570.95, 305.85]
+      type: &transported_type
+        class: IntegerMapping
+        values:
+          1: Not transported
+          2: EMS
+          3: Police
+          4: Other
+          5: Unknown
+    injury1_severity:
+      coordinates: [538.38, 291.46, 553.81, 305.85]
+      type: &injury_severity_type
+        class: IntegerMapping
+        values:
+          1: Killed
+          2: Disabling
+          3: Visible but not disabling
+          4: Possible but not visible
+          5: None
+    injury1_ems_report_num:
+      coordinates: [474.49, 268.697, 589.34, 282.94]
+    injury2_vehicle_num:
+      coordinates: [24.07, 239.74, 44.46, 254.08]
+    injury2_name_address:
+      coordinates: [48.6, 248.03, 371.274, 262.37]
+    injury2_sex:
+      coordinates: [574.55, 250.01, 588.98, 264.357]
+    injury2_dob:
+      coordinates: [376.73, 248.03, 469.205, 262.37]
+      type: Date
+    injury2_seat_pos:
+      coordinates: [473.18, 250.01, 493.57, 264.357]
+      type: *seat_position_type
+    injury2_ejected:
+      coordinates: [496.31, 250.01, 511.23, 264.357]
+      type: *ejected_type
+    injury2_body_region:
+      coordinates: [515.93, 250.0, 534.74, 264.34]
+      type: *body_region_type
+    injury2_transported:
+      coordinates: [556.46, 250.01, 571.38, 264.357]
+      type: *transported_type
+    injury2_severity:
+      coordinates: [538.06, 250.01, 553.49, 264.357]
+      type: *injury_severity_type
+    injury3_vehicle_num:
+      coordinates: [24.56, 44.95, 197.49, 211.83]
+    injury3_name_address:
+      coordinates: [48.12, 207.52, 370.78000000000003, 221.86]
+    injury3_sex:
+      coordinates: [574.11, 209.73, 588.54, 224.07]
+    injury3_dob:
+      coordinates: [376.25, 207.52, 468.72, 221.86]
+      type: Date
+    injury3_seat_pos:
+      coordinates: [472.7, 209.73, 493.09, 224.07]
+      type: *seat_position_type
+    injury3_ejected:
+      coordinates: [496.56, 209.73, 511.48, 224.07]
+      type: *ejected_type
+    injury3_body_region:
+      coordinates: [515.45, 209.73, 534.75, 224.07]
+      type: *body_region_type
+    injury3_transported:
+      coordinates: [556.71, 209.73, 571.63, 224.07]
+      type: *transported_type
+    injury3_severity:
+      coordinates: [538.32, 209.73, 553.75, 224.07]
+      type: *injury_severity_type
+    dor_property_damage_no:
+      coordinates: [441.48, 689.79, 453.075, 701.92]
+      class: BooleanChoice
+    dor_property_damage_yes:
+      coordinates: [484.494, 690.31, 496.08, 702.44]
+      class: BooleanChoice
+    nsew:
+      coordinates: [337.42, 754.31, 397.57, 765.75]
+    environment_circumstances_i:
+      coordinates: [23.2104, 483.02, 44.7206, 497.9]
+      type:
+        class: IntegerMapping
+        values:
+          1: None
+          2: Weather conditions
+          3: Vision obstruction
+          4: Glare
+          5: Animal in roadway
+          6: Other
+          7: Unknown
+    road_surface_e:
+      coordinates: [23.07, 685.43, 44.58, 700.31]
+      type:
+        class: IntegerMapping
+        values:
+          1: Concrete
+          2: Asphalt
+          3: Brick
+          4: Gravel
+          5: Dirt
+          6: Other
+    road_surface_condition_f:
+      coordinates: [24.1803, 655.61, 45.69, 670.48]
+      type:
+        class: IntegerMapping
+        values:
+          1: Dry
+          2: Wet
+          3: Snow
+          4: Ice
+          5: Sand, mud, dirt, oil, gravel
+          6: Water (standing, moving)
+          7: Slush
+          8: Other
+          9: Unknown
+    num_lanes_g:
+      coordinates: [22.3598, 582.74, 43.861, 597.62]
+      type: Integer
+    median_type_h:
+      coordinates: [23.2104, 557.37, 44.7206, 572.25]
+      type:
+        class: IntegerMapping
+        values:
+          1: Median barrier
+          2: Raised median (curbed)
+          3: Grass median (no curb)
+          4: Painted (no curb)
+          5: None
+    road_circumstances_j:
+      coordinates: [23.2698, 405.375, 44.7796, 420.25]
+      type:
+        class: IntegerMapping
+        values:
+          1: None
+          2: Road surface condition (wet, icy, snow, slush, etc.)
+          3: Debris
+          4: Rut, holes, bumps
+          5: Work zone
+          6: Worn, travel-polished surface
+          7: Obstruction in roadway
+          8: Traffic control device inoperative, missing or obscured
+          9: Shoulders (none, low, soft, high)
+          10: Non-highway work
+          11: Other
+          12: Unknown
+    v1_driver_local_num:
+      coordinates: [469.557, 641.29, 563.79, 651.91]
+    v1_driver_male:
+      coordinates: [525.96, 657.55, 537.55, 669.68]
+      type: &v1_driver_gender
+        class: MultipleChoice
+        choices:
+          - v1_driver_male
+          - v1_driver_female
+    v1_driver_female:
+      coordinates: [526.35, 665.43, 537.94, 677.56]
+      type: *v1_driver_gender
+    junction_type_k:
+      coordinates: [22.7703, 331.29, 44.284, 346.17]
+      type:
+        class: IntegerMapping
+        values:
+          1: Not at junction
+          2: Four-way intersection
+          3: T-intersection
+          4: Y-intersection
+          5: Traffic circle/roundabout
+          6: Five-point or more
+          7: On-ramp
+          8: Off-ramp
+          9: Crossover
+          10: Driveway
+          11: Railroad grade crossing
+          12: Shared-use paths or trails
+          13: Unknown
+    v2_license_plate:
+      coordinates: [133.27, 387.44, 370.917, 400.86]
+    v2_license_plate_state:
+      coordinates: [533.48, 387.52, 562.81, 401.866]
+    v2_license_plate_year:
+      coordinates: [422.62, 388.01, 472.32, 402.357]
+    v2_license_plate_pa:
+      coordinates: [88.53, 386.52, 114.39, 400.866]
+    v2_vin:
+      coordinates: [96.99, 349.73, 378.37, 364.07]
+    v2_year:
+      coordinates: [120.85, 368.61, 165.088, 382.95]
+    v2_make:
+      coordinates: [174.97, 367.65, 241.15, 379.227]
+    v2_model:
+      coordinates: [246.93, 367.14, 312.334, 379.227]
+    v2_style:
+      coordinates: [315.86, 368.13, 383.62, 379.227]
+    v2_color:
+      coordinates: [391.24, 367.88, 455.01, 378.917]
+    v2_owner:
+      coordinates: [48.26, 424.78, 342.08, 439.125]
+    v2_owner_phone:
+      coordinates: [350.22, 423.98, 453.98, 437.403]
+    v2_owner_local_num:
+      coordinates: [469.55, 424.78, 564.83, 436.09]
+    v2_owner_address:
+      coordinates: [48.26, 404.41, 374.4, 418.75]
+    v2_insurance_co:
+      coordinates: [391.24, 349.23, 563.81, 360.843]
+    v2_insurance_policy_num:
+      coordinates: [391.65, 330.35, 563.81, 342.43]
+    v2_damage:
+      coordinates: [23.63, 508.82, 45.14, 523.7]
+      type: *damage_extent_type
+    v2_damage_value:
+      coordinates: [511.89, 368.13, 563.81, 382.477]
+    v2_totaled:
+      coordinates: [459.58, 366.14, 471.17, 378.27]
+      type: Boolean
+    v2_disposition_q:
+      coordinates: [22.77, 354.5, 44.28, 369.38]
+      type: *vehicle_disposition_type
+    v2_towed_to:
+      coordinates: [49.88, 329.89, 212.338, 341.61]
+    v2_towed_by:
+      coordinates: [217.08, 329.38, 378.37, 341.61]
+    v2_first_event_1:
+      coordinates: [568.58, 447.86, 590.09, 462.74]
+      type: *event_type
+    v2_second_event_2:
+      coordinates: [568.58, 424.15, 590.09, 439.03]
+      type: *event_type
+    v2_most_harmful_event_5:
+      coordinates: [568.09, 353.02, 589.6, 367.9]
+      type: *event_type
+    v2_traffic_control_n:
+      coordinates: [22.35, 608.94, 43.86, 623.82]
+      type: *traffic_control_type
+    v2_speed_limit_6:
+      coordinates: [568.09, 330.79, 589.6, 345.67]
+      type: Integer
+    v2_drivers_license_num:
+      coordinates: [131.09, 480.98, 419.935, 495.32]
+    v2_drivers_license_state:
+      coordinates: [468.46, 480.98, 498.796, 495.32]
+    v2_driver_male:
+      coordinates: [525.18, 479.31, 536.77, 491.44]
+      type: &v2_driver_gender
+        class: MultipleChoice
+        choices:
+          - v2_driver_male
+          - v2_driver_female
+    v2_driver_phone:
+      coordinates: [352.21, 461.99, 454.96, 475.41]
+    v2_driver:
+      coordinates: [48.56, 461.28, 340.9, 475.625]
+    v2_driver_address:
+      coordinates: [48.26, 442.18, 415.18, 456.52]
+    v2_driver_dob:
+      coordinates: [469.86, 442.69, 564.32, 457.03]
+      type: Date
+    v2_female:
+      coordinates: [525.18, 485.78, 536.77, 497.917]
+    v2_driver_condition_p:
+      coordinates: [22.77, 429.58, 44.28, 444.46]
+      type: *condition_type
+    v2_driver_contributing_circumstances_m:
+      coordinates: [23.07, 711.62, 44.58, 726.5]
+      type: *motorist_error
+    v2_citation_yes:
+      coordinates: [434.07, 412.09, 445.667, 424.227]
+      type: &v2_citation_type
+        class: MultipleChoice
+        choices:
+          - v2_driver_citation_pending
+          - v2_driver_citation_no
+          - v2_driver_citation_yes
+    v2_citation_no:
+      coordinates: [434.07, 404.63, 445.667, 416.76]
+      type: *v2_citation_type
+    v2_citation_pending:
+      coordinates: [382.35, 403.63, 393.94, 415.76]
+      type: *v2_citation_type
+    v2_citation_num:
+      coordinates: [471.37, 404.57, 514.63, 415.92]
+
+  diagram:
+    v1_movement:
+      coordinates: [38.31, 310.09, 64.48, 322.227]
+      type: &vehicle_movement_type
+        class: IntegerMapping
+        values:
+          1: Essentially straight ahead
+          2: Backing
+          3: Changing lanes
+          4: Overtaking/passing
+          5: Turning right
+          6: Turning left
+          7: Making u-turn
+          8: Entering traffic lane
+          9: Leaving traffic lane
+          10: Parked
+          11: Slowing or stopped in traffic
+          12: Other
+          13: Unknown
+    v1_n:
+      coordinates: [36.339, 346.79, 43.74, 356.79]
+      type: &v1_direction_type
+        class: MultipleChoice
+        choices:
+          - v1_n
+          - v1_s
+          - v1_e
+          - v1_w
+    v1_s:
+      coordinates: [45.23, 346.79, 52.64, 356.79]
+      type: *v1_direction_type
+    v1_e:
+      coordinates: [53.899, 346.79, 61.30, 356.79]
+      type: *v1_direction_type
+    v1_road:
+      coordinates: [72.49, 346.3, 136.1, 358.43]
+    v1_point_of_impact:
+      coordinates: [177.49, 329.76, 203.66, 341.89]
+      type: &vehicle_damage_type
+        class: IntegerMapping
+        values:
+          1: Front
+          2: Front passenger side
+          3: Passenger side
+          4: Rear passenger side
+          5: Rear
+          6: Rear driver side
+          7: Driver side
+          8: Front driver side
+          9: Top & windows
+          10: Undercarriage
+          11: Total (all areas)
+          12: Other
+    # d1_alcohol_drugs:
+    #   coordinates: [520.12, 316.93, 566.67, 344.38]
+    #    #   type: *alcohol_drugs_suspected_type
+    d1_bac_tested_no:
+      coordinates: [525.83, 330.42, 537.83, 340.42]
+      type: BooleanChoice
+    v1_num_occupants:
+      coordinates: [530.305, 374.495, 563.72, 392.055]
+      type: Integer
+    v1_airbag_front_driver:
+      coordinates: [313.35, 341.51, 327.17, 351.51]
+      type: &airbag_type
+        class: IntegerMapping
+        values:
+          1: Deployed - front
+          2: Deployed - side
+          3: Deployed - both front/side
+          4: Not deployed
+          5: Not applicable/no airbag available
+          6: Unknown
+    v1_airbag_rear_passenger:
+      coordinates: [343.73, 364.96, 357.55, 374.96]
+      type: *airbag_type
+    v1_airbag_rear_driver:
+      coordinates: [343.48, 341.51, 357.3, 351.51]
+      type: *airbag_type
+    v1_restraint_driver:
+      coordinates: [406.94, 340.77, 420.76, 350.77]
+      type: &restraint_type
+        class: IntegerMapping
+        values:
+          1: None used - vehicle occupant
+          2: Lap & shoulder belt used
+          3: Shoulder belt only used
+          4: Lap belt only used
+          5: Child safety seat used
+          6: Child booster seat used
+          7: DOT approved helmet used
+          8: Costume helmet used
+          9: Restraint use unknown
+    v1_restraint_rear_passenger:
+      coordinates: [436.59, 364.96, 450.41, 374.96]
+      type: *restraint_type
+    v1_restraint_rear_driver:
+      coordinates: [437.07, 340.77, 450.89, 350.77]
+      type: *restraint_type
+    report:
+      coordinates: [27.5, 485.0, 588.63, 594.18]
+    property_damage_1_owner_name_and_address:
+      coordinates: [126.02, 462.134, 410.26, 476.99]
+    property_damage_1_owner_phone:
+      coordinates: [413.74, 462.72, 504.894, 475.705]
+    property_damage_1_cost:
+      coordinates: [517.71, 463.126, 589.34, 477.46]
+    property_damage_1_object:
+      coordinates: [33.65, 462.616, 121.58, 476.95]
+    highway_num:
+      coordinates: [396.09, 790.29, 461.22, 804.54]
+    injury1_medical_facility:
+      coordinates: [119.539, 268.42, 291.197, 282.97]
+    injury1_ems_service:
+      coordinates: [293.04, 268.697, 470.02, 282.94]
+    v1_most_damaged_area:
+      coordinates: [178.46, 309.5, 204.63, 321.63]
+      type: *vehicle_damage_type
+    witness1_name_address:
+      coordinates: [35.25, 419.21, 489.18, 433.555]
+    witness1_phone:
+      coordinates: [497.15, 418.93, 586.24, 432.35]
+    witness2_name_address:
+      coordinates: [35.14, 397.91, 489.07, 412.25]
+    witness2_phone:
+      coordinates: [497.15, 397.34, 586.24, 410.76]
+    nearest_city:
+      coordinates: [380.17, 723.08, 563.62, 737.42]
+    v1_driver_local_num:
+      coordinates: [469.745, 584.55, 516.27, 595.9]
+    photos_taken_yes:
+      coordinates: [555.23, 218.72, 567.23, 227.72]
+      type: BooleanChoice
+    photos_taken_no:
+      coordinates: [555.23, 209.312, 567.416, 218.72]
+      type: BooleanChoice
+    v2_movement:
+      coordinates: [38.81, 292.3, 64.98, 304.43]
+      type: *vehicle_movement_type
+    v2_n:
+      coordinates: [36.19, 329.21, 43.56, 339.21]
+      type: &v2_direction_type
+        class: MultipleChoice
+        choices:
+          - v2_n
+          - v2_s
+          - v2_e
+          - v2_w
+    v2_s:
+      coordinates: [45.1, 329.21, 52.51, 339.21]
+      type: *v2_direction_type
+    v2_w:
+      coordinates: [62.87, 329.21, 70.28, 339.21]
+      type: *v2_direction_type
+    v2_e:
+      coordinates: [53.75, 329.21, 61.16, 339.21]
+      type: *v2_direction_type
+    v2_road:
+      coordinates: [72.49, 328.85, 136.1, 340.98]
+    v2_point_of_impact:
+      coordinates: [253.55, 329.76, 279.72, 341.89]
+      type: *vehicle_damage_type
+    v2_most_damaged_area:
+      coordinates: [254.05, 310.49, 280.22, 322.62]
+      type: *vehicle_damage_type
+    d2_bac_tested_no:
+      coordinates: [551.61, 330.42, 563.61, 340.42]
+      type: BooleanChoice
+    d2_alcohol_drugs:
+      coordinates: [541.09, 288.08, 589.5, 300.21]
+      type: *alcohol_drugs_suspected_type
+    v2_num_occupants:
+      coordinates: [574.67, 377.48, 589.49, 389.61]
+      type: Integer
+    v2_airbag_front_driver:
+      coordinates: [311.24, 230.8, 325.06, 240.19]
+      type: *airbag_type
+    v2_airbag_front_passenger:
+      coordinates: [310.76, 254.99, 324.58, 264.38]
+      type: *airbag_type
+    v2_restraint_passenger:
+      coordinates: [403.62, 254.99, 417.44, 264.38]
+      type: *restraint_type
+    v2_restraint_driver:
+      coordinates: [404.1, 230.8, 417.92, 240.19]
+      type: *restraint_type
+
+  addl_diagram:
+    witness3_name_address:
+      coordinates: [34.6, 102.26, 488.533, 116.601]
+    witness1_phone:
+      coordinates: [497.97, 101.98, 587.53, 115.4]
+
+  40a:
+    v3_num_occupants:
+      coordinates: [522.2, 297.3, 536.46, 307.6]
+      type: Integer
+    v3_license_plate:
+      coordinates: [131.99, 556.59, 369.63, 570.01]
+    v3_license_plate_state:
+      coordinates: [532.65, 554.76, 561.98, 569.1]
+    v3_license_plate_year:
+      coordinates: [421.2, 470.9, 555.66, 570.0]
+    v3_license_plate_pa:
+      coordinates: [85.35, 554.91, 111.21, 569.25]
+    v3_vin:
+      coordinates: [91.31, 515.77, 372.69, 530.11]
+    v3_drivers_license_num:
+      coordinates: [129.3, 649.27, 418.14, 663.61]
+    v3_drivers_license_state:
+      coordinates: [468.75, 649.11, 499.08, 663.45]
+    v3_year:
+      coordinates: [115.2, 536.61, 159.43, 550.95]
+    v3_make:
+      coordinates: [173.85, 536.02, 240.46, 550.36]
+    v3_model:
+      coordinates: [244.8, 536.02, 311.9, 550.36]
+    v3_style:
+      coordinates: [314.55, 535.86, 381.67, 550.2]
+    v3_color:
+      coordinates: [388.35, 535.72, 455.45, 550.06]
+    v3_driver_name:
+      coordinates: [47.55, 630.75, 339.89, 642.96]
+    v3_driver_phone:
+      coordinates: [350.96, 630.82, 453.9, 644.24]
+    v3_driver_address:
+      coordinates: [48.9, 611.76, 415.82, 626.1]
+    v3_driver_dob:
+      coordinates: [468.3, 611.61, 562.76, 625.95]
+      type: Date
+    v3_driver_male:
+      coordinates: [525.75, 647.57, 537.34, 659.7]
+      type: &v3_driver_gender
+        class: MultipleChoice
+        choices:
+          - v3_driver_male
+          - v3_driver_female
+    v3_driver_female:
+      coordinates: [525.75, 653.42, 537.34, 665.55]
+      type: *v3_driver_gender
+    v3_driver_bac_tested_no:
+      coordinates: [534.03, 265.99, 546.03, 274.99]
+      type: BooleanChoice
+    v3_driver_bac_tested_yes:
+      coordinates: [534.03, 252.18, 546.03, 261.18]
+      type: BooleanChoice
+    v3_owner_name:
+      coordinates: [47.55, 593.63, 341.37, 605.66]
+    v3_owner_phone:
+      coordinates: [350.7, 593.76, 454.97, 607.18]
+    v3_owner_address:
+      coordinates: [47.55, 574.5, 373.69, 585.29]
+    v3_insurance_co:
+      coordinates: [385.62, 517.35, 558.13, 529.6]
+    v3_insurance_policy_num:
+      coordinates: [385.62, 498.37, 558.62, 510.75]
+    v3_num_occupants:
+      coordinates: [525.52, 205.87, 548.24, 218.0]
+      type: Integer
+    v3_driver_contributing_circumstances_m:
+      coordinates: [23.15, 574.38, 44.66, 589.26]
+      type: *motorist_error
+    v3_damage_value:
+      coordinates: [511.35, 536.32, 564.74, 550.66]
+    v3_first_event_1:
+      coordinates: [568.12, 621.87, 589.63, 636.75]
+      type: *event_type
+    v3_most_harmful_event_5:
+      coordinates: [568.12, 526.51, 589.63, 541.39]
+      type: *event_type
+    v3_speed_limit_6:
+      coordinates: [568.12, 502.3, 589.63, 517.18]
+      type: Integer
+    v3_traffic_control_n:
+      coordinates: [23.15, 597.54, 44.66, 612.42]
+      type: *traffic_control_type
+    v3_driver_condition_p:
+      coordinates: [23.15, 551.23, 44.66, 566.11]
+      type: *condition_type
+    v3_movement:
+      coordinates: [40.59, 230.28, 66.76, 242.41]
+      type: *vehicle_movement_type
+    v3_n:
+      coordinates: [36.9, 269.46, 44.31, 278.85]
+      type: &v3_direction_type
+        class: MultipleChoice
+        choices:
+          - v3_n
+          - v3_s
+          - v3_e
+          - v3_w
+    v3_s:
+      coordinates: [45.81, 269.46, 53.22, 278.85]
+      type: *v3_direction_type
+    v3_e:
+      coordinates: [54.46, 269.46, 61.87, 278.85]
+      type: *v3_direction_type
+    v3_w:
+      coordinates: [63.58, 269.46, 70.99, 278.85]
+      type: *v3_direction_type
+    v3_road:
+      coordinates: [73.05, 267.62, 136.66, 279.75]
+    v3_point_of_impact:
+      coordinates: [176.99, 251.88, 203.16, 264.01]
+      type: *vehicle_damage_type
+    v3_most_damaged_area:
+      coordinates: [177.36, 232.76, 203.53, 244.89]
+      type: *vehicle_damage_type
+
+  40b:
+    report_continued:
+      coordinates: [24.93, 89.54, 586.03, 671.83]
+
+skip:
+  40a:
+    - [32.62, 746.64, 125.25, 772.15]
+    - [557.45, 297.0, 571.71, 307.6]
+    - [149.16, 723.88, 287.9, 738.22]
+    - [273.75, 678.07, 542.98, 692.41]
+    - [273.9, 691.5, 560.77, 705.9]
+    - [293.1, 707.16, 494.88, 720.0]
+    - [309.3, 724.26, 495.28, 738.6]
+    - [56.25, 696.66, 199.38, 711.0]
+    - [568.5, 220.12, 580.5, 229.12]
+    - [532.5, 220.49, 544.5, 229.49]
+    - [22.8, 34.8, 252.15, 261.15]
+    - [22.95, 34.95, 269.55, 278.55]
+    - [23.25, 35.25, 214.34, 223.34]
+    - [23.1, 35.1, 232.2, 241.2]
+    - [258.38, 270.38, 271.12, 280.12]
+    - [183.37, 195.37, 271.87, 280.87]
+    - [341.35, 353.35, 195.15, 204.15]
+    - [341.25, 353.25, 300.6, 309.6]
+    - [564.75, 579.09, 749.78, 764.12]
+    - [525.04, 539.38, 749.3, 763.64]
+    - [337.12, 347.99, 667.42, 676.5]
+    - [433.87, 445.87, 301.49, 310.49]
+    - [337.2, 349.2, 487.5, 496.5]
+    - [434.25, 446.25, 195.6, 204.6]
+    - [568.22, 586.81, 648.73, 664.33]
+    - [22.22, 40.81, 647.53, 663.13]
+    - [569.25, 587.85, 471.15, 486.75]
+  40b:
+    - [154.08, 720.24, 289.084, 742.56]
+    - [161.81, 60.24, 257.04, 83.04]
+    - [20.5, 739.5, 123.5, 772.5]
+    - [224.75, 24.13, 459.07, 52.93]
+    - [24.7, 61.02, 134.45, 76.62]
+    - [273.24, 676.8, 590.16, 691.44]
+    - [274.06, 692.62, 586.64, 704.95]
+    - [295.03, 707.5, 496.37, 719.08]
+    - [296.88, 60.24, 589.32, 83.04]
+    - [30.45, 23.76, 220.92, 52.56]
+    - [305.77, 721.71, 494.95, 734.91]
+    - [512.22, 26.73, 584.84, 53.3]
+    - [520.46, 745.6, 544.92, 761.92]
+    - [55.72, 694.53, 192.77, 709.53]
+    - [560.04, 745.6, 585.0, 762.42]
+  diagram:
+    - [161.52, 208.03, 256.867, 220.163]
+    #- [21.5, 174.5, 590.5, 945.5]
+    - [230.193, 181.369, 462.84, 193.49]
+    - [25.8004, 206.403, 133.482, 218.53]
+    - [262.78, 206.567, 496.42, 218.693]
+    - [28.1502, 181.869, 217.826, 193.99]
+    - [448.0825, 914.8125, 589.5525, 931.86]
+    - [516.17, 184.398, 587.31, 196.434]
+    - [9.2865295, 621.29, -397.023, 610.911]
+  addl_diagram:
+    - [159.25, 58.71, 254.59, 70.84]
+    - [227.52, 28.97, 460.17, 41.1]
+    - [24.58, 58.71, 132.26, 70.84]
+    - [25.48, 29.47, 215.16, 41.6]
+    - [262.28, 58.71, 495.926, 70.84]
+    - [513.51, 30.44, 584.64, 42.57]
+
+start_index:
+  40a: 245
+  40b: 370
+  addl_diagram: 389
+  diagram: 306
+  report: 345
+start_y:
+  addl_diagram: 180
+  diagram: 595

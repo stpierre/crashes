@@ -3,9 +3,10 @@
 from __future__ import print_function
 
 import collections
+import copy
 import datetime
 import glob
-import json
+import itertools
 import logging
 import multiprocessing
 import os
@@ -19,7 +20,9 @@ from pdfminer import pdfinterp
 from pdfminer import pdfpage
 from pdfminer import pdfparser
 from pdfminer import psparser
+from six.moves import input
 from six.moves import queue
+import yaml
 
 from crashes.commands import base
 from crashes import db
@@ -27,6 +30,9 @@ from crashes import log
 from crashes import utils
 
 LOG = logging.getLogger(__name__)
+
+ParsedPDFObjectData = collections.namedtuple("ParsedPDFObjectData", ("name",
+                                                                     "data"))
 
 
 def get_text(obj):
@@ -40,425 +46,262 @@ def get_text(obj):
             return ""
 
 
-class LocatorAdjustment(collections.Iterable):
+def pdfobj_repr(pdfobj):
+    return "%s(%r at %s)" % (pdfobj.__class__.__name__, get_text(pdfobj),
+                             pdfobj.bbox)
+
+
+class Converter(object):
+    def __init__(self, **kwargs):
+        pass
+
+    def convert(self, data):
+        raise NotImplementedError
+
+    @staticmethod
+    def load_converter(record_type):
+        try:
+            cls_name = record_type["class"]
+            kwargs = copy.copy(record_type)
+            del kwargs["class"]
+        except TypeError:
+            cls_name = record_type
+            kwargs = {}
+        return globals()[cls_name](**kwargs)
+
+
+class Integer(Converter):
+    def convert(self, data):
+        return int(data)
+
+
+class Date(Converter):
+    _date_split = re.compile(r'[-/]')
+
+    def convert(self, data):
+        """Try to parse a date in the accident report format.
+
+        At least, it's *supposed* to be the accident report
+        format. They're also supposed to use slashes, not dashes, but
+        that isn't always the case.
+        """
+        month, day, year = self._date_split.split(data)
+        return datetime.date(int(year), int(month), int(day))
+
+
+class Time(Converter):
+    def convert(self, data):
+        """Try to parse a time in the accident report format."""
+        if ":" in data:
+            hours, minutes = data.split(":")
+        else:
+            hours = data[0:2]
+            minutes = data[2:4]
+            return datetime.time(int(hours), int(minutes))
+
+
+class Boolean(Converter):
+    def convert(self, data):
+        return data.lower() == "x"
+
+
+class BooleanChoice(Boolean):
+    # NOTE(stpierre): for now, BooleanChoice and MultipleChoice are
+    # just going to act as booleans; eventually it'd be nice to
+    # abstract them so that they record a single datum checked for
+    # consistency, but this is sufficient for now
+    pass
+
+
+class MultipleChoice(Boolean):
+    pass
+
+
+class IntegerMapping(Integer):
+    def __init__(self, values):
+        super(IntegerMapping, self).__init__()
+        self._values = values
+
+    def convert(self, data):
+        return self._values[super(IntegerMapping, self).convert(data)]
+
+
+class PDFDocument(collections.Iterable):
+    def __init__(self, filename, layout):
+        self.filename = filename
+        self.stream = open(filename, 'rb')
+        self.document = None
+        self.rsrcmgr = None
+        self.device = None
+        self.interpreter = None
+        self.layout = layout
+
+    def _parse(self):
+        if self.interpreter is None:
+            # so much pdfminer boilerplate....
+            self.document = pdfdocument.PDFDocument(
+                pdfparser.PDFParser(self.stream))
+            self.rsrcmgr = pdfinterp.PDFResourceManager()
+            self.device = pdfconverter.PDFPageAggregator(
+                self.rsrcmgr, laparams=pdflayout.LAParams())
+            self.interpreter = pdfinterp.PDFPageInterpreter(
+                self.rsrcmgr, self.device)
+
+    def __iter__(self):
+        self._parse()
+
+        page_num = 0
+        for raw_page in pdfpage.PDFPage.create_pages(self.document):
+            page_num += 1
+            self.interpreter.process_page(raw_page)
+            layout = self.device.get_result()
+            objects = list(layout)
+
+            try:
+                LOG.debug("Instantiating page object for page %s of %s",
+                          page_num, self.filename)
+                yield PDFPage.factory(objects, self.layout, number=page_num)
+            except UnknownPageType:
+                raise UnknownPageType("%s page %s" % (self.filename, page_num))
+
+
+class UnknownPageType(Exception):
+    pass
+
+
+class PDFPage(collections.Iterable):
+    name = None
+    _subclasses = None
+
+    def __init__(self, objects, layout, number=0):
+        self.objects = objects
+        self.layout = layout
+        self.number = number
+        self.start_index = layout["start_index"].get(self.name, 0)
+        self.start_y = layout["start_y"].get(self.name)
+
+    def __iter__(self):
+        for obj in self.objects[self.start_index:]:
+            coords = Coordinates(*obj.bbox)
+            if self.start_y and coords.ymin > self.start_y:
+                continue
+            yield obj
+
+    @classmethod
+    def factory(cls, objects, layout, number=0):
+        for subclass in cls._get_subclasses():
+            if subclass.matches(objects):
+                return subclass(objects, layout, number=number)
+        raise UnknownPageType()
+
+    @classmethod
+    def _get_subclasses(cls):
+        if cls._subclasses is None:
+            cls._subclasses = []
+            for obj_name, obj in globals().items():
+                if (isinstance(obj, type) and issubclass(obj, cls)
+                        and obj != cls and not obj_name.startswith("_")):
+                    LOG.debug("Discovered %s subclass: %s", cls.__name__,
+                              obj.__name__)
+                    cls._subclasses.append(obj)
+        return cls._subclasses
+
+    @classmethod
+    def matches(cls, objects):
+        raise NotImplementedError()
+
+
+class ReportPage(PDFPage):
+    name = "report"
+
+    @classmethod
+    def matches(cls, objects):
+        return "Motor Vehicle  Accident  Report" in get_text(objects[0])
+
+
+class DiagramPage(PDFPage):
+    name = "diagram"
+
+    @classmethod
+    def matches(cls, objects):
+        return get_text(
+            objects[0]).startswith("THE  FOLLOWING INFORMATION  IS REQUIRED")
+
+
+class AdditionalDiagramPage(PDFPage):
+    name = "addl_diagram"
+
+    @classmethod
+    def matches(cls, objects):
+        return get_text(objects[0]).startswith("ADDITIONAL  -  DIAGRAM")
+
+
+class ContinuationPage40a(PDFPage):
+    name = "40a"
+
+    @classmethod
+    def matches(cls, objects):
+        return "40a" in get_text(objects[241])
+
+
+class ContinuationPage40b(PDFPage):
+    name = "40b"
+
+    @classmethod
+    def matches(cls, objects):
+        return "40b" in get_text(objects[368])
+
+
+class Coordinates(collections.Iterable):
     """A set of coordinate pairs representing an area in a PDF."""
 
-    def __init__(self, xmin, xmax, ymin, ymax):
-        self.xmin = xmin
-        self.xmax = xmax
-        self.ymin = ymin
-        self.ymax = ymax
+    def __init__(self, x0, y0, x1, y1):
+        self.xmin = min(x0, x1)
+        self.xmax = max(x0, x1)
+        self.ymin = min(y0, y1)
+        self.ymax = max(y0, y1)
 
     def __repr__(self):
         return "%s(xmin=%s, xmax=%s, ymin=%s, ymax=%s)" % (
             self.__class__.__name__, self.xmin, self.xmax, self.ymin,
             self.ymax)
 
-    @staticmethod
-    def _min(num1, num2):
-        """min() function that considers all numbers > None.
+    def __eq__(self, other):
+        return (abs(self.xmin - other.xmin) < 1e-6
+                and abs(self.xmax - other.xmax) < 1e-6
+                and abs(self.ymin - other.ymin) < 1e-6
+                and abs(self.ymax - other.ymax) < 1e-6)
 
-        None is less than all numbers by default, but for
-        LocatorAdjustments we want to discard a None value as soon as
-        we have a real number -- any real number -- to replace it
-        with.
-        """
-        if num1 is None:
-            return num2
-        elif num2 is None:
-            return num1
-        else:
-            return min(num1, num2)
+    def to_list(self):
+        return [self.xmin, self.xmax, self.ymin, self.ymax]
 
-    @staticmethod
-    def _max(num1, num2):
-        """max() function for symmetricity.
-
-        max() works just fine with None values, but since we provide
-        _min() it's nice to provide _max() as well.
-        """
-        return max(num1, num2)
-
-    def contains(self, obj):
+    def contains(self, other, fuzz=0):
         """Whether or not an object is contained within the bounds."""
-        return ((self.ymin is None or obj.y0 > self.ymin)
-                and (self.ymax is None or obj.y1 < self.ymax)
-                and (self.xmin is None or obj.x0 > self.xmin)
-                and (self.xmax is None or obj.x1 < self.xmax))
+        return (other.ymax - fuzz <= self.ymax
+                and other.ymin + fuzz >= self.ymin
+                and other.xmax - fuzz <= self.xmax
+                and other.xmin + fuzz >= self.xmin)
 
-    def expand_limits(self, other):
-        """Expand the limits of this object with the limits of another.
+    def overlaps(self, other):
+        """Whether or not another object overlaps this one at all."""
+        return (other.xmin < self.xmax and other.xmax > self.xmin
+                and other.ymin < self.ymax and other.ymax > self.ymin)
 
-        Each limit is set to the more prominent value -- i.e., the
-        lesser value for minima, the greater value for maxima.
-        """
-        self.xmin = self._min(other.xmin, self.xmin)
-        self.xmax = self._max(other.xmax, self.xmax)
-        self.ymin = self._min(other.ymin, self.ymin)
-        self.ymax = self._max(other.ymax, self.ymax)
-
-    def contract_limits(self, other):
-        """Contract the limits of this object to the limits of another.
-
-        Each limit is set to the less prominent value -- i.e., the
-        greater value for minima, the lesser value for maxima.
-        """
-        self.xmin = self._max(other.xmin, self.xmin)
-        self.xmax = self._min(other.xmax, self.xmax)
-        self.ymin = self._max(other.ymin, self.ymin)
-        self.ymax = self._min(other.ymax, self.ymax)
+    def merge(self, other):
+        if hasattr(other, "xmin"):
+            return self.__class__(
+                min(self.xmin, other.xmin),
+                max(self.xmax, other.xmax),
+                min(self.ymin, other.ymin), max(self.ymax, other.ymax))
+        else:
+            return self.__class__(
+                min(self.xmin, other[0]),
+                max(self.xmax, other[1]),
+                min(self.ymin, other[2]), max(self.ymax, other[3]))
 
     def __iter__(self):
         for item in (self.xmin, self.xmax, self.ymin, self.ymax):
             yield item
-
-
-class Locator(object):
-    """Abstract class for PDF locators.
-
-    Locator classes are used to find fields in a PDF by reference to
-    the other known fields. See the concrete implementations below for
-    examples.
-
-    A concrete Locator object consists of a pattern to match, and how
-    to adjust the location of the desired field by the location of
-    that pattern. For instance, the 'name' field might be to the right
-    of the known text "Name:"; a locator could be used to express this
-    relationship. Locators can be combined with other criteria in a
-    PDFFinder class.
-    """
-
-    def __init__(self, pattern, fuzz=0):
-        # pattern can either be a compiled regex, or a string
-        # describing a regex
-        if not hasattr(pattern, "search"):
-            pattern = re.compile(pattern)
-        self._pattern = pattern
-        self.fuzz = fuzz
-        self._adj = LocatorAdjustment(None, None, None, None)
-
-    def matches(self, text):
-        """Whether or not the pattern matches the given text."""
-        return bool(self._pattern.search(text))
-
-    def check_text(self, obj):
-        """Expand limits if obj matches the pattern.
-
-        If the text in the given object matches this Locator's
-        pattern, then the bounds are expanded to the location of the
-        object and True is returned. Otherwise, False is returned.
-        """
-        text = get_text(obj)
-        if self.matches(text):
-            self._adj.expand_limits(self.set_by_object(obj))
-            return True
-        return False
-
-    def reset(self):
-        """Reset the bounds of this locator so it can be reused."""
-        self._adj = LocatorAdjustment(None, None, None, None)
-
-    @property
-    def bounds(self):
-        """Get a LocatorAdjustment containing this Locator's bounds."""
-        xmin = self._adj.xmin - self.fuzz if self._adj.xmin else None
-        xmax = self._adj.xmax + self.fuzz if self._adj.xmax else None
-        ymin = self._adj.ymin - self.fuzz if self._adj.ymin else None
-        ymax = self._adj.ymax + self.fuzz if self._adj.ymax else None
-        return LocatorAdjustment(xmin, xmax, ymin, ymax)
-
-    def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self._pattern.pattern)
-
-    def set_by_object(self, obj):
-        """Return a LocatorAdjustment based on the given object.
-
-        This must be implemented by concrete Locator implementations,
-        which will determine for themselves how to adjust the bounds.
-        """
-        raise NotImplementedError
-
-
-class LeftOf(Locator):
-    """Field is left of objects matching the pattern.
-
-    Does not imply any vertical alignment; this only sets the maximum
-    X value.
-    """
-
-    def set_by_object(self, obj):
-        return LocatorAdjustment(None, obj.x0, None, None)
-
-
-class RightOf(Locator):
-    """Field is right of objects matching the pattern.
-
-    Does not imply any vertical alignment; this only sets the minimum
-    X value.
-    """
-
-    def set_by_object(self, obj):
-        return LocatorAdjustment(obj.x1, None, None, None)
-
-
-class Above(Locator):
-    """Field is above objects matching the pattern.
-
-    Does not imply any horizontal alignment; this only sets the
-    minimum Y value. (Note that the Y axis in PDFs is "backwards"; the
-    bottom left of the page is (0, 0), while the top right is
-    (1000,600) or something like that.)
-    """
-
-    def set_by_object(self, obj):
-        return LocatorAdjustment(None, None, obj.y1, None)
-
-
-class Below(Locator):
-    """Field is below objects matching the pattern.
-
-    Does not imply any horizontal alignment; this only sets the
-    maximum Y value.
-    """
-
-    def set_by_object(self, obj):
-        return LocatorAdjustment(None, None, None, obj.y0)
-
-
-class AlignedWith(Locator):
-    """Field is aligned horizontally with objects matching the pattern.
-
-    The field may be on either side of (or even on top of) the
-    objects. No horizontal position is implied. This only sets the Y
-    values.
-    """
-
-    def set_by_object(self, obj):
-        return LocatorAdjustment(None, None, obj.y0, obj.y1)
-
-
-class VAlignedWith(Locator):
-    """Field is aligned vertically with objects matching the pattern.
-
-    The field may be on above or below (or even on top of) the
-    objects. No vertical position is implied. This only sets the X
-    values.
-    """
-
-    def set_by_object(self, obj):
-        return LocatorAdjustment(obj.x0, obj.x1, None, None)
-
-
-class NotFound(Exception):
-    """Raised when PDFFinder cannot find a datum in a page."""
-
-
-class PDFFinder(object):
-    """Find text in a PDF based on Locators and other criteria."""
-
-    newline_re = re.compile(r'\n')
-    _sentinel = object()
-
-    def __init__(
-            self,
-            name,
-            locators,
-            minpage=None,
-            maxpage=None,
-            type=None,  # pylint: disable=redefined-builtin
-            multiple=False,
-            default=_sentinel,
-            serialize=None,
-            short_circuit=False):
-        self.name = name
-        self.locators = locators
-        self.minpage = minpage
-        self.maxpage = maxpage
-        self.type = type
-        self.multiple = multiple
-        self.short_circuit = short_circuit
-        if multiple:
-            self._default = []
-        else:
-            self._default = default
-        self._data = self._default
-        if serialize is None:
-            self.serialize = lambda v: v
-        else:
-            self.serialize = serialize
-
-    @property
-    def bounds(self):
-        """Get the coordinate bounds for possible fields.
-
-        This is based only on minpage/maxpage and the locators.
-        """
-        bounds = LocatorAdjustment(None, None, None, None)
-        for locator in self.locators:
-            bounds.contract_limits(locator.bounds)
-        return bounds
-
-    def _get_bounded_objects(self, layout, page=None):
-        """Get all objects within the bounds that are not locators.
-
-        This returns all objects within the bounds determined by the
-        Locators given to this PDFFinder, which are not themselves
-        used to determine the bounds. (This is only an issue with PDF
-        objects that are both used to determine the bounds and are
-        within them, e.g., potentially AlignedWith and VAlignedWith
-        Locators.)
-        """
-        if (page is not None and (self.minpage or self.maxpage)
-                and ((self.minpage is not None and page < self.minpage) or
-                     (self.maxpage is not None and page > self.maxpage))):
-            return
-
-        for locator in self.locators:
-            locator.reset()
-
-        locator_objs = []
-        missing_locators = self.locators[:]
-        for obj in layout:
-            for locator in missing_locators[:]:
-                if locator.check_text(obj):
-                    logtext = self.newline_re.sub(r'\\n', get_text(obj))
-                    LOG.debug("Found locator %s for %s on page %s: %s ('%s')",
-                              locator, self.name, page, obj, logtext)
-                    locator_objs.append(obj)
-                    missing_locators.remove(locator)
-        if missing_locators:
-            LOG.debug("Missing locators for %s on page %s: %s", self.name,
-                      page, missing_locators)
-            return
-        LOG.debug("Found bounds for %s on page %s: %s", self.name, page,
-                  self.bounds)
-
-        return [
-            obj for obj in layout
-            if obj not in locator_objs and self.bounds.contains(obj)
-        ]
-
-    def _get_longest(self, candidates, page):
-        longest = ''
-        obj = None
-        for candidate in candidates:
-            text = get_text(candidate)
-            if len(text) > len(longest):
-                longest = text
-                obj = candidate
-        if longest:
-            LOG.debug("Found %s on page %s: %s (%s)", self.name, page, longest,
-                      obj)
-            return longest
-        else:
-            LOG.debug("No %s found on page %s", self.name, page)
-            raise NotFound()
-
-    def _get_type(self, candidates, page):
-        for candidate in candidates:
-            text = get_text(candidate)
-            logtext = self.newline_re.sub(r'\\n', text)
-            LOG.debug("%s: Checking text '%s' against type", self.name,
-                      logtext)
-            try:
-                retval = self.type(text)
-                LOG.debug("%s: Converted text '%s' to: %s", self.name, logtext,
-                          retval)
-                LOG.debug("Found %s on page %s: %s (%s)", self.name, page,
-                          retval, candidate)
-                return retval
-            except Exception as err:  # pylint: disable=broad-except
-                LOG.debug("%s: Error converting text '%s' to type: %s",
-                          self.name, logtext, err)
-        LOG.debug("No %s matches correct type on page %s", self.name, page)
-        raise NotFound()
-
-    def get(self, layout, page=None):
-        """Get the value described by this PDFFinder in the layout.
-
-        Raises NotFound if no value is found.
-        """
-        LOG.debug("Finding %s on page %s", self.name, page)
-        candidates = self._get_bounded_objects(layout, page=page)
-        if not candidates:
-            LOG.debug("No %s found on page %s", self.name, page)
-            raise NotFound()
-        if self.type == 'longest':
-            return self._get_longest(candidates, page)
-        elif self.type:
-            return self._get_type(candidates, page)
-        else:
-            if len(candidates) > 1:
-                LOG.warning("Multiple candidates found for %s: %s", self.name,
-                            candidates)
-            obj = candidates[0]
-            text = get_text(obj)
-            LOG.debug("Found %s on page %s: %s (%s)", self.name, page, text,
-                      obj)
-            return text
-
-    def update(self, layout, page=None):
-        """Update the value stored by this PDFFinder by searching the layout.
-
-        This is what should usually be used; a PDF can be parsed page
-        by page, and each PDFFinder can be update()'d to collect the
-        first value, or all values for multi-valued PDFFinders.
-        """
-        LOG.debug("Updating field %s", self.name)
-        try:
-            if self.multiple:
-                newval = self.get(layout, page=page)
-                self._data.append(newval)
-            elif self._data == self._default:
-                self._data = self.get(layout, page=page)
-        except NotFound:
-            pass
-
-        return self._data
-
-    @property
-    def value(self):
-        """Get the value accumulated with update()."""
-        if self._data == self._sentinel:
-            return None
-        try:
-            return self.serialize(self._data)
-        except Exception as err:  # pylint: disable=broad-except
-            LOG.warning("Failed to serialize %s '%s': %s", self.name,
-                        self._data, err)
-            return None
-
-
-_DATE_SPLIT = re.compile(r'[-/]')
-
-
-def _parse_date(text):
-    """Try to parse a date in the accident report format.
-
-    At least, it's *supposed* to be the accident report
-    format. They're also supposed to use slashes, not dashes, but that
-    isn't always the case.
-    """
-    month, day, year = _DATE_SPLIT.split(text)
-    return datetime.date(int(year), int(month), int(day))
-
-
-def _parse_time(text):
-    """Try to parse a time in the accident report format."""
-    if ":" in text:
-        hours, minutes = text.split(":")
-    else:
-        hours = text[0:2]
-        minutes = text[2:4]
-    return datetime.time(int(hours), int(minutes))
-
-
-def _parse_gender(text):
-    value = text.upper().strip()
-    if value not in ("M", "F"):
-        raise ValueError("%r is not either M or F" % value)
-    else:
-        return value
 
 
 class Parse(base.Command):
@@ -468,6 +311,7 @@ class Parse(base.Command):
         base.Argument("files", nargs='*'),
         base.Argument(
             "--processes", type=int, default=multiprocessing.cpu_count()),
+        base.Argument("--interactive", action="store_true"),
         base.Argument("--reparse-curated", action="store_true")
     ]
 
@@ -486,12 +330,15 @@ class Parse(base.Command):
                               result)
                     LOG.debug("%s items still in result queue",
                               self._result_queue.qsize())
-                    if self.options.files:
-                        print(json.dumps(result))
-                    else:
-                        db.collisions.upsert(result)
+                    self._store_one_result(result)
             except queue.Empty:
                 break
+
+    def _store_one_result(self, result):
+        if self.options.files:
+            print(repr(result))
+        else:
+            db.collisions.upsert(result)
 
     def _build_filelist(self):
         LOG.debug("Building list of files to parse...")
@@ -523,12 +370,25 @@ class Parse(base.Command):
         filelist = self._build_filelist()
         LOG.debug("Parsing %s files", len(filelist))
 
-        if len(filelist) < self.options.processes:
-            LOG.debug("Fewer files than processes (%s files, %s processes)",
-                      len(filelist), self.options.processes)
+        if self.options.interactive:
+            return self.run_foreground(filelist)
+        elif len(filelist) < self.options.processes:
+            LOG.debug("Fewer files than processes (%s files, %s processes)" %
+                      (len(filelist), self.options.processes))
         nprocs = min(len(filelist), self.options.processes)
 
-        LOG.debug("Building %s worker processes", nprocs)
+        if nprocs < 2:
+            return self.run_foreground(filelist)
+        else:
+            return self.run_multiprocess(filelist, nprocs)
+
+    def run_foreground(self, filelist):
+        parser = Parser(self.options)
+        for fpath in filelist:
+            self._store_one_result(parser.parse(fpath))
+
+    def run_multiprocess(self, filelist, nprocs):
+        LOG.debug("Building %s worker processes" % nprocs)
         processes = [
             ParseChildProcess(
                 self._terminate,
@@ -588,18 +448,32 @@ class Parse(base.Command):
         self._result_queue.close()
 
 
-class ParseChildProcess(multiprocessing.Process):
-    """Child process for Parse command."""
+class Parser(object):
+    interactive = True
 
     _injured_name_re = re.compile(r'^\s*(?P<name>[^\d]*?)\s+\d')
 
-    def __init__(self, terminate, work_queue, result_queue, options,
-                 name=None):
-        super(ParseChildProcess, self).__init__(name=name)
-        self._terminate = terminate
-        self._work_queue = work_queue
-        self._result_queue = result_queue
+    def __init__(self, options):
         self.options = options
+        self.layout = yaml.load(open(self.options.layout))
+
+        for objects in self.layout["objects"].values():
+            for obj in objects.values():
+                try:
+                    obj["raw_coordinates"] = obj["coordinates"]
+                except KeyError:
+                    LOG.error("Malformed layout object: %s", obj)
+                    LOG.error("Missing 'coordinates' key")
+                    raise
+                obj["coordinates"] = Coordinates(*obj["raw_coordinates"])
+
+                if "type" in obj:
+                    obj["converter"] = Converter.load_converter(obj["type"])
+
+        for pg_type, coords_list in self.layout["skip"].items():
+            self.layout["skip"][pg_type] = [
+                Coordinates(*c) for c in coords_list
+            ]
 
     def _munge_name(self, name):
         """Anonymize a name so that it can be compared but not read.
@@ -614,149 +488,176 @@ class ParseChildProcess(multiprocessing.Process):
             name = match.group("name")
         return "".join(w[0] for w in name.split())
 
-    def _get_fields(self):
-        """Get a list of PDFFinders representing the fields to find.
+    def _handle_record_multiple_candidates(self, pdfobj, page, filename,
+                                           candidates):
+        coords = Coordinates(*pdfobj.bbox)
+        if self.interactive:
+            print(
+                "Could not determine what %s on page %s of %s is. Candidates:"
+                % (pdfobj_repr(pdfobj), page.name, filename))
+            for obj_name, candidate in candidates.items():
+                print("  %s: %s" % (obj_name, candidate))
+            name = None
+            while (name is None
+                   or (name not in candidates and name.upper() != 'S')):
+                name = input("Enter name, or 'S' to skip: ")
+            if name.upper() == 'S':
+                self.layout["skip"].setdefault(page.name, []).append(coords)
+                print("Adding to skip list for %s:" % page.name)
+                print("  - %s" % coords.to_list())
+            else:
+                layout_obj = candidates[name]
+                new_coords = coords.merge(layout_obj["coordinates"])
+                print("Updating coordinates for %s to %s" % (name, new_coords))
+                obj = self.layout["objects"][page.name][name]
+                obj["coordinates"] = new_coords
+                obj["raw_coordinates"] = new_coords.to_list()
+                return name, layout_obj
+        else:
+            msg = ("Could not determine what %s on page %s is: %s candidates" %
+                   (pdfobj_repr(pdfobj), page.name, len(candidates)))
+            LOG.error(msg)
+            for name in candidates.keys():
+                LOG.error("  Candidate: %s", name)
+            raise Exception(msg)
+        return None
 
-        This is a function (instead of, say, just a class variable)
-        that returns new PDFFinder objects each time to avoid
-        contaminating future search results by reusing PDFFinder
-        objects.
-        """
-        location = PDFFinder(
-            "location", [
-                AlignedWith(
-                    r'ROAD\s+ON\s+WHICH|ACCIDENT\s+OCCURRED|'
-                    r'STREET/\s*HIGHWAY\s+NO',
-                    fuzz=6),
-                RightOf(r'STREET/\s*HIGHWAY\s+NO'),
-                LeftOf('ONE-WAY')
-            ],
-            minpage=1,
-            maxpage=1)
-        date = PDFFinder(
-            "date", [Below(r'of\s+Vehicles', fuzz=1),
-                     Above(r'^COUNTY$')],
-            minpage=1,
-            maxpage=1,
-            type=_parse_date,
-            short_circuit=True)
-        time = PDFFinder(
-            "time", [
-                RightOf(r'TIME\s+OF'),
-                AlignedWith(r'TIME\s+OF', fuzz=15),
-                VAlignedWith(r'In Military Time', fuzz=12),
-                Below(r'In Military Time')
-            ],
-            minpage=1,
-            maxpage=1,
-            type=_parse_time)
-        report = PDFFinder(
-            "report", [
-                Below(r'DESCRIPTION\s+OF\s+ACCIDENT\s+BASED|'
-                      r'ROAD\s+ON\s+WHICH\s+ACCIDENT\s+OCCURRED'),
-                Above(r'OBJECT\s+DAMAGED|OFFICER\s+NO')
-            ],
-            minpage=2,
-            type='longest',
-            multiple=True,
-            serialize=" ".join)
-        complete_str = (
-            r'Complete\s+this\s+section\s+for\s+all\s+injured\s+persons')
-        dob = PDFFinder(
-            "dob", [
-                VAlignedWith(r'DATE\s+OF\s+BIRTH', fuzz=25),
-                Below(complete_str),
-                RightOf(complete_str),
-                AlignedWith("^19$", fuzz=20)
-            ],
-            minpage=1,
-            maxpage=1,
-            type=_parse_date)
-        injury_severity_id = PDFFinder(
-            "injury_severity_id", [
-                Below(complete_str),
-                VAlignedWith(r'Sev\.', fuzz=10),
-                VAlignedWith('Injury', fuzz=10),
-                AlignedWith("^19$", fuzz=20)
-            ],
-            minpage=1,
-            maxpage=1,
-            type=int)
-        injury_region_id = PDFFinder(
-            "injury_region_id", [
-                Below(complete_str),
-                VAlignedWith(r'Region', fuzz=10),
-                AlignedWith("^19$", fuzz=20)
-            ],
-            minpage=1,
-            maxpage=1,
-            type=int)
-        initials = PDFFinder(
-            "initials", [
-                Below(complete_str),
-                Below(r"^\s*NAME\s*$", fuzz=2),
-                VAlignedWith(complete_str, fuzz=75),
-                AlignedWith("^19$", fuzz=20),
-                Above(r"MEDICAL\s+FACILITY\s+NAME")
-            ],
-            minpage=1,
-            maxpage=1,
-            type=self._munge_name)
-        gender = PDFFinder(
-            "gender", [
-                Below(complete_str),
-                VAlignedWith(r'M\s+F', fuzz=10),
-                AlignedWith("^19$", fuzz=20)
-            ],
-            minpage=1,
-            maxpage=1,
-            type=_parse_gender)
+    def _handle_record_without_candidates(self, pdfobj, page, filename):
+        coords = Coordinates(*pdfobj.bbox)
+        if self.interactive:
+            print("Could not determine what %s on page %s of %s is. "
+                  "No candidates." % (pdfobj_repr(pdfobj), page.name,
+                                      filename))
+            existing_names = itertools.chain(
+                [o.keys() for o in self.layout["objects"].values()])
+            name = None
+            while name is None or name in existing_names:
+                name = input("Enter name, or 'S' to skip: ")
 
-        return [
-            location, date, time, report, dob, initials, gender,
-            injury_severity_id, injury_region_id
-        ]
+            if name.upper() == 'S':
+                self.layout["skip"].setdefault(page.name, []).append(coords)
+                print("Adding to skip list for %s:" % page.name)
+                print("  - %s" % coords.to_list())
+            else:
+                layout_record = {
+                    "coordinates": coords,
+                    "raw_coordinates": coords.to_list(),
+                }
 
-    def _parse_pdf(self, stream):
-        """Parse a single PDF and return the date and description."""
-        LOG.info("Parsing accident report data from %s", stream.name)
-        fields = self._get_fields()
+                record_type = input("Enter type: ")
+                if record_type:
+                    layout_record["type"] = record_type
+                    layout_record["converter"] = Converter.load_converter(
+                        record_type)
 
+                self.layout["objects"][page.name][name] = layout_record
+
+                print("Adding to layout object list:")
+                print("%s:" % name)
+                print("  coordinates: %r" % layout_record["raw_coordinates"])
+                if "type" in layout_record:
+                    print("  type: %s" % layout_record["type"])
+
+                return name, layout_record
+        else:
+            msg = ("Could not determine what %s on page %s is: no candidates" %
+                   (pdfobj_repr(pdfobj), page.name))
+            LOG.error(msg)
+            raise Exception(msg)
+        return None
+
+    def _parse_pdfobj(self, pdfobj, page, filename):
+        record = get_text(pdfobj)
+        if not record:
+            return None
+        coords = Coordinates(*pdfobj.bbox)
+
+        skip_pdf_obj = False
+        for skip_coords in self.layout["skip"].get(page.name, []):
+            if skip_coords.contains(coords, fuzz=0.1):
+                LOG.debug("Skipping PDF object %s: contained within %s",
+                          pdfobj_repr(pdfobj), skip_coords)
+                skip_pdf_obj = True
+                break
+        if skip_pdf_obj:
+            return None
+
+        candidates = {}
+        for obj_name, obj in self.layout["objects"][page.name].items():
+            if obj["coordinates"].contains(coords, fuzz=0.1):
+                candidates[obj_name] = obj
+        if len(candidates) > 1:
+            obj_name, layout_obj = self._handle_record_multiple_candidates(
+                pdfobj, page, filename, candidates)
+        elif not candidates:
+            obj_name, layout_obj = self._handle_record_without_candidates(
+                pdfobj, page, filename)
+        elif len(candidates) == 1:
+            obj_name, layout_obj = candidates.items()[0]
+
+        if layout_obj:
+            if "converter" in layout_obj:
+                try:
+                    record = layout_obj["converter"].convert(record)
+                except Exception as err:
+                    LOG.error(
+                        "Could not convert value %r for %s in %s to %s: %s",
+                        record, obj_name, filename,
+                        layout_obj["converter"].__class__.__name__, err)
+                    raise
+            LOG.debug("Found %s at %s in %s: %r", obj_name, coords, filename,
+                      record)
+            return ParsedPDFObjectData(obj_name, record)
+        return None
+
+    def _parse_pdf(self, filename):
+        """Parse a single PDF and return the known data."""
+        LOG.info("Parsing accident report data from %s" % filename)
+
+        doc = PDFDocument(filename, self.layout)
+
+        data = {
+            "filename": filename,
+            "case_no": utils.filename_to_case_no(filename)
+        }
+
+        page_types = []
+        for page in doc:
+            if page.name in page_types:
+                LOG.warning("Already parsed %s page in %s; skipping page %s",
+                            page.name, filename, page.number)
+                continue
+
+            LOG.debug("Parsing page %s (%s)", page.number, page.name)
+
+            for pdfobj in page:
+                obj_data = self._parse_pdfobj(pdfobj, page, filename)
+                if obj_data is not None:
+                    data[obj_data.name] = obj_data.data
+
+        data["parsed"] = True
+        return data
+
+    def parse(self, filename):
         try:
-            # so much pdfminer boilerplate....
-            document = pdfdocument.PDFDocument(pdfparser.PDFParser(stream))
-            rsrcmgr = pdfinterp.PDFResourceManager()
-            device = pdfconverter.PDFPageAggregator(
-                rsrcmgr, laparams=pdflayout.LAParams())
-            interpreter = pdfinterp.PDFPageInterpreter(rsrcmgr, device)
+            case_data = self._parse_pdf(filename)
         except psparser.PSException as err:
-            LOG.warn("Parsing %s failed, skipping: %s", stream.name, err)
-            return dict([(f.name, f.value) for f in fields])
-
-        page_num = 1
-
-        for page in pdfpage.PDFPage.create_pages(document):
-            LOG.debug("Parsing page %s", page_num)
-
-            interpreter.process_page(page)
-            layout = device.get_result()
-
-            for field in fields:
-                field.update(layout, page=page_num)
-                if (not field.value and field.short_circuit
-                        and page_num >= field.maxpage):
-                    LOG.warn("No %s found in %s, aborting parsing", field.name,
-                             stream.name)
-                    return dict([(f.name, f.value) for f in fields])
-
-            page_num += 1
-        return dict([(f.name, f.value) for f in fields])
-
-    def _get_data(self, stream):
-        case_data = self._parse_pdf(stream)
-        case_data["case_no"] = utils.filename_to_case_no(stream.name)
-        case_data["parsed"] = True
+            LOG.warn("Parsing %s failed, skipping: %s", filename, err)
         return case_data
+
+
+class ParseChildProcess(Parser, multiprocessing.Process):
+    """Child process for Parse command."""
+    interactive = False
+
+    def __init__(self, terminate, work_queue, result_queue, options,
+                 name=None):
+        Parser.__init__(self, options)
+        multiprocessing.Process.__init__(name=name)
+
+        self._terminate = terminate
+        self._work_queue = work_queue
+        self._result_queue = result_queue
 
     def run(self):
         log.setup_logging(self.options.verbose, prefix=self.name)
@@ -764,7 +665,7 @@ class ParseChildProcess(multiprocessing.Process):
             try:
                 fpath = self._work_queue.get_nowait()
                 LOG.debug("Got file path from work queue: %s", fpath)
-                data = self._get_data(open(fpath, 'rb'))
+                data = self.parse(fpath)
                 LOG.debug("Returning data for %s to results queue", fpath)
                 self._result_queue.put(data)
             except queue.Empty:
