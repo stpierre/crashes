@@ -63,10 +63,10 @@ class PDFExplorer(object):
     start_index = {
         "report": 345,
         "diagram": 306,
-        #"40a": 245,
-        "40a": 422,
+        "40a": 245,
         "addl_diagram": 389,
-        "40b": 370
+        "40b": 370,
+        "truck_bus": 199,
     }
 
     start_y = {"diagram": 595, "addl_diagram": 180}

@@ -35,6 +35,26 @@ ParsedPDFObjectData = collections.namedtuple("ParsedPDFObjectData", ("name",
                                                                      "data"))
 
 
+class PDFObjectParsingException(Exception):
+    pass
+
+
+class PDFObjectUnknown(PDFObjectParsingException):
+    """Raised when we don't know what an object is."""
+
+
+class PDFObjectMultipleCandidates(PDFObjectParsingException):
+    """Raised when an object might be more than one thing."""
+
+
+class PDFObjectConversionFailed(PDFObjectParsingException):
+    """Raised when applying a converter to object data raises an exception."""
+
+    def __init__(self, msg, obj_name=None):
+        self.obj_name = obj_name
+        super(PDFObjectConversionFailed, self).__init__(msg)
+
+
 def get_text(obj):
     """Get the text content of an object, whatever that means."""
     if hasattr(obj, "get_text"):
@@ -68,6 +88,12 @@ class Converter(object):
             cls_name = record_type
             kwargs = {}
         return globals()[cls_name](**kwargs)
+
+
+class PII(Converter):
+    def convert(self, _):
+        """Discard PII entirely."""
+        return None
 
 
 class Integer(Converter):
@@ -144,8 +170,8 @@ class PDFDocument(collections.Iterable):
             self.rsrcmgr = pdfinterp.PDFResourceManager()
             self.device = pdfconverter.PDFPageAggregator(
                 self.rsrcmgr, laparams=pdflayout.LAParams())
-            self.interpreter = pdfinterp.PDFPageInterpreter(
-                self.rsrcmgr, self.device)
+            self.interpreter = pdfinterp.PDFPageInterpreter(self.rsrcmgr,
+                                                            self.device)
 
     def __iter__(self):
         self._parse()
@@ -199,8 +225,8 @@ class PDFPage(collections.Iterable):
         if cls._subclasses is None:
             cls._subclasses = []
             for obj_name, obj in globals().items():
-                if (isinstance(obj, type) and issubclass(obj, cls)
-                        and obj != cls and not obj_name.startswith("_")):
+                if (isinstance(obj, type) and issubclass(obj, cls) and
+                        obj != cls and not obj_name.startswith("_")):
                     LOG.debug("Discovered %s subclass: %s", cls.__name__,
                               obj.__name__)
                     cls._subclasses.append(obj)
@@ -241,7 +267,7 @@ class ContinuationPage40a(PDFPage):
 
     @classmethod
     def matches(cls, objects):
-        return "40a" in get_text(objects[241])
+        return len(objects) > 241 and "40a" in get_text(objects[241])
 
 
 class ContinuationPage40b(PDFPage):
@@ -249,7 +275,15 @@ class ContinuationPage40b(PDFPage):
 
     @classmethod
     def matches(cls, objects):
-        return "40b" in get_text(objects[368])
+        return len(objects) > 368 and "40b" in get_text(objects[368])
+
+
+class TruckAndBusPage(PDFPage):
+    name = "truck_bus"
+
+    @classmethod
+    def matches(cls, objects):
+        return "Supplemental Truck  and  Bus" in get_text(objects[0])
 
 
 class Coordinates(collections.Iterable):
@@ -267,25 +301,25 @@ class Coordinates(collections.Iterable):
             self.ymax)
 
     def __eq__(self, other):
-        return (abs(self.xmin - other.xmin) < 1e-6
-                and abs(self.xmax - other.xmax) < 1e-6
-                and abs(self.ymin - other.ymin) < 1e-6
-                and abs(self.ymax - other.ymax) < 1e-6)
+        return (abs(self.xmin - other.xmin) < 1e-6 and
+                abs(self.xmax - other.xmax) < 1e-6 and
+                abs(self.ymin - other.ymin) < 1e-6 and
+                abs(self.ymax - other.ymax) < 1e-6)
 
     def to_list(self):
         return [self.xmin, self.xmax, self.ymin, self.ymax]
 
     def contains(self, other, fuzz=0):
         """Whether or not an object is contained within the bounds."""
-        return (other.ymax - fuzz <= self.ymax
-                and other.ymin + fuzz >= self.ymin
-                and other.xmax - fuzz <= self.xmax
-                and other.xmin + fuzz >= self.xmin)
+        return (other.ymax - fuzz <= self.ymax and
+                other.ymin + fuzz >= self.ymin and
+                other.xmax - fuzz <= self.xmax and
+                other.xmin + fuzz >= self.xmin)
 
     def overlaps(self, other):
         """Whether or not another object overlaps this one at all."""
-        return (other.xmin < self.xmax and other.xmax > self.xmin
-                and other.ymin < self.ymax and other.ymax > self.ymin)
+        return (other.xmin < self.xmax and other.xmax > self.xmin and
+                other.ymin < self.ymax and other.ymax > self.ymin)
 
     def merge(self, other):
         if hasattr(other, "xmin"):
@@ -308,8 +342,7 @@ class Parse(base.Command):
     """Extract data from all downloaded reports."""
 
     arguments = [
-        base.Argument("files", nargs='*'),
-        base.Argument(
+        base.Argument("files", nargs='*'), base.Argument(
             "--processes", type=int, default=multiprocessing.cpu_count()),
         base.Argument("--interactive", action="store_true"),
         base.Argument("--reparse-curated", action="store_true")
@@ -347,8 +380,8 @@ class Parse(base.Command):
         elif self.options.reparse_curated:
             reports = [
                 r for r in db.collisions
-                if r["road_location"] is not None
-                and not r["case_no"].startswith("NDOR")
+                if r["road_location"] is not None and not r["case_no"]
+                .startswith("NDOR")
             ]
             return [
                 os.path.join(self.options.pdfdir,
@@ -385,7 +418,9 @@ class Parse(base.Command):
     def run_foreground(self, filelist):
         parser = Parser(self.options)
         for fpath in filelist:
-            self._store_one_result(parser.parse(fpath))
+            result = parser.parse(fpath)
+            if result:
+                self._store_one_result(result)
 
     def run_multiprocess(self, filelist, nprocs):
         LOG.debug("Building %s worker processes" % nprocs)
@@ -498,29 +533,19 @@ class Parser(object):
             for obj_name, candidate in candidates.items():
                 print("  %s: %s" % (obj_name, candidate))
             name = None
-            while (name is None
-                   or (name not in candidates and name.upper() != 'S')):
-                name = input("Enter name, or 'S' to skip: ")
-            if name.upper() == 'S':
-                self.layout["skip"].setdefault(page.name, []).append(coords)
-                print("Adding to skip list for %s:" % page.name)
-                print("  - %s" % coords.to_list())
-            else:
-                layout_obj = candidates[name]
-                new_coords = coords.merge(layout_obj["coordinates"])
-                print("Updating coordinates for %s to %s" % (name, new_coords))
-                obj = self.layout["objects"][page.name][name]
-                obj["coordinates"] = new_coords
-                obj["raw_coordinates"] = new_coords.to_list()
-                return name, layout_obj
+            while name is None or name not in candidates:
+                name = input("Enter name: ")
+            layout_obj = candidates[name]
+            new_coords = coords.merge(layout_obj["coordinates"])
+            LOG.debug("Updating coordinates for %s to %s" % (name, new_coords))
+            obj = self.layout["objects"][page.name][name]
+            obj["coordinates"] = new_coords
+            obj["raw_coordinates"] = new_coords.to_list()
+            return name, layout_obj
         else:
-            msg = ("Could not determine what %s on page %s is: %s candidates" %
-                   (pdfobj_repr(pdfobj), page.name, len(candidates)))
-            LOG.error(msg)
-            for name in candidates.keys():
-                LOG.error("  Candidate: %s", name)
-            raise Exception(msg)
-        return None
+            raise PDFObjectMultipleCandidates(
+                "Could not determine what %s on page %s is: %s candidates" %
+                (pdfobj_repr(pdfobj), page.name, len(candidates)))
 
     def _handle_record_without_candidates(self, pdfobj, page, filename):
         coords = Coordinates(*pdfobj.bbox)
@@ -535,36 +560,22 @@ class Parser(object):
                 name = input("Enter name, or 'S' to skip: ")
 
             if name.upper() == 'S':
+                LOG.debug("Adding %s to skip list for %s", coords, page.name)
                 self.layout["skip"].setdefault(page.name, []).append(coords)
-                print("Adding to skip list for %s:" % page.name)
-                print("  - %s" % coords.to_list())
+                return None, None
             else:
                 layout_record = {
                     "coordinates": coords,
                     "raw_coordinates": coords.to_list(),
                 }
 
-                record_type = input("Enter type: ")
-                if record_type:
-                    layout_record["type"] = record_type
-                    layout_record["converter"] = Converter.load_converter(
-                        record_type)
-
+                LOG.debug("Adding %s to layout object list", name)
                 self.layout["objects"][page.name][name] = layout_record
-
-                print("Adding to layout object list:")
-                print("%s:" % name)
-                print("  coordinates: %r" % layout_record["raw_coordinates"])
-                if "type" in layout_record:
-                    print("  type: %s" % layout_record["type"])
-
                 return name, layout_record
         else:
-            msg = ("Could not determine what %s on page %s is: no candidates" %
-                   (pdfobj_repr(pdfobj), page.name))
-            LOG.error(msg)
-            raise Exception(msg)
-        return None
+            raise PDFObjectUnknown(
+                "Could not determine what %s on page %s is: no candidates" %
+                (pdfobj_repr(pdfobj), page.name))
 
     def _parse_pdfobj(self, pdfobj, page, filename):
         record = get_text(pdfobj)
@@ -582,6 +593,7 @@ class Parser(object):
         if skip_pdf_obj:
             return None
 
+        LOG.debug("Finding candidates for %s", pdfobj_repr(pdfobj))
         candidates = {}
         for obj_name, obj in self.layout["objects"][page.name].items():
             if obj["coordinates"].contains(coords, fuzz=0.1):
@@ -600,11 +612,11 @@ class Parser(object):
                 try:
                     record = layout_obj["converter"].convert(record)
                 except Exception as err:
-                    LOG.error(
-                        "Could not convert value %r for %s in %s to %s: %s",
-                        record, obj_name, filename,
-                        layout_obj["converter"].__class__.__name__, err)
-                    raise
+                    raise PDFObjectConversionFailed(
+                        "Could not convert value %r for %s in %s to %s: %s" %
+                        (record, obj_name, filename,
+                         layout_obj["converter"].__class__.__name__, err),
+                        obj_name=obj_name)
             LOG.debug("Found %s at %s in %s: %r", obj_name, coords, filename,
                       record)
             return ParsedPDFObjectData(obj_name, record)
@@ -631,19 +643,29 @@ class Parser(object):
             LOG.debug("Parsing page %s (%s)", page.number, page.name)
 
             for pdfobj in page:
-                obj_data = self._parse_pdfobj(pdfobj, page, filename)
-                if obj_data is not None:
-                    data[obj_data.name] = obj_data.data
+                try:
+                    obj_data = self._parse_pdfobj(pdfobj, page, filename)
+                except PDFObjectParsingException as err:
+                    LOG.error(err)
+                    if "unparsed_data" not in data:
+                        data["unparsed_data"] = []
+                    if hasattr(err, "obj_name"):
+                        data["unparsed_data"].append(err.obj_name)
+                    else:
+                        data["unparsed_data"].append(pdfobj.bbox)
+                else:
+                    if obj_data is not None and obj_data.data is not None:
+                        data[obj_data.name] = obj_data.data
 
         data["parsed"] = True
         return data
 
     def parse(self, filename):
         try:
-            case_data = self._parse_pdf(filename)
+            return self._parse_pdf(filename)
         except psparser.PSException as err:
             LOG.warn("Parsing %s failed, skipping: %s", filename, err)
-        return case_data
+            return None
 
 
 class ParseChildProcess(Parser, multiprocessing.Process):
@@ -666,8 +688,9 @@ class ParseChildProcess(Parser, multiprocessing.Process):
                 fpath = self._work_queue.get_nowait()
                 LOG.debug("Got file path from work queue: %s", fpath)
                 data = self.parse(fpath)
-                LOG.debug("Returning data for %s to results queue", fpath)
-                self._result_queue.put(data)
+                if data:
+                    LOG.debug("Returning data for %s to results queue", fpath)
+                    self._result_queue.put(data)
             except queue.Empty:
                 LOG.info("Work queue is empty, exiting")
                 break
