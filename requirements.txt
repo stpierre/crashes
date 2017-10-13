@@ -1,4 +1,5 @@
-beautifulsoup4==4.4.1
+beautifulsoup4==4.6.0
+lxml==4.0.0
 requests==2.9.1
 -e git+https://github.com/euske/pdfminer.git@8150458718e9024c80b00e74965510b20206e588#egg=pdfminer
 six==1.10.0

@@ -39,6 +39,7 @@ def retry(func, args=(), kwargs=None, exceptions=None, times=1, wait=5):
 
 class Fetch(base.Command):
     """Download reports from LPD."""
+    bs4_parser = "lxml"
 
     arguments = [
         base.Argument(
@@ -47,7 +48,8 @@ class Fetch(base.Command):
         base.Argument(
             "--end", type=lambda d: datetime.datetime.strptime(d, "%Y-%m-%d")),
         base.Argument("--autostart", action="store_true"),
-        base.Argument("--refetch-curated", action="store_true")
+        base.Argument("--refetch-curated", action="store_true"),
+        base.Argument("--force", action="store_true"),
     ]
 
     @staticmethod
@@ -60,8 +62,8 @@ class Fetch(base.Command):
         people in a collision without storing their names.
         """
         parts = name.split(" (dob) ")
-        return " ".join(["".join(w[0] for w in parts[0].split()),
-                         parts[1]]).strip()
+        return " ".join(["".join(w[0]
+                                 for w in parts[0].split()), parts[1]]).strip()
 
     def _parse_tickets(self, case_no, url, post_data):
         time.sleep(
@@ -78,8 +80,8 @@ class Fetch(base.Command):
                         response.status_code)
             return None
 
-        page_data = bs4.BeautifulSoup(response.text, "html.parser")
-        ticket_table = page_data.find('table', attrs={'width': 800})
+        page_data = bs4.BeautifulSoup(response.text, self.bs4_parser)
+        ticket_table = page_data.find('table', attrs={'border': 1})
 
         current_person = None
         for row in ticket_table.find_all("tr"):
@@ -113,30 +115,28 @@ class Fetch(base.Command):
         if response.status_code != 200:
             raise Exception("Failed to list reports for %s: %s" %
                             (date.isoformat(), response.status_code))
-        page_data = bs4.BeautifulSoup(response.text, "html.parser")
-        crash_table = page_data.find('table', attrs={'width': 800})
+        page_data = bs4.BeautifulSoup(response.text, self.bs4_parser)
+        crash_table = page_data.find('table', attrs={'border': 1})
 
-        ticket_url = crash_table.tbody.form["action"]
-        ticket_token = crash_table.tbody.input["value"]
+        ticket_url = crash_table.form["action"]
+        ticket_token = crash_table.input["value"]
 
         for row in crash_table.find_all('tr'):
-            if row.td and row.td.a:
+            if row.td and row.th and row.th.a:
+                case_no = row.th.a.string.strip()
                 cols = row.find_all("td")
-                case_no = cols[0].a.string.strip()
                 record = db.collisions.get(case_no)
-                hit_and_run = "H&R" in cols[4].string
+                hit_and_run = "H&R" in cols[3].string
                 if record is None:
+                    date = datetime.datetime.strptime(cols[1].string.strip(),
+                                                      "%m-%d-%Y").date()
                     db.collisions.append({
-                        "case_no":
-                        case_no,
-                        "date":
-                        datetime.datetime.strptime(cols[2].string.strip(),
-                                                   "%m-%d-%Y").date(),
-                        "hit_and_run":
-                        hit_and_run
+                        "case_no": case_no,
+                        "date": date,
+                        "hit_and_run": hit_and_run
                     })
 
-                    submit = cols[5].input
+                    submit = cols[4].input
                     if submit:
                         ticket_post_data = {
                             "CGI": ticket_token,
@@ -151,7 +151,7 @@ class Fetch(base.Command):
                     record["hit_and_run"] = hit_and_run
                     db.collisions.update_one(record)
 
-                yield cols[0].a['href'].strip()
+                yield row.th.a['href'].strip()
 
     def _dates_in_range(self):
         """Generate all dates in the desired range, not including
@@ -217,8 +217,8 @@ class Fetch(base.Command):
     def _fetch_curated(self):
         reports = [
             c for c in db.collisions
-            if c["road_location"] is not None
-            and not c["case_no"].startswith("NDOR")
+            if c["road_location"] is not None and not c["case_no"].startswith(
+                "NDOR")
         ]
         for report in reports:
             filename = utils.case_no_to_filename(report.case_no)
@@ -233,4 +233,4 @@ class Fetch(base.Command):
                 random.randint(self.options.sleep_min, self.options.sleep_max))
             LOG.info("Fetching reports from %s", date.isoformat())
             for url in self._list_reports_for_date(date):
-                self._download_report(url)
+                self._download_report(url, force=self.options.force)
