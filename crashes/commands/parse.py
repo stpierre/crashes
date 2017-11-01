@@ -349,10 +349,12 @@ class Parse(base.Command):
     """Extract data from all downloaded reports."""
 
     arguments = [
-        base.Argument("files", nargs='*'), base.Argument(
+        base.Argument("files", nargs='*'),
+        base.Argument(
             "--processes", type=int, default=multiprocessing.cpu_count()),
         base.Argument("--interactive", action="store_true"),
-        base.Argument("--reparse-curated", action="store_true")
+        base.Argument("--reparse-curated", action="store_true"),
+        base.Argument("--reparse-all", action="store_true"),
     ]
 
     def __init__(self, options):
@@ -398,6 +400,8 @@ class Parse(base.Command):
                              utils.case_no_to_filename(report.case_no))
                 for report in reports
             ]
+        elif self.options.reparse_all:
+            return glob.glob(os.path.join(self.options.pdfdir, "*"))
         else:
             case_numbers = [
                 r["case_no"] for r in db.collisions
@@ -694,7 +698,7 @@ class ParseChildProcess(Parser, multiprocessing.Process):
     def __init__(self, terminate, work_queue, result_queue, options,
                  name=None):
         Parser.__init__(self, options)
-        multiprocessing.Process.__init__(name=name)
+        multiprocessing.Process.__init__(self, name=name)
 
         self._terminate = terminate
         self._work_queue = work_queue
