@@ -11,6 +11,7 @@ import logging
 import multiprocessing
 import os
 import re
+import time
 import traceback
 
 from pdfminer import converter as pdfconverter
@@ -361,6 +362,7 @@ class Parse(base.Command):
         self._terminate = multiprocessing.Event()
 
     def _handle_results(self, timeout=1):
+        results = 0
         while True:
             try:
                 result = self._result_queue.get(True, timeout)
@@ -370,8 +372,10 @@ class Parse(base.Command):
                     LOG.debug("%s items still in result queue",
                               self._result_queue.qsize())
                     self._store_one_result(result)
+                    results += 1
             except queue.Empty:
                 break
+        return results
 
     def _store_one_result(self, result):
         if self.options.files:
@@ -448,12 +452,14 @@ class Parse(base.Command):
         for process in processes:
             process.start()
 
+        start = time.time()
+        parsed = 0
         LOG.debug("Collecting results from result queue")
         while processes:
             try:
                 # first, collect results that are available with a
                 # very short timeout
-                self._handle_results()
+                parsed += self._handle_results()
 
                 # see if any processes have completed
                 for process in processes:
@@ -472,14 +478,21 @@ class Parse(base.Command):
                     if not running:
                         processes.remove(process)
                 LOG.debug("%s processes still running", len(processes))
-                LOG.debug("%s items still in work queue",
-                          self._work_queue.qsize())
+                LOG.info("%s items remain in work queue",
+                         self._work_queue.qsize())
             except (SystemExit, KeyboardInterrupt):
                 LOG.info("Stopping %s processes", len(processes))
                 self._terminate.set()
             except Exception:  # pylint: disable=broad-except
                 self._terminate.set()
                 LOG.error("Uncaught exception: %s", traceback.format_exc())
+            elapsed = time.time() - start
+            LOG.debug("%0.2f wall clock seconds elapsed", elapsed)
+            if parsed > 0:
+                seconds_per_report = elapsed / parsed
+                LOG.debug("%0.2f mean seconds per report", seconds_per_report)
+                LOG.info("Estimated %0.2f seconds remaining",
+                         seconds_per_report * self._work_queue.qsize())
 
         # handle any more results that have arrived between the time
         # that results were handled and all processes stopped.
