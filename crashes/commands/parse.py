@@ -96,6 +96,12 @@ class PII(Converter):
         return None
 
 
+class Initials(Converter):
+    def convert(self, data):
+        """Keep initials from names to match with tickets."""
+        return "".join(w[0] for w in data.split())
+
+
 class Integer(Converter):
     def convert(self, data):
         return int(data)

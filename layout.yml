@@ -438,7 +438,7 @@ objects:
       type: PII
     v1_driver_name:
       coordinates: [50.69, 640.43, 343.04, 652.73]
-      type: PII
+      type: Initials
     v1_driver_address:
       coordinates: [50.28, 623.24, 417.214, 633.92]
       type: PII
@@ -845,9 +845,9 @@ objects:
     v2_driver_phone:
       coordinates: [352.21, 461.99, 454.96, 475.41]
       type: PII
-    v2_driver:
+    v2_driver_name:
       coordinates: [48.56, 461.28, 340.9, 475.625]
-      type: PII
+      type: Initials
     v2_driver_address:
       coordinates: [48.26, 442.18, 415.18, 456.52]
       type: PII
@@ -1254,7 +1254,7 @@ objects:
       coordinates: [388.35, 535.72, 455.45, 550.06]
     v3_driver_name:
       coordinates: [47.55, 630.75, 339.89, 642.96]
-      type: PII
+      type: Initials
     v3_driver_phone:
       coordinates: [350.96, 630.82, 453.9, 644.24]
       type: PII
