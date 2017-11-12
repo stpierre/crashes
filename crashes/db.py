@@ -150,20 +150,54 @@ class Database(collections.MutableSequence):
         self._data = None
         self._by_key = None
 
-    @property
-    def _filepath(self):
+    def get_shard(self, record):
+        raise NotImplementedError
+
+    def _get_filepath(self, suffix=None):
         if _DB_PATH is None:
             raise DatabaseNotReady(self.filename)
-        return os.path.join(_DB_PATH, self.filename)
+        if suffix is None:
+            filename = self.filename
+        else:
+            name, ext = os.path.splitext(self.filename)
+            filename = "%s-%s%s" % (name, suffix, ext)
+        return os.path.join(_DB_PATH, filename)
 
     def _load(self):
         if self._data is None:
-            LOG.debug("Loading data from %s", self._filepath)
-            self._data = json.load(open(self._filepath))
+            self._data = []
+            shards = [None]
+            shard_filepath = self._get_filepath(suffix="shards")
+            if os.path.exists(shard_filepath):
+                LOG.debug("Loading list of shards from %s", shard_filepath)
+                shards = json.load(open(shard_filepath))
+            for shard in shards:
+                filepath = self._get_filepath(suffix=shard)
+                LOG.debug("Loading data from %s", filepath)
+                self._data.extend(json.load(open(filepath)))
+
+    def _shard_data(self):
+        shards = collections.defaultdict(list)
+        for record in self._data:
+            try:
+                shard = self.get_shard(record)
+            except NotImplementedError:
+                return {None: self._data}
+            shards[shard].append(record)
+        return shards
 
     def _save(self):
-        LOG.debug("Saving %s records to %s", len(self._data), self._filepath)
-        json.dump(self._data, open(self._filepath, "w"), separators=(',', ':'))
+        sharded_data = self._shard_data()
+        for suffix, records in sharded_data.items():
+            filepath = self._get_filepath(suffix=suffix)
+            LOG.debug("Saving %s records to %s", len(records), filepath)
+            json.dump(records, open(filepath, "w"), separators=(',', ':'))
+        shard_filepath = self._get_filepath(suffix="shards")
+        LOG.debug("Saving list of shards to %s", shard_filepath)
+        json.dump(
+            sharded_data.keys(),
+            open(shard_filepath, "w"),
+            separators=(',', ':'))
 
     def _serialize(self, record):
         retval = {}
@@ -294,6 +328,14 @@ class KeyedDatabase(Database):
             return self.append(record)
 
 
+class CollisionDatabase(KeyedDatabase):
+    def get_shard(self, record):
+        if record[self.key].startswith("NDOR"):
+            return "NDOR"
+        else:
+            return record[self.key][0:2]
+
+
 _DB_PATH = None
 _FIXTURE_PATH = None
 
@@ -307,13 +349,12 @@ hit_and_run_status = Fixture("hit_and_run_status.yml", key="name")
 
 # databases
 tickets = Database("tickets.json")
-collisions = KeyedDatabase("collisions.json", key="case_no")
+collisions = CollisionDatabase("collisions.json", key="case_no")
 traffic = Database("traffic.json")
 
 
 def init(db_path, fixture_path):
     global _DB_PATH, _FIXTURE_PATH  # pylint: disable=global-statement
-    LOG.debug("Preloading databases")
 
     _DB_PATH = db_path
     _FIXTURE_PATH = fixture_path
