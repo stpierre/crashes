@@ -187,8 +187,8 @@ class PDFDocument(collections.Iterable):
             self.rsrcmgr = pdfinterp.PDFResourceManager()
             self.device = pdfconverter.PDFPageAggregator(
                 self.rsrcmgr, laparams=pdflayout.LAParams())
-            self.interpreter = pdfinterp.PDFPageInterpreter(self.rsrcmgr,
-                                                            self.device)
+            self.interpreter = pdfinterp.PDFPageInterpreter(
+                self.rsrcmgr, self.device)
 
     def __iter__(self):
         self._parse()
@@ -245,8 +245,8 @@ class PDFPage(collections.Iterable):
         if cls._subclasses is None:
             cls._subclasses = []
             for obj_name, obj in globals().items():
-                if (isinstance(obj, type) and issubclass(obj, cls) and
-                        obj != cls and not obj_name.startswith("_")):
+                if (isinstance(obj, type) and issubclass(obj, cls)
+                        and obj != cls and not obj_name.startswith("_")):
                     LOG.debug("Discovered %s subclass: %s", cls.__name__,
                               obj.__name__)
                     cls._subclasses.append(obj)
@@ -321,25 +321,25 @@ class Coordinates(collections.Iterable):
             self.ymax)
 
     def __eq__(self, other):
-        return (abs(self.xmin - other.xmin) < 1e-6 and
-                abs(self.xmax - other.xmax) < 1e-6 and
-                abs(self.ymin - other.ymin) < 1e-6 and
-                abs(self.ymax - other.ymax) < 1e-6)
+        return (abs(self.xmin - other.xmin) < 1e-6
+                and abs(self.xmax - other.xmax) < 1e-6
+                and abs(self.ymin - other.ymin) < 1e-6
+                and abs(self.ymax - other.ymax) < 1e-6)
 
     def to_list(self):
         return [self.xmin, self.xmax, self.ymin, self.ymax]
 
     def contains(self, other, fuzz=0):
         """Whether or not an object is contained within the bounds."""
-        return (other.ymax - fuzz <= self.ymax and
-                other.ymin + fuzz >= self.ymin and
-                other.xmax - fuzz <= self.xmax and
-                other.xmin + fuzz >= self.xmin)
+        return (other.ymax - fuzz <= self.ymax
+                and other.ymin + fuzz >= self.ymin
+                and other.xmax - fuzz <= self.xmax
+                and other.xmin + fuzz >= self.xmin)
 
     def overlaps(self, other):
         """Whether or not another object overlaps this one at all."""
-        return (other.xmin < self.xmax and other.xmax > self.xmin and
-                other.ymin < self.ymax and other.ymax > self.ymin)
+        return (other.xmin < self.xmax and other.xmax > self.xmin
+                and other.ymin < self.ymax and other.ymax > self.ymin)
 
     def merge(self, other):
         if hasattr(other, "xmin"):
@@ -435,8 +435,8 @@ class Parse(base.Command):
             # we want to exit this loop periodically to check on things
             # like stopped processes and report on time elapsed and
             # remaining
-            while (time.time() - start < interval and
-                   results < self.result_batch_size):
+            while (time.time() - start < interval
+                   and results < self.result_batch_size):
                 try:
                     result = self._result_queue.get(True, timeout)
                     if result:
@@ -454,8 +454,10 @@ class Parse(base.Command):
     def _store_one_result(self, result):
         if self.options.files:
             print(repr(result))
+        elif db.collisions.record_exists(result):
+            db.collisions.merge(result)
         else:
-            db.collisions.upsert(result)
+            db.collisions.append(result)
 
     def _build_filelist(self):
         LOG.debug("Building list of files to parse...")
@@ -777,8 +779,8 @@ class ParseChildProcess(Parser, multiprocessing.Process):
         self._result_queue = result_queue
         self._max_result_queue_length = max_result_queue_length
 
-        self.logger = logging.getLogger("%s.%s" %
-                                        (self.__class__.__name__, name))
+        self.logger = logging.getLogger("%s.%s" % (self.__class__.__name__,
+                                                   name))
 
         log.setup_logging(
             max(0, self.options.verbose - 1),
