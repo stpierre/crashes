@@ -119,6 +119,15 @@ class Date(Converter):
         that isn't always the case.
         """
         month, day, year = self._date_split.split(data)
+        if int(year) < 100:
+            year = int(year) + 1900
+        elif 190 < int(year) < 220:
+            # handle typos like 195 for 1995 or 213 for 2013
+            year = int(year) + 1800
+        if int(year) < 1900:
+            # strftime can't handle years older than 1900; this is a
+            # typo that we can't make sense of, so just abort.
+            raise ValueError("Year before 1900: %s" % data)
         return datetime.date(int(year), int(month), int(day))
 
 
@@ -160,7 +169,7 @@ class IntegerMapping(Integer):
 
 
 class PDFDocument(collections.Iterable):
-    def __init__(self, filename, layout):
+    def __init__(self, filename, layout, logger=None):
         self.filename = filename
         self.stream = open(filename, 'rb')
         self.document = None
@@ -168,6 +177,7 @@ class PDFDocument(collections.Iterable):
         self.device = None
         self.interpreter = None
         self.layout = layout
+        self.logger = logger or LOG
 
     def _parse(self):
         if self.interpreter is None:
@@ -191,11 +201,13 @@ class PDFDocument(collections.Iterable):
             objects = list(layout)
 
             try:
-                LOG.debug("Instantiating page object for page %s of %s",
-                          page_num, self.filename)
-                yield PDFPage.factory(objects, self.layout, number=page_num)
+                self.logger.debug(
+                    "Instantiating page object for page %s of %s", page_num,
+                    self.filename)
+                yield PDFPage.factory(
+                    objects, self.layout, number=page_num, logger=self.logger)
             except UnknownPageType:
-                raise UnknownPageType("%s page %s" % (self.filename, page_num))
+                yield UnknownPageType("%s page %s" % (self.filename, page_num))
 
 
 class UnknownPageType(Exception):
@@ -206,12 +218,13 @@ class PDFPage(collections.Iterable):
     name = None
     _subclasses = None
 
-    def __init__(self, objects, layout, number=0):
+    def __init__(self, objects, layout, number=0, logger=None):
         self.objects = objects
         self.layout = layout
         self.number = number
         self.start_index = layout["start_index"].get(self.name, 0)
         self.start_y = layout["start_y"].get(self.name)
+        self.logger = logger or LOG
 
     def __iter__(self):
         for obj in self.objects[self.start_index:]:
@@ -221,10 +234,10 @@ class PDFPage(collections.Iterable):
             yield obj
 
     @classmethod
-    def factory(cls, objects, layout, number=0):
+    def factory(cls, objects, layout, number=0, logger=None):
         for subclass in cls._get_subclasses():
             if subclass.matches(objects):
-                return subclass(objects, layout, number=number)
+                return subclass(objects, layout, number=number, logger=logger)
         raise UnknownPageType()
 
     @classmethod
@@ -347,6 +360,7 @@ class Coordinates(collections.Iterable):
 
 class Parse(base.Command):
     """Extract data from all downloaded reports."""
+    result_batch_size = 30
 
     arguments = [
         base.Argument("files", nargs='*'),
@@ -355,6 +369,7 @@ class Parse(base.Command):
         base.Argument("--interactive", action="store_true"),
         base.Argument("--reparse-curated", action="store_true"),
         base.Argument("--reparse-all", action="store_true"),
+        base.Argument("--reparse-old", action="store_true"),
     ]
 
     def __init__(self, options):
@@ -362,21 +377,78 @@ class Parse(base.Command):
         self._work_queue = multiprocessing.Queue()
         self._result_queue = multiprocessing.Queue()
         self._terminate = multiprocessing.Event()
+        self._processes = []
 
-    def _handle_results(self, timeout=1):
-        results = 0
-        while True:
+    def _tend_processes(self):
+        start = time.time()
+        parsed = 0
+        error = None
+        LOG.debug("Collecting results from result queue")
+        while self._processes:
             try:
-                result = self._result_queue.get(True, timeout)
-                if result:
-                    LOG.debug("Got result for %(case_no)s from result queue",
-                              result)
-                    LOG.debug("%s items still in result queue",
-                              self._result_queue.qsize())
-                    self._store_one_result(result)
-                    results += 1
-            except queue.Empty:
-                break
+                # collect results that are available
+                count = self._handle_results()
+                LOG.info("Writing %s results", count)
+                parsed += count
+
+                # see if any processes have completed
+                for process in self._processes:
+                    running = False
+                    if process.is_alive():
+                        process.join(1)
+                        if process.is_alive():
+                            running = True
+                        else:
+                            LOG.debug("Process %s completed", process.name)
+                    elif self._terminate:
+                        LOG.debug("Process %s exited", process.name)
+                    else:
+                        LOG.warn("Process %s exited unexpectedly",
+                                 process.name)
+                    if not running:
+                        self._processes.remove(process)
+            except (SystemExit, KeyboardInterrupt):
+                LOG.info("Caught Ctrl-C, stopping %s processes",
+                         len(self._processes))
+                error = "Caught Ctrl-C"
+                self._terminate.set()
+            except Exception:  # pylint: disable=broad-except
+                self._terminate.set()
+                error = "Uncaught exception: %s" % traceback.format_exc()
+                LOG.error(error)
+            LOG.debug("%s processes still running", len(self._processes))
+            LOG.info("%s items remain in work queue", self._work_queue.qsize())
+            elapsed = time.time() - start
+            LOG.debug("%0.2f wall clock seconds elapsed", elapsed)
+            if parsed > 0:
+                seconds_per_report = elapsed / parsed
+                LOG.debug("%0.2f mean seconds per report", seconds_per_report)
+                LOG.info("Estimated %0.2f seconds remaining",
+                         seconds_per_report * self._work_queue.qsize())
+
+        return error
+
+    def _handle_results(self, timeout=1, interval=15):
+        results = 0
+        start = time.time()
+        with db.collisions.delay_write():
+            # we want to exit this loop periodically to check on things
+            # like stopped processes and report on time elapsed and
+            # remaining
+            while (time.time() - start < interval and
+                   results < self.result_batch_size):
+                try:
+                    result = self._result_queue.get(True, timeout)
+                    if result:
+                        LOG.debug(
+                            "Got result for %(case_no)s from result queue",
+                            result)
+                        LOG.debug("%s items still in result queue",
+                                  self._result_queue.qsize())
+                        self._store_one_result(result)
+                        results += 1
+                except queue.Empty:
+                    continue
         return results
 
     def _store_one_result(self, result):
@@ -397,16 +469,29 @@ class Parse(base.Command):
             ]
             return [
                 os.path.join(self.options.pdfdir,
-                             utils.case_no_to_filename(report.case_no))
+                             utils.case_no_to_filename(report["case_no"]))
+                for report in reports
+            ]
+        elif self.options.reparse_old:
+            reports = [
+                r for r in db.collisions
+                if "num_vehicles" not in r and "unparsed_data" not in r and
+                "unparseable" not in r and not r["case_no"].startswith("NDOR")
+            ]
+            return [
+                os.path.join(self.options.pdfdir,
+                             utils.case_no_to_filename(report["case_no"]))
                 for report in reports
             ]
         elif self.options.reparse_all:
             return glob.glob(os.path.join(self.options.pdfdir, "*"))
         else:
+            LOG.debug("Building list of already parsed cases")
             case_numbers = [
                 r["case_no"] for r in db.collisions
                 if r.get("parsed") and not r["case_no"].startswith("NDOR")
             ]
+            LOG.debug("Found %s already parsed cases", len(case_numbers))
             return [
                 fpath
                 for fpath in glob.glob(os.path.join(self.options.pdfdir, "*"))
@@ -437,73 +522,37 @@ class Parse(base.Command):
                 self._store_one_result(result)
 
     def run_multiprocess(self, filelist, nprocs):
-        LOG.debug("Building %s worker processes" % nprocs)
-        processes = [
-            ParseChildProcess(
-                self._terminate,
-                self._work_queue,
-                self._result_queue,
-                self.options,
-                name="parse-child-%s" % i) for i in range(nprocs)
-        ]
-
         for fpath in filelist:
             self._work_queue.put(fpath)
         LOG.debug("Added %s file paths to work queue",
                   self._work_queue.qsize())
 
-        LOG.debug("Starting %s worker processes", len(processes))
-        for process in processes:
+        LOG.info("Building and starting %s worker processes", nprocs)
+        for i in range(nprocs):
+            process = ParseChildProcess(
+                self._terminate,
+                self._work_queue,
+                self._result_queue,
+                self.options,
+                name="parse-child-%s" % i,
+                max_result_queue_length=nprocs * 2)
+            self._processes.append(process)
             process.start()
 
-        start = time.time()
-        parsed = 0
-        LOG.debug("Collecting results from result queue")
-        while processes:
-            try:
-                # first, collect results that are available with a
-                # very short timeout
-                parsed += self._handle_results()
-
-                # see if any processes have completed
-                for process in processes:
-                    running = False
-                    if process.is_alive():
-                        process.join(1)
-                        if process.is_alive():
-                            running = True
-                        else:
-                            LOG.debug("Process %s completed", process.name)
-                    elif self._terminate:
-                        LOG.debug("Process %s exited", process.name)
-                    else:
-                        LOG.warn("Process %s exited unexpectedly",
-                                 process.name)
-                    if not running:
-                        processes.remove(process)
-                LOG.debug("%s processes still running", len(processes))
-                LOG.info("%s items remain in work queue",
-                         self._work_queue.qsize())
-            except (SystemExit, KeyboardInterrupt):
-                LOG.info("Stopping %s processes", len(processes))
-                self._terminate.set()
-            except Exception:  # pylint: disable=broad-except
-                self._terminate.set()
-                LOG.error("Uncaught exception: %s", traceback.format_exc())
-            elapsed = time.time() - start
-            LOG.debug("%0.2f wall clock seconds elapsed", elapsed)
-            if parsed > 0:
-                seconds_per_report = elapsed / parsed
-                LOG.debug("%0.2f mean seconds per report", seconds_per_report)
-                LOG.info("Estimated %0.2f seconds remaining",
-                         seconds_per_report * self._work_queue.qsize())
+        error = self._tend_processes()
 
         # handle any more results that have arrived between the time
         # that results were handled and all processes stopped.
-        self._handle_results()
+        self._handle_results(interval=0)
 
         self._work_queue.close()
         self._result_queue.close()
+
+        if error is None:
+            return 0
+        else:
+            LOG.error(error)
+            return 2
 
 
 class Parser(object):
@@ -515,13 +564,15 @@ class Parser(object):
         self.options = options
         self.layout = yaml.load(open(self.options.layout))
 
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         for objects in self.layout["objects"].values():
             for obj in objects.values():
                 try:
                     obj["raw_coordinates"] = obj["coordinates"]
                 except KeyError:
-                    LOG.error("Malformed layout object: %s", obj)
-                    LOG.error("Missing 'coordinates' key")
+                    self.logger.error("Malformed layout object: %s", obj)
+                    self.logger.error("Missing 'coordinates' key")
                     raise
                 obj["coordinates"] = Coordinates(*obj["raw_coordinates"])
 
@@ -560,7 +611,8 @@ class Parser(object):
                 name = input("Enter name: ")
             layout_obj = candidates[name]
             new_coords = coords.merge(layout_obj["coordinates"])
-            LOG.debug("Updating coordinates for %s to %s" % (name, new_coords))
+            self.logger.debug("Updating coordinates for %s to %s" %
+                              (name, new_coords))
             obj = self.layout["objects"][page.name][name]
             obj["coordinates"] = new_coords
             obj["raw_coordinates"] = new_coords.to_list()
@@ -583,7 +635,8 @@ class Parser(object):
                 name = input("Enter name, or 'S' to skip: ")
 
             if name.upper() == 'S':
-                LOG.debug("Adding %s to skip list for %s", coords, page.name)
+                self.logger.debug("Adding %s to skip list for %s", coords,
+                                  page.name)
                 self.layout["skip"].setdefault(page.name, []).append(coords)
                 return None, None
             else:
@@ -592,7 +645,7 @@ class Parser(object):
                     "raw_coordinates": coords.to_list(),
                 }
 
-                LOG.debug("Adding %s to layout object list", name)
+                self.logger.debug("Adding %s to layout object list", name)
                 self.layout["objects"][page.name][name] = layout_record
                 return name, layout_record
         else:
@@ -609,14 +662,15 @@ class Parser(object):
         skip_pdf_obj = False
         for skip_coords in self.layout["skip"].get(page.name, []):
             if skip_coords.contains(coords, fuzz=0.1):
-                LOG.debug("Skipping PDF object %s: contained within %s",
-                          pdfobj_repr(pdfobj), skip_coords)
+                self.logger.debug(
+                    "Skipping PDF object %s: contained within %s",
+                    pdfobj_repr(pdfobj), skip_coords)
                 skip_pdf_obj = True
                 break
         if skip_pdf_obj:
             return None
 
-        LOG.debug("Finding candidates for %s", pdfobj_repr(pdfobj))
+        self.logger.debug("Finding candidates for %s", pdfobj_repr(pdfobj))
         candidates = {}
         for obj_name, obj in self.layout["objects"][page.name].items():
             if obj["coordinates"].contains(coords, fuzz=0.1):
@@ -640,36 +694,46 @@ class Parser(object):
                         (record, obj_name, filename,
                          layout_obj["converter"].__class__.__name__, err),
                         obj_name=obj_name)
-            LOG.debug("Found %s at %s in %s: %r", obj_name, coords, filename,
-                      record)
+            self.logger.debug("Found %s at %s in %s: %r", obj_name, coords,
+                              filename, record)
             return ParsedPDFObjectData(obj_name, record)
         return None
 
     def _parse_pdf(self, filename):
         """Parse a single PDF and return the known data."""
-        LOG.info("Parsing accident report data from %s" % filename)
-
-        doc = PDFDocument(filename, self.layout)
+        self.logger.info("Parsing accident report data from %s" % filename)
 
         data = {
             "filename": filename,
             "case_no": utils.filename_to_case_no(filename)
         }
+        try:
+            doc = PDFDocument(filename, self.layout, logger=self.logger)
+        except IOError as err:
+            self.logger.error("Could not read %s: %s", filename, err)
+            data["unreadable"] = True
+            data["parsed"] = False
+            return data
 
         page_types = []
         for page in doc:
-            if page.name in page_types:
-                LOG.warning("Already parsed %s page in %s; skipping page %s",
-                            page.name, filename, page.number)
+            if isinstance(page, UnknownPageType):
+                self.logger.warning("Unknown page type: %s" % page)
                 continue
+            if page.name in page_types:
+                self.logger.warning(
+                    "Already parsed %s page in %s; skipping page %s",
+                    page.name, filename, page.number)
+                continue
+            page_types.append(page.name)
 
-            LOG.debug("Parsing page %s (%s)", page.number, page.name)
+            self.logger.debug("Parsing page %s (%s)", page.number, page.name)
 
             for pdfobj in page:
                 try:
                     obj_data = self._parse_pdfobj(pdfobj, page, filename)
                 except PDFObjectParsingException as err:
-                    LOG.error(err)
+                    self.logger.error(err)
                     if "unparsed_data" not in data:
                         data["unparsed_data"] = []
                     if hasattr(err, "obj_name"):
@@ -680,6 +744,8 @@ class Parser(object):
                     if obj_data is not None and obj_data.data is not None:
                         data[obj_data.name] = obj_data.data
 
+        if not page_types:
+            data["unparseable"] = True
         data["parsed"] = True
         return data
 
@@ -687,36 +753,62 @@ class Parser(object):
         try:
             return self._parse_pdf(filename)
         except psparser.PSException as err:
-            LOG.warn("Parsing %s failed, skipping: %s", filename, err)
+            self.logger.warn("Parsing %s failed, skipping: %s", filename, err)
             return None
 
 
 class ParseChildProcess(Parser, multiprocessing.Process):
     """Child process for Parse command."""
     interactive = False
+    result_queue_sleep = 30
 
-    def __init__(self, terminate, work_queue, result_queue, options,
-                 name=None):
+    def __init__(self,
+                 terminate,
+                 work_queue,
+                 result_queue,
+                 options,
+                 name=None,
+                 max_result_queue_length=10):
         Parser.__init__(self, options)
         multiprocessing.Process.__init__(self, name=name)
 
         self._terminate = terminate
         self._work_queue = work_queue
         self._result_queue = result_queue
+        self._max_result_queue_length = max_result_queue_length
+
+        self.logger = logging.getLogger("%s.%s" %
+                                        (self.__class__.__name__, name))
+
+        log.setup_logging(
+            max(0, self.options.verbose - 1),
+            prefix=self.name,
+            logger=self.logger)
+        self.logger.info("Created child process %s", name)
 
     def run(self):
-        log.setup_logging(self.options.verbose, prefix=self.name)
         while not self._terminate.is_set():
+            while self._result_queue.qsize() >= self._max_result_queue_length:
+                self.logger.info("Result queue contains %s items, > %s",
+                                 self._result_queue.qsize(),
+                                 self._max_result_queue_length)
+                self.logger.info(
+                    "Pausing %s seconds to allow result queue to drain",
+                    self.result_queue_sleep)
+                time.sleep(self.result_queue_sleep)
+
             try:
                 fpath = self._work_queue.get_nowait()
-                LOG.debug("Got file path from work queue: %s", fpath)
+                self.logger.info("Got file path from work queue: %s", fpath)
                 data = self.parse(fpath)
                 if data:
-                    LOG.debug("Returning data for %s to results queue", fpath)
+                    self.logger.info("Returning data for %s to results queue",
+                                     fpath)
                     self._result_queue.put(data)
             except queue.Empty:
-                LOG.info("Work queue is empty, exiting")
+                self.logger.info("Work queue is empty, exiting")
                 break
             except KeyboardInterrupt:
-                LOG.info("Caught Ctrl-C, exiting")
+                self.logger.info("Caught Ctrl-C, exiting")
                 break
+        self.logger.info("Exited loop normally")
