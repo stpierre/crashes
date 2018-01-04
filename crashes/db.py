@@ -11,6 +11,7 @@ serialization (until we actually request data from a record).
 import abc
 import collections
 import contextlib
+import copy
 import datetime
 import logging
 import json
@@ -18,6 +19,8 @@ import os
 
 import six
 import yaml
+
+from crashes import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -151,6 +154,7 @@ class Database(collections.MutableSequence):
         self._data = None
         self._by_key = None
         self._sync = True
+        self._needs_write = set()
 
     @contextlib.contextmanager
     def delay_write(self):
@@ -180,10 +184,12 @@ class Database(collections.MutableSequence):
             if os.path.exists(shard_filepath):
                 LOG.debug("Loading list of shards from %s", shard_filepath)
                 shards = json.load(open(shard_filepath))
+
             for shard in shards:
                 filepath = self._get_filepath(suffix=shard)
                 LOG.debug("Loading data from %s", filepath)
-                self._data.extend(json.load(open(filepath)))
+                shard_data = json.load(open(filepath))
+                self._data.extend(shard_data)
 
     def _shard_data(self):
         shards = collections.defaultdict(list)
@@ -195,19 +201,55 @@ class Database(collections.MutableSequence):
             shards[shard].append(record)
         return shards
 
-    def _save(self):
-        if self._sync:
-            sharded_data = self._shard_data()
-            for suffix, records in sharded_data.items():
-                filepath = self._get_filepath(suffix=suffix)
-                LOG.debug("Saving %s records to %s", len(records), filepath)
-                json.dump(records, open(filepath, "w"), separators=(',', ':'))
-            shard_filepath = self._get_filepath(suffix="shards")
-            LOG.debug("Saving list of shards to %s", shard_filepath)
-            json.dump(
-                sharded_data.keys(),
-                open(shard_filepath, "w"),
-                separators=(',', ':'))
+    def _save(self, force=False):
+        if not self._sync:
+            return
+
+        sharded_data = self._shard_data()
+        abort = False
+        wrote_any_shard = False
+        for suffix, records in sharded_data.items():
+            if not force and suffix not in self._needs_write:
+                LOG.debug("Shard %s has no new data, skipping write", suffix)
+                continue
+            self._needs_write.remove(suffix)
+
+            write_success = False
+            while not write_success:
+                try:
+                    filepath = self._get_filepath(suffix=suffix)
+                    LOG.debug("Saving %s records to %s", len(records),
+                              filepath)
+                    json.dump(
+                        records, open(filepath, "w"), separators=(',', ':'))
+                    write_success = True
+                    wrote_any_shard = True
+                except (SystemExit, KeyboardInterrupt):
+                    LOG.info("Caught Ctrl-C, "
+                             "aborting after database writes are complete")
+                    abort = True
+
+        if wrote_any_shard:
+            write_success = False
+            while not write_success:
+                try:
+                    shard_filepath = self._get_filepath(suffix="shards")
+                    LOG.debug("Saving list of shards to %s", shard_filepath)
+                    json.dump(
+                        sharded_data.keys(),
+                        open(shard_filepath, "w"),
+                        separators=(',', ':'))
+                    write_success = True
+                except (SystemExit, KeyboardInterrupt):
+                    LOG.info("Caught Ctrl-C, "
+                             "aborting after database writes are complete")
+                    abort = True
+
+        if abort:
+            raise SystemExit("Caught Ctrl-C during database write")
+
+    def sync(self):
+        self._save(force=True)
 
     def _serialize(self, record):
         retval = {}
@@ -242,11 +284,13 @@ class Database(collections.MutableSequence):
     def __setitem__(self, key, value):
         self._load()
         self._data[key] = self._serialize(value)
+        self._needs_write.add(self.get_shard(self._data[key]))
         self._save()
 
     def __delitem__(self, key):
         self._load()
-        self._data.pop(key)
+        record = self._data.pop(key)
+        self._needs_write.add(self.get_shard(record[key]))
         self._save()
 
     def __len__(self):
@@ -256,6 +300,7 @@ class Database(collections.MutableSequence):
     def insert(self, index, value):
         self._load()
         self._data.insert(index, self._serialize(value))
+        self._needs_write.add(self.get_shard(self._data[index]))
         self._save()
 
     def __str__(self):
@@ -317,13 +362,28 @@ class KeyedDatabase(Database):
         except (KeyError, IndexError):
             return default
 
+    def record_exists(self, record):
+        return self.exists(record[self.key])
+
     def exists(self, key):
         self._load()
         return key in self._by_key
 
     def update_one(self, record):
+        self._load()
         idx = self._by_key[record[self.key]]
         self[idx] = record
+
+    def merge(self, record):
+        self._load()
+        idx = self._by_key[record[self.key]]
+        new_record = copy.deepcopy(self[idx])
+        new_record.update(record)
+        # we replace the old record, even though it's slower, in order
+        # to ensure that __setitem__() is called, with all of its
+        # attendant magic -- updating the key data, saving, etc.
+        self[idx] = new_record
+        return self[idx]
 
     update = update_one
 
