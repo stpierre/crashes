@@ -164,7 +164,7 @@ class Database(collections.MutableSequence):
         self._save()
 
     def get_shard(self, record):
-        raise NotImplementedError
+        return None
 
     def _get_filepath(self, suffix=None):
         if _DB_PATH is None:
@@ -194,11 +194,7 @@ class Database(collections.MutableSequence):
     def _shard_data(self):
         shards = collections.defaultdict(list)
         for record in self._data:
-            try:
-                shard = self.get_shard(record)
-            except NotImplementedError:
-                return {None: self._data}
-            shards[shard].append(record)
+            shards[self.get_shard(record)].append(record)
         return shards
 
     def _save(self, force=False):
