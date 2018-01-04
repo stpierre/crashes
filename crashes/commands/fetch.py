@@ -62,12 +62,17 @@ class Fetch(base.Command):
         people in a collision without storing their names.
         """
         parts = name.split(" (dob) ")
-        return " ".join(["".join(w[0]
-                                 for w in parts[0].split()), parts[1]]).strip()
+        return " ".join(["".join(w[0] for w in parts[0].split()),
+                         parts[1]]).strip()
+
+    def _sleep(self):
+        sleep_duration = random.randint(self.options.sleep_min,
+                                        self.options.sleep_max)
+        LOG.debug("Sleeping %s seconds", sleep_duration)
+        time.sleep(sleep_duration)
 
     def _parse_tickets(self, case_no, url, post_data):
-        time.sleep(
-            random.randint(self.options.sleep_min, self.options.sleep_max))
+        self._sleep()
         LOG.info("Fetching tickets for %s", case_no)
         response = retry(
             requests.post,
@@ -121,37 +126,39 @@ class Fetch(base.Command):
         ticket_url = crash_table.form["action"]
         ticket_token = crash_table.input["value"]
 
-        for row in crash_table.find_all('tr'):
-            if row.td and row.th and row.th.a:
-                case_no = row.th.a.string.strip()
-                cols = row.find_all("td")
-                record = db.collisions.get(case_no)
-                hit_and_run = "H&R" in cols[3].string
-                if record is None:
-                    date = datetime.datetime.strptime(cols[1].string.strip(),
-                                                      "%m-%d-%Y").date()
-                    db.collisions.append({
-                        "case_no": case_no,
-                        "date": date,
-                        "hit_and_run": hit_and_run
-                    })
+        with db.collisions.delay_write():
+            for row in crash_table.find_all('tr'):
+                if row.td and row.th and row.th.a:
+                    case_no = row.th.a.string.strip()
+                    cols = row.find_all("td")
+                    record = db.collisions.get(case_no)
+                    hit_and_run = "H&R" in cols[3].string
+                    if record is None:
+                        date = datetime.datetime.strptime(
+                            cols[1].string.strip(), "%m-%d-%Y").date()
+                        db.collisions.append({
+                            "case_no": case_no,
+                            "date": date,
+                            "hit_and_run": hit_and_run
+                        })
 
-                    submit = cols[4].input
-                    if submit:
-                        ticket_post_data = {
-                            "CGI": ticket_token,
-                            submit["name"]: submit["value"]
-                        }
+                        submit = cols[4].input
+                        if submit:
+                            ticket_post_data = {
+                                "CGI": ticket_token,
+                                submit["name"]: submit["value"]
+                            }
 
-                        self._parse_tickets(case_no, ticket_url,
-                                            ticket_post_data)
-                elif hit_and_run != record.get("hit_and_run"):
-                    LOG.info("Setting hit-and-run status for %s: %s (was %s)",
-                             case_no, hit_and_run, record.get("hit_and_run"))
-                    record["hit_and_run"] = hit_and_run
-                    db.collisions.update_one(record)
+                            self._parse_tickets(case_no, ticket_url,
+                                                ticket_post_data)
+                    elif hit_and_run != record.get("hit_and_run"):
+                        LOG.info(
+                            "Setting hit-and-run status for %s: %s (was %s)",
+                            case_no, hit_and_run, record.get("hit_and_run"))
+                        record["hit_and_run"] = hit_and_run
+                        db.collisions.update_one(record)
 
-                yield row.th.a['href'].strip()
+                    yield row.th.a['href'].strip()
 
     def _dates_in_range(self):
         """Generate all dates in the desired range, not including
@@ -205,8 +212,7 @@ class Fetch(base.Command):
                 for chunk in response.iter_content():
                     outfile.write(chunk)
             LOG.debug("Wrote data from %s to %s", url, filepath)
-            time.sleep(
-                random.randint(self.options.sleep_min, self.options.sleep_max))
+            self._sleep()
 
     def __call__(self):
         if self.options.refetch_curated:
@@ -217,8 +223,8 @@ class Fetch(base.Command):
     def _fetch_curated(self):
         reports = [
             c for c in db.collisions
-            if c["road_location"] is not None and not c["case_no"].startswith(
-                "NDOR")
+            if c["road_location"] is not None
+            and not c["case_no"].startswith("NDOR")
         ]
         for report in reports:
             filename = utils.case_no_to_filename(report.case_no)
@@ -229,8 +235,7 @@ class Fetch(base.Command):
 
     def _fetch_by_date(self):
         for date in self._dates_in_range():
-            time.sleep(
-                random.randint(self.options.sleep_min, self.options.sleep_max))
+            self._sleep()
             LOG.info("Fetching reports from %s", date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url, force=self.options.force)
