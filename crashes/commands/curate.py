@@ -176,7 +176,8 @@ class Curate(base.Command):
         self.steps.sort(key=operator.attrgetter("order"))
 
     def _print_report(self, report):
-        split = self.highlight_re.split(report["report"])
+        report_text = report["report"] + report.get("report_continued", "")
+        split = self.highlight_re.split(report_text)
 
         print(termcolor.colored(
             self.fmt % (report["case_no"], report["date"]),
@@ -207,13 +208,16 @@ class Curate(base.Command):
         total = len(db.collisions)
 
         for report in db.collisions:
-            if report["report"] is None:
+            if report.get("report") is None:
                 LOG.debug("%s has no report, skipping", report["case_no"])
-            elif not self.search_re.search(report["report"]):
-                LOG.debug("%s doesn't match the search regex, skipping",
-                          report["case_no"])
             else:
-                self._curate_one(report)
-                LOG.info("%s/%s curated (%.02f%%)", complete, total,
-                         100.0 * complete / total)
+                report_text = report["report"] + report.get(
+                    "report_continued", "")
+                if not self.search_re.search(report_text):
+                    LOG.debug("%s doesn't match the search regex, skipping",
+                              report["case_no"])
+                else:
+                    self._curate_one(report)
+                    LOG.info("%s/%s curated (%.02f%%)", complete, total,
+                             100.0 * complete / total)
             complete += 1
