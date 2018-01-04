@@ -10,6 +10,7 @@ serialization (until we actually request data from a record).
 
 import abc
 import collections
+import contextlib
 import datetime
 import logging
 import json
@@ -149,6 +150,14 @@ class Database(collections.MutableSequence):
         self.filename = filename
         self._data = None
         self._by_key = None
+        self._sync = True
+
+    @contextlib.contextmanager
+    def delay_write(self):
+        self._sync = False
+        yield
+        self._sync = True
+        self._save()
 
     def get_shard(self, record):
         raise NotImplementedError
@@ -187,17 +196,18 @@ class Database(collections.MutableSequence):
         return shards
 
     def _save(self):
-        sharded_data = self._shard_data()
-        for suffix, records in sharded_data.items():
-            filepath = self._get_filepath(suffix=suffix)
-            LOG.debug("Saving %s records to %s", len(records), filepath)
-            json.dump(records, open(filepath, "w"), separators=(',', ':'))
-        shard_filepath = self._get_filepath(suffix="shards")
-        LOG.debug("Saving list of shards to %s", shard_filepath)
-        json.dump(
-            sharded_data.keys(),
-            open(shard_filepath, "w"),
-            separators=(',', ':'))
+        if self._sync:
+            sharded_data = self._shard_data()
+            for suffix, records in sharded_data.items():
+                filepath = self._get_filepath(suffix=suffix)
+                LOG.debug("Saving %s records to %s", len(records), filepath)
+                json.dump(records, open(filepath, "w"), separators=(',', ':'))
+            shard_filepath = self._get_filepath(suffix="shards")
+            LOG.debug("Saving list of shards to %s", shard_filepath)
+            json.dump(
+                sharded_data.keys(),
+                open(shard_filepath, "w"),
+                separators=(',', ':'))
 
     def _serialize(self, record):
         retval = {}
@@ -333,7 +343,7 @@ class CollisionDatabase(KeyedDatabase):
         if record[self.key].startswith("NDOR"):
             return "NDOR"
         else:
-            return record[self.key][0:2]
+            return record[self.key].strip()[0:2].upper()
 
 
 _DB_PATH = None
