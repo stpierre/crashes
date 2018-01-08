@@ -413,6 +413,18 @@ injury_severity = Fixture("injury_severity.yml")
 location = Fixture("location.yml", key="name")
 hit_and_run_status = Fixture("hit_and_run_status.yml", key="name")
 dotcode = Fixture("dotcode.yml", key="name")
+boolean = {
+    True: {
+        "shortcut": "Y",
+        "name": True,
+        "desc": "True"
+    },
+    False: {
+        "shortcut": "N",
+        "name": False,
+        "desc": "False"
+    }
+}
 
 # databases
 tickets = Database("tickets.json")

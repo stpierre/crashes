@@ -258,6 +258,20 @@ class HitnrunCuration(CurationStep):
                 and report.get("hit_and_run", False))
 
 
+class BlindRightCuration(CurationStep):
+    """Find collisions that are look-left-turn-right scenarios."""
+
+    results_column = "look_left_turn_right"
+    status_fixture = db.boolean
+    prompt = "Look-left-turn-right collision"
+    order = 20
+
+    def curate_case(self, report):
+        return (report.get("road_location") in ("sidewalk", "crosswalk",
+                                                "bike trail crossing")
+                and report.get("dotcode", 1000) < 400)
+
+
 class Curate(base.Command):
     """Do manual curation of accident reports."""
 
