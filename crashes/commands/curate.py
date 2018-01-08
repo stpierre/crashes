@@ -107,8 +107,11 @@ class CurationStep(object):
     status_fixture = None
     order = None
     prompt = "Status"
+    use_bayes = True
 
     def __init__(self, options):
+        self._curated = 0
+        self._predicted = 0
         # NOTE(stpierre): we have to defer the population of the
         # status dict and bayesian classifier until after the
         # constructor is called, since they depends on database
@@ -124,6 +127,10 @@ class CurationStep(object):
                 if r.get(self.results_column) and utils.get_report_text(r)]
 
     def classify(self, report):
+        if not self.use_bayes:
+            raise NotImplementedError(
+                "Bayesian classification is disabled for %s objects" %
+                self.__class__.__name__)
         if self._classifier is None:
             LOG.debug("Collecting training data for Bayesian classifier")
             train = self._get_training_data()
@@ -142,13 +149,31 @@ class CurationStep(object):
         return self._statuses
 
     def _get_default(self, report):
-        return self._statuses.get_shortcut(self.classify(report))
+        if self.use_bayes:
+            return self.statuses.get_shortcut(self.classify(report))
+        else:
+            return None
 
     def print_additional_info(self, report):
         pass
 
     def get_answer(self, report):
-        return self.statuses.input(default=self._get_default(report))
+        default = self._get_default(report)
+        answer = self.statuses.input(default=default)
+        self._curated += 1
+        if self.use_bayes:
+            if answer and self.statuses[default].name == answer:
+                # predicted default was correct
+                self._predicted += 1
+            LOG.debug("Bayesian accuracy: %0.2f (%s/%s)", self.bayes_accuracy,
+                      self._predicted, self._curated)
+
+    @property
+    def bayes_accuracy(self):
+        if self._curated:
+            return float(self._predicted) / self._curated
+        else:
+            return 0.0
 
     def curate_case(self, report):
         return True
@@ -179,6 +204,7 @@ class HitnrunCuration(CurationStep):
     status_fixture = db.hit_and_run_status
     prompt = "Hit and run status"
     order = 10
+    use_bayes = False
 
     def _get_default(self, _):
         # not trying to be biased here, this is just a sensible default :(
