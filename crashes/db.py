@@ -365,10 +365,12 @@ class KeyedDatabase(Database):
         self._load()
         return key in self._by_key
 
-    def update_one(self, record):
+    def replace(self, record):
         self._load()
         idx = self._by_key[record[self.key]]
         self[idx] = record
+
+    update = replace
 
     def merge(self, record):
         self._load()
@@ -380,8 +382,6 @@ class KeyedDatabase(Database):
         # attendant magic -- updating the key data, saving, etc.
         self[idx] = new_record
         return self[idx]
-
-    update = update_one
 
     def update_many(self, records):
         for record in records:
@@ -412,6 +412,7 @@ injury_region = Fixture("injury_region.yml")
 injury_severity = Fixture("injury_severity.yml")
 location = Fixture("location.yml", key="name")
 hit_and_run_status = Fixture("hit_and_run_status.yml", key="name")
+dotcode = Fixture("dotcode.yml", key="name")
 
 # databases
 tickets = Database("tickets.json")

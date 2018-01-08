@@ -25,7 +25,7 @@ CurationStatus = collections.namedtuple("CurationStatus", ("name",
 
 
 class StatusDict(collections.MutableMapping):
-    def __init__(self, prompt="Status"):
+    def __init__(self, prompt="Status", display_choices=True):
         self._prompt = prompt
         self._order = []
         self._end = ["K", "Q", "?"]
@@ -34,6 +34,7 @@ class StatusDict(collections.MutableMapping):
             "Q": CurationStatus(None, "Quit"),
             "?": CurationStatus(None, "Help")
         }
+        self._display_choices = display_choices
 
     def __getitem__(self, key):
         return self._statuses[key]
@@ -75,11 +76,16 @@ class StatusDict(collections.MutableMapping):
         return "/".join(str(k) for k in self)
 
     def input(self, default=None):
-        if default:
+        if self._display_choices and default:
             prompt = "%s [%s, default=%s] " % (self._prompt, self.choices,
                                                default)
-        else:
+        elif self._display_choices:
             prompt = "%s [%s]: " % (self._prompt, self.choices)
+        elif default:
+            prompt = "%s [default=%s] " % (self._prompt, default)
+        else:
+            prompt = "%s: " % self._prompt
+
         while True:
             ans = input(prompt).upper()
             if not ans and default:
@@ -108,6 +114,7 @@ class CurationStep(object):
     order = None
     prompt = "Status"
     use_bayes = True
+    display_choices = True
 
     def __init__(self, options):
         self._curated = 0
@@ -132,27 +139,48 @@ class CurationStep(object):
                 "Bayesian classification is disabled for %s objects" %
                 self.__class__.__name__)
         if self._classifier is None:
-            LOG.debug("Collecting training data for Bayesian classifier")
+            LOG.debug(
+                "Collecting training data for Bayesian classifier for %s",
+                self.__class__.__name__)
             train = self._get_training_data()
-            LOG.debug("Training Bayesian classifier with %s records",
-                      len(train))
-            self._classifier = classifiers.NaiveBayesClassifier(train)
+            if train:
+                LOG.debug(
+                    "Training Bayesian classifier for %s with %s records",
+                    self.__class__.__name__, len(train))
+                self._classifier = classifiers.NaiveBayesClassifier(train)
+            else:
+                LOG.debug("No training data for %s, skipping classification",
+                          self.__class__.__name__)
+                return None
         return self._classifier.classify(utils.get_report_text(report))
+
+    def get_sorted_choices(self):
+        return self.status_fixture.items()
 
     @property
     def statuses(self):
         if self._statuses is None:
-            self._statuses = StatusDict(self.prompt)
-            for name, status in self.status_fixture.items():
+            self._statuses = StatusDict(
+                self.prompt, display_choices=self.display_choices)
+            for name, status in self.get_sorted_choices():
                 self._statuses[status["shortcut"]] = CurationStatus(
                     name, status["desc"])
         return self._statuses
 
     def _get_default(self, report):
         if self.use_bayes:
-            return self.statuses.get_shortcut(self.classify(report))
-        else:
-            return None
+            default = self.classify(report)
+            if default:
+                if default in self.statuses:
+                    # DOT coding is stored as the shortcut, so we can
+                    # return it directly
+                    return default
+                else:
+                    # assume that we've gotten the name, not the
+                    # shortcut, and return the shortcut. This is how
+                    # the road location/hit and run coding works.
+                    return self.statuses.get_shortcut(default)
+        return None
 
     def print_additional_info(self, report):
         pass
@@ -162,11 +190,12 @@ class CurationStep(object):
         answer = self.statuses.input(default=default)
         self._curated += 1
         if self.use_bayes:
-            if answer and self.statuses[default].name == answer:
+            if answer and default and self.statuses[default].name == answer:
                 # predicted default was correct
                 self._predicted += 1
             LOG.debug("Bayesian accuracy: %0.2f (%s/%s)", self.bayes_accuracy,
                       self._predicted, self._curated)
+        return answer
 
     @property
     def bayes_accuracy(self):
@@ -195,6 +224,20 @@ class LocationCuration(CurationStep):
                 for r in db.collisions
                 if r.get(self.results_column) not in (
                     None, "unknown") and utils.get_report_text(r)]
+
+
+class DOTCoding(CurationStep):
+    """Determine the DOT collision code."""
+
+    results_column = "dotcode"
+    status_fixture = db.dotcode
+    prompt = "DOT code"
+    order = 5
+    display_choices = False
+
+    def get_sorted_choices(self):
+        return sorted(
+            self.status_fixture.items(), key=lambda v: v[1]["shortcut"])
 
 
 class HitnrunCuration(CurationStep):
@@ -256,7 +299,7 @@ class Curate(base.Command):
                 ans = step.get_answer(report)
                 if ans:
                     report[step.results_column] = ans
-                    db.collisions.update_one(report)
+                    db.collisions.replace(report)
 
     def __call__(self):
         complete = 0

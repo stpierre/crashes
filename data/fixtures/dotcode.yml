@@ -1,0 +1,464 @@
+---
+- shortcut: "111"
+  name: Motorist Turning Error—Left Turn
+  desc: >
+    The motorist made a left turn, cut the corner and entered the
+    opposing traffic lane.
+
+- shortcut: "112"
+  name: Motorist Turning Error—Right Turn
+  desc: >
+    The motorist made a right turn, swung too wide and entered the
+    opposing traffic lane.
+
+- shortcut: "113"
+  name: Motorist Turning Error—Other
+  desc: >
+    The motorist made another type of turning error which led them
+    into the path of the bicyclist.
+
+- shortcut: "114"
+  name: Bicyclist Turning Error—Left Turn
+  desc: >
+    The bicyclist made a left turn, cut the corner and entered the
+    opposing traffic lane.
+
+- shortcut: "115"
+  name: Bicyclist Turning Error—Right Turn
+  desc: >
+    The bicyclist made a right turn, swung too wide and entered the
+    opposing traffic lane.
+
+- shortcut: "116"
+  name: Bicyclist Turning Error—Other
+  desc: >
+    The bicyclist made another type of turning error which led them
+    into the path of the motorist.
+
+- shortcut: "121"
+  name: Bicyclist Lost Control—Mechanical Problems
+  desc: The bicyclist lost control due to mechanical problems.
+
+- shortcut: "122"
+  name: Bicyclist Lost Control—Oversteering, Improper Braking, Speed
+  desc: >
+    The bicyclist lost control due to oversteering, improper braking,
+    or speed too fast for conditions.
+
+- shortcut: "123"
+  name: Bicylist Lost Control—Alcohol/Drug Impairment
+  desc: The bicyclist lost control due to alcohol or drug impairment.
+
+- shortcut: "124"
+  name: Bicyclist Lost Control—Surface Conditions
+  desc: >
+    The bicyclist lost control due to surface conditions (sand,
+    debris, potholes, ice, etc.).
+
+- shortcut: "129"
+  name: Bicyclist Lost Control—Other/Unknown
+  desc: The bicyclist lost control due to other or unknown circumstances.
+
+- shortcut: "131"
+  name: Motorist Lost Control—Mechanical Problems
+  desc: The motorist lost control due to mechanical problems.
+
+- shortcut: "132"
+  name: Motorist Lost Control—Oversteering, Improper Braking, Speed
+  desc: >
+    The motorist lost control due to oversteering, improper braking,
+    or speed too fast for conditions.
+
+- shortcut: "133"
+  name: Motorist Lost Control—Alcohol/Drug Impairment
+  desc: The motorist lost control due to alcohol or drug impairment.
+
+- shortcut: "134"
+  name: Motorist Lost Control—Surface Conditions
+  desc: >
+    The motorist lost control due to surface conditions (potholes, ice, etc.).
+
+- shortcut: "139"
+  name: Motorist Lost Control—Other/Unknown
+  desc: The motorist lost control due to other or unknown circumstances.
+
+- shortcut: "141"
+  name: Motorist Drive–out Sign–Controlled Intersection
+  desc: >
+    The motorist was facing the sign or flashing signal and drove into
+    the crosswalk area or intersection and collided with the bicyclist
+    after stopping or yielding.
+
+- shortcut: "142"
+  name: Bicyclist Ride–out—Sign–Controlled Intersection
+  desc: >
+    The bicyclist was facing the sign or flashing signal and rode into
+    the intersection and collided with the motorist after stopping or
+    yielding.
+
+- shortcut: "143"
+  name: Motorist Drive–through—Sign–Controlled Intersection
+  desc: >
+    The motorist violated the sign or flashing signal and drove into
+    the crosswalk area or intersection and collided with the bicyclist.
+
+- shortcut: "144"
+  name: Bicyclist Ride Through Sign–Controlled Intersection
+  desc: >
+    The bicyclist violated the sign or flashing signal and rode into
+    the intersection and collided with the motorist.
+
+- shortcut: "147"
+  name: Multiple Threat—Sign–Controlled Intersection
+  desc: >
+    The bicyclist entered a sign–controlled intersection in front of
+    standing or slowing traffic and was struck by another vehicle whose
+    view of the bicyclist was blocked.
+
+- shortcut: "148"
+  name: Sign–Controlled Intersection—Other/Unknown
+  desc: >
+    The crash occurred at a sign–controlled intersection but cannot be
+    further classified.
+
+- shortcut: "151"
+  name: Motorist Drive–out—Right Turn on Red
+  desc: >
+    The motorist was facing a red signal, stopped, and then drove into
+    the crosswalk area or intersection and collided with the bicyclist
+    while attempting to make a right turn on red.
+
+- shortcut: "152"
+  name: Motorist Drive–out—Signalized Intersection
+  desc: >
+    The motorist was facing a red signal, stopped, and then drove into
+    the crosswalk area or intersection and collided with the bicyclist.
+
+- shortcut: "153"
+  name: Bicyclist Ride–out—Signalized Intersection
+  desc: >
+    The bicyclist was facing the red signal, stopped, and then rode
+    into the intersection and collided with the motorist.
+
+- shortcut: "154"
+  name: Motorist Drive–through—Signalized Intersection
+  desc: >
+    The motorist violated the signal and drove into the crosswalk area
+    or intersection and collided with the bicyclist.
+
+- shortcut: "155"
+  name: Bicyclist Ride Through—Signalized Intersection
+  desc: >
+    The bicyclist violated the signal and rode into the intersection
+    and collided with the motorist.
+
+- shortcut: "156"
+  name: Bicyclist Failed to Clear—Trapped
+  desc: >
+    The bicyclist lawfully entered the intersection on green but did
+    not clear the intersection before the signal changed to green for
+    the cross–street traffic and was struck by a vehicle whose view was
+    not obstructed by standing or stopped traffic.
+
+- shortcut: "157"
+  name: Bicyclist Failed to Clear—Multiple Threat
+  desc: >
+    The bicyclist lawfully entered the intersection on green but did
+    not clear the intersection before the signal changed to green for
+    the cross–street traffic and was struck by a motorist whose view of
+    the bicyclist was obstructed by standing or stopped traffic.
+
+- shortcut: "158"
+  name: Signalized Intersection—Other/Unknown
+  desc: >
+    The crash occurred at a signal–controlled intersection but cannot
+    be further classified.
+
+- shortcut: "159"
+  name: Bicyclist Failed to Clear—Unknown
+  desc: >
+    The bicyclist failed to clear the intersection and was struck by a
+    motorist, but it is unknown whether the bicyclist was trapped in the
+    intersection by a signal change or if there was a multiple threat
+    situation or other circumstances surrounding the crash.
+
+- shortcut: "160"
+  name: Crossing Paths—Uncontrolled Intersection
+  desc: The crash occurred at an intersection not controlled by signs or signals.
+
+- shortcut: "180"
+  name: Crossing Paths—Intersection—Other/Unknown
+  desc: >
+    The crash involved a bicyclist and motorist on initial crossing
+    paths but cannot be further classified.
+
+- shortcut: "211"
+  name: Motorist Left Turn—Same Direction
+  desc: >
+    The motorist turned left in front of a bicyclist going in the same
+    direction.
+
+- shortcut: "212"
+  name: Motorist Left Turn—Opposite Direction
+  desc: >
+    The motorist turned left in front of a bicyclist coming from the
+    opposite direction.
+
+- shortcut: "213"
+  name: Motorist Right Turn—Same Direction
+  desc: >
+    The motorist turned right in front of a bicyclist going in the
+    same direction.
+
+- shortcut: "214"
+  name: Motorist Right Turn—Opposite Direction
+  desc: >
+    The motorist turned right in front of a bicyclist coming from the
+    opposite direction.
+
+- shortcut: "215"
+  name: Motorist Drive–in/Out—Parking
+  desc: >
+    The motorist struck the bicyclist while exiting or entering
+    on–street parking.
+
+- shortcut: "216"
+  name: Bus/Delivery Vehicle Pullover
+  desc: >
+    The bicyclist was struck by a bus or delivery vehicle pulling into
+    or away from the curb.
+
+- shortcut: "217"
+  name: Motorist Right Turn on Red—Same Direction
+  desc: >
+    The bicyclist and motorist were initially traveling on parallel
+    paths when the motorist turned right on red in front of a bicyclist
+    traveling in the same direction as the motorist.
+
+- shortcut: "218"
+  name: Motorist Right Turn on Red—Opposite Direction
+  desc: >
+    The bicyclist and motorist were initially traveling on parallel
+    paths when the motorist turned right on red in front of a bicyclist
+    traveling in the opposite direction as the motorist.
+
+- shortcut: "219"
+  name: Motorist Turn/Merge—Other/Unknown
+  desc: >
+    The motorist's turning maneuver is other than those described or is unknown.
+
+- shortcut: "221"
+  name: Bicyclist Left Turn—Same Direction
+  desc: >
+    The bicyclist turned or merged left in front of a motorist going
+    in the same direction.
+
+- shortcut: "222"
+  name: Bicyclist Left Turn—Opposite Direction
+  desc: >
+    The bicyclist turned or merged left in front of a motorist coming
+    from the opposite direction.
+
+- shortcut: "223"
+  name: Bicyclist Right Turn—Same Direction
+  desc: >
+    The bicyclist turned or merged right in front of a motorist going
+    in the same direction.
+
+- shortcut: "224"
+  name: Bicyclist Right Turn—Opposite Direction
+  desc: >
+    The bicyclist turned or merged right in front of a motorist coming
+    from the opposite direction.
+
+- shortcut: "225"
+  name: Bicyclist Ride–out—Parallel Path
+  desc: >
+    The bicyclist, initially on a sidewalk or other parallel path,
+    rode into the roadway and into the path of a motor vehicle.
+
+- shortcut: "231"
+  name: Motorist Overtaking—Undetected Bicyclist
+  desc: >
+    The motorist was overtaking the bicyclist and failed to detect the bicyclist.
+
+- shortcut: "232"
+  name: Motorist Overtaking—Misjudged Space
+  desc: >
+    The motorist was overtaking the bicyclist and misjudged the width
+    and distance required to pass the bicyclist.
+
+- shortcut: "235"
+  name: Motorist Overtaking—Bicyclist Swerved
+  desc: >
+    The bicyclist swerved or moved suddenly into the path of an
+    overtaking vehicle.
+
+- shortcut: "239"
+  name: Motorist Overtaking—Other/Unknown
+  desc: >
+    The motorist was overtaking the bicyclist, but the specific
+    circumstances surrounding the overtaking maneuver do not conform to
+    the other situations described or are unknown.
+
+- shortcut: "241"
+  name: Bicyclist Overtaking—Passing on Right
+  desc: >
+    The bicyclist struck a motor vehicle in the travel lane while
+    passing on the right.
+
+- shortcut: "242"
+  name: Bicyclist Overtaking—Passing on Left
+  desc: >
+    The bicyclist struck a motor vehicle in the travel lane while
+    passing on the left.
+
+- shortcut: "243"
+  name: Bicyclist Overtaking—Parked Vehicle
+  desc: The bicyclist struck a parked vehicle while passing.
+
+- shortcut: "244"
+  name: Bicyclist Overtaking—Extended Door
+  desc: The bicyclist struck an extended door on a parked vehicle while passing.
+
+- shortcut: "249"
+  name: Bicyclist Overtaking—Other/Unknown
+  desc: >
+    The specific circumstances surrounding the overtaking maneuver of
+    the bicyclist do not conform to any of the situations described or
+    are unknown.
+
+- shortcut: "250"
+  name: Head–On—Bicyclist
+  desc: >
+    The bicyclist was traveling the wrong way/wrong side and the two
+    parties collided head–on.
+
+- shortcut: "255"
+  name: Head–On—Motorist
+  desc: >
+    The motorist was traveling the wrong way/wrong side and the two
+    parties collided head–on.
+
+- shortcut: "259"
+  name: Head–On—Unknown
+  desc: >
+    The two parties collided head–on but it is unknown which party was
+    traveling on the wrong side.
+
+- shortcut: "280"
+  name: Parallel Paths—Other/Unknown
+  desc: >
+    The crash involved a bicyclist and motorist on initial parallel
+    paths but cannot be further classified.
+
+- shortcut: "311"
+  name: Bicyclist Ride–out—Residential Driveway
+  desc: >
+    The bicyclist rode into the roadway and into the path of a motor
+    vehicle from a residential driveway.
+
+- shortcut: "312"
+  name: Bicyclist Ride–out—Commercial Driveway/Alley
+  desc: >
+    The bicyclist rode into the roadway and into the path of a motor
+    vehicle from a commercial driveway or alley.
+
+- shortcut: "318"
+  name: Bicyclist Ride–out—Other Midblock
+  desc: >
+    The bicyclist rode into the roadway and into the path of a motor
+    vehicle from a midblock area other than a driveway or alley.
+
+- shortcut: "319"
+  name: Bicyclist Ride–out—Midblock—Unknown
+  desc: >
+    The bicyclist rode into the roadway and into the path of a motor
+    vehicle from an unknown midblock location.
+
+- shortcut: "321"
+  name: Motorist Drive–out—Residential Driveway
+  desc: >
+    The motorist drove into the roadway or sidewalk/driveway crossing
+    area and into the path of a bicyclist from a residential driveway.
+
+- shortcut: "322"
+  name: Motorist Drive–out—Commercial Driveway/Alley
+  desc: >
+    The motorist drove into the roadway or sidewalk/driveway crossing
+    area and into the path of a bicyclist from a commercial driveway or
+    alley.
+
+- shortcut: "328"
+  name: Motorist Drive–out—Other Midblock
+  desc: >
+    The motorist drove into the roadway or sidewalk/driveway crossing
+    area and into the path of a bicyclist from a midblock area other
+    than a driveway or alley.
+
+- shortcut: "329"
+  name: Motorist Drive–out—Midblock—Unknown
+  desc: >
+    The motorist drove into the roadway or sidewalk/driveway crossing
+    area and into the path of a bicyclist an unknown midblock area.
+
+- shortcut: "357"
+  name: Multiple Threat—Midblock
+  desc: >
+    The bicyclist entered the roadway in front of standing or slowing
+    traffic at a mid–block location and was struck by a motorist
+    traveling in the same direction as the stopped traffic, and whose
+    view of the bicyclist was blocked.
+
+- shortcut: "380"
+  name: Crossing Paths—Midblock—Other/Unknown
+  desc: >
+    The crash involved a bicyclist and motorist on initial crossing
+    paths at a midblock location but cannot be furter classified.
+
+- shortcut: "400"
+  name: Bicycle Only
+  desc: The crash involved a bicycle but no motor vehicle.
+
+- shortcut: "510"
+  name: Motorist Intentionally Caused
+  desc: The motorist intentionally caused the crash.
+
+- shortcut: "520"
+  name: Bicyclist Intentionally Caused
+  desc: The bicyclist intentionally caused the crash.
+
+- shortcut: "600"
+  name: Backing Vehicle
+  desc: >
+    The crash involved a motor vehicle that was backing and did not
+    involve a play vehicle.
+
+- shortcut: "700"
+  name: Play Vehicle–Related
+  desc: >
+    The bicyclist was riding a child's vehicle such as a tricycle (not
+    an adult tricycle), bicycle with training wheels, or "Big Wheel"
+    type tricycle.
+
+- shortcut: "800"
+  name: Unusual Circumstances
+  desc: >
+    There were other unusual circumstances not defined above (e.g.,
+    bicyclist struck by falling cargo).
+
+- shortcut: "910"
+  name: Nonroadway
+  desc: >
+    The crash occurred off the street network (e.g., parking lots,
+    driveways, alleys, trails, and other open areas).
+
+- shortcut: "970"
+  name: Unknown Approach Paths
+  desc: >
+    There is insufficient information to determine the initial
+    approach paths for the two vehicles.
+
+- shortcut: "980"
+  name: Unknown Location
+  desc: There is insufficient information to determine where the crash occurred.

@@ -156,7 +156,7 @@ class Fetch(base.Command):
                             "Setting hit-and-run status for %s: %s (was %s)",
                             case_no, hit_and_run, record.get("hit_and_run"))
                         record["hit_and_run"] = hit_and_run
-                        db.collisions.update_one(record)
+                        db.collisions.replace(record)
 
                     yield row.th.a['href'].strip()
 
