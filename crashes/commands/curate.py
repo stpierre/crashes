@@ -11,9 +11,11 @@ import textwrap
 from backports.shutil_get_terminal_size import get_terminal_size
 from six.moves import input
 import termcolor
+from textblob import classifiers
 
 from crashes.commands import base
 from crashes import db
+from crashes import utils
 
 LOG = logging.getLogger(__name__)
 ROWS = get_terminal_size()[0]
@@ -91,6 +93,13 @@ class StatusDict(collections.MutableMapping):
             else:
                 return self[ans].name
 
+    def get_shortcut(self, name):
+        for key, status in self.items():
+            if name == status.name:
+                return key
+        raise ValueError("%s is not a valid choice (%s)" %
+                         (name, [s.name for s in self.values()]))
+
 
 # pylint: disable=unused-argument,no-self-use
 class CurationStep(object):
@@ -100,12 +109,28 @@ class CurationStep(object):
     prompt = "Status"
 
     def __init__(self, options):
-        # NOTE(stpierre): we have to defer the population of
-        # self._statuses until after the constructor is called, since
-        # it depends on database initialization to read the fixture
-        # data. But db init is called after option parsing, which is
-        # when the constructor is called.
+        # NOTE(stpierre): we have to defer the population of the
+        # status dict and bayesian classifier until after the
+        # constructor is called, since they depends on database
+        # initialization to read the fixture data/report data. But db
+        # init is called after option parsing, which is when the
+        # constructor is called.
         self._statuses = None
+        self._classifier = None
+
+    def _get_training_data(self):
+        return [(utils.get_report_text(r), r[self.results_column])
+                for r in db.collisions
+                if r.get(self.results_column) and utils.get_report_text(r)]
+
+    def classify(self, report):
+        if self._classifier is None:
+            LOG.debug("Collecting training data for Bayesian classifier")
+            train = self._get_training_data()
+            LOG.debug("Training Bayesian classifier with %s records",
+                      len(train))
+            self._classifier = classifiers.NaiveBayesClassifier(train)
+        return self._classifier.classify(utils.get_report_text(report))
 
     @property
     def statuses(self):
@@ -117,7 +142,7 @@ class CurationStep(object):
         return self._statuses
 
     def _get_default(self, report):
-        return None
+        return self._statuses.get_shortcut(self.classify(report))
 
     def print_additional_info(self, report):
         pass
@@ -139,6 +164,12 @@ class LocationCuration(CurationStep):
     status_fixture = db.location
     prompt = "Road location"
     order = 0
+
+    def _get_training_data(self):
+        return [(utils.get_report_text(r), r[self.results_column])
+                for r in db.collisions
+                if r.get(self.results_column) not in (
+                    None, "unknown") and utils.get_report_text(r)]
 
 
 class HitnrunCuration(CurationStep):
@@ -176,8 +207,7 @@ class Curate(base.Command):
         self.steps.sort(key=operator.attrgetter("order"))
 
     def _print_report(self, report):
-        report_text = report["report"] + report.get("report_continued", "")
-        split = self.highlight_re.split(report_text)
+        split = self.highlight_re.split(utils.get_report_text(report))
 
         print(termcolor.colored(
             self.fmt % (report["case_no"], report["date"]),
@@ -211,9 +241,7 @@ class Curate(base.Command):
             if report.get("report") is None:
                 LOG.debug("%s has no report, skipping", report["case_no"])
             else:
-                report_text = report["report"] + report.get(
-                    "report_continued", "")
-                if not self.search_re.search(report_text):
+                if not self.search_re.search(utils.get_report_text(report)):
                     LOG.debug("%s doesn't match the search regex, skipping",
                               report["case_no"])
                 else:
