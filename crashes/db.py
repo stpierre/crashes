@@ -176,8 +176,8 @@ class Database(collections.MutableSequence):
             filename = "%s-%s%s" % (name, suffix, ext)
         return os.path.join(_DB_PATH, filename)
 
-    def _load(self):
-        if self._data is None:
+    def _load(self, force=False):
+        if force or self._data is None:
             self._data = []
             shards = [None]
             shard_filepath = self._get_filepath(suffix="shards")
@@ -319,8 +319,8 @@ class KeyedDatabase(Database):
         super(KeyedDatabase, self).__init__(filename)
         self.key = key
 
-    def _load(self):
-        super(KeyedDatabase, self)._load()
+    def _load(self, force=False):
+        super(KeyedDatabase, self)._load(force=force)
         if self._by_key is None:
             self._by_key = {d[self.key]: i for i, d in enumerate(self._data)}
 
