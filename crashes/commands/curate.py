@@ -63,7 +63,7 @@ class StatusDict(collections.MutableMapping):
         rv = []
         for key in self:
             status = self._statuses[key]
-            if status.name:
+            if status.name != key:
                 line = "%s (%s): %s" % (key, status.name, status.description)
             else:
                 line = "%s: %s" % (key, status.description)
@@ -116,7 +116,7 @@ class CurationStep(object):
     use_bayes = True
     display_choices = True
 
-    def __init__(self, options):
+    def __init__(self):
         self._curated = 0
         self._predicted = 0
         # NOTE(stpierre): we have to defer the population of the
@@ -128,8 +128,16 @@ class CurationStep(object):
         self._statuses = None
         self._classifier = None
 
+    @staticmethod
+    def _get_report_bayes_data(report):
+        return "\n".join([
+            utils.get_report_text(report),
+            "Road location: %s" % report.get("road_location"),
+            "DOT code: %s" % report.get("dotcode")
+        ])
+
     def _get_training_data(self):
-        return [(utils.get_report_text(r), r[self.results_column])
+        return [(self._get_report_bayes_data(r), r[self.results_column])
                 for r in db.collisions
                 if r.get(self.results_column) and utils.get_report_text(r)]
 
@@ -190,17 +198,18 @@ class CurationStep(object):
         answer = self.statuses.input(default=default)
         self._curated += 1
         if self.use_bayes:
-            if answer and default and self.statuses[default].name == answer:
+            if (answer is not None and default is not None
+                    and self.statuses[default].name == answer):
                 # predicted default was correct
                 self._predicted += 1
-            LOG.debug("Bayesian accuracy: %0.2f (%s/%s)", self.bayes_accuracy,
-                      self._predicted, self._curated)
+            LOG.debug("Bayesian accuracy: %0.2f%% (%s/%s)",
+                      self.bayes_accuracy, self._predicted, self._curated)
         return answer
 
     @property
     def bayes_accuracy(self):
         if self._curated:
-            return float(self._predicted) / self._curated
+            return 100.0 * self._predicted / self._curated
         else:
             return 0.0
 
@@ -235,9 +244,19 @@ class DOTCoding(CurationStep):
     order = 5
     display_choices = False
 
+    def print_additional_info(self, report):
+        print("Road location: %(road_location)s" % report)
+
     def get_sorted_choices(self):
         return sorted(
             self.status_fixture.items(), key=lambda v: v[1]["shortcut"])
+
+    def curate_case(self, report):
+        if report.get("road_location") in (None, 'not involved'):
+            LOG.debug("Cyclist was not involved in %s, skipping DOT coding",
+                      report["case_no"])
+            return False
+        return True
 
 
 class HitnrunCuration(CurationStep):
@@ -254,8 +273,14 @@ class HitnrunCuration(CurationStep):
         return "D"
 
     def curate_case(self, report):
-        return (report.get("road_location") not in (None, 'not involved')
-                and report.get("hit_and_run", False))
+        if report.get("road_location") in (None, 'not involved'):
+            LOG.debug("Cyclist was not involved in %s, skipping hit-and-run",
+                      report["case_no"])
+            return False
+        if not report.get("hit_and_run", False):
+            LOG.debug("%s was not a hit-and-run, skipping", report["case_no"])
+            return False
+        return True
 
 
 class BlindRightCuration(CurationStep):
@@ -267,9 +292,31 @@ class BlindRightCuration(CurationStep):
     order = 20
 
     def curate_case(self, report):
-        return (report.get("road_location") in ("sidewalk", "crosswalk",
-                                                "bike trail crossing")
-                and report.get("dotcode", 1000) < 400)
+        if report.get("road_location") not in ("sidewalk", "crosswalk",
+                                               "bike trail",
+                                               "bike trail crossing",
+                                               "bike lane"):
+            LOG.debug(
+                "%s was not at a road crossing (%s), skipping blind right",
+                report["case_no"], report.get("road_location"))
+            return False
+        dotcode = int(report.get("dotcode", 0))
+        if (120 <= dotcode < 140 or  # cyclist or motorist lost control
+                220 <= dotcode < 230 or  # cyclist ride out
+                230 <= dotcode < 250 or  # cyclist or motorst overtaking
+                250 <= dotcode < 260 or  # head-on
+                310 <= dotcode < 320 or  # cyclist ride out
+                dotcode >= 400 or  # non-roadway, other oddities
+                dotcode in (144, 156, 215, 216, 280)):
+            LOG.debug("DOT code for %s indicates non-right turn crash, "
+                      "skipping blind right (%s)", report["case_no"],
+                      report["dotcode"])
+            return False
+        return True
+
+    def print_additional_info(self, report):
+        print("Road location: %(road_location)s" % report)
+        print("DOT code: %(dotcode)s" % report)
 
 
 class Curate(base.Command):
@@ -286,7 +333,7 @@ class Curate(base.Command):
         for name, obj in globals().items():
             if (not name.startswith("_") and isinstance(obj, type)
                     and issubclass(obj, CurationStep) and obj != CurationStep):
-                self.steps.append(obj(options))
+                self.steps.append(obj())
         self.steps.sort(key=operator.attrgetter("order"))
 
     def _print_report(self, report):
@@ -304,16 +351,23 @@ class Curate(base.Command):
     def _curate_one(self, report):
         report_printed = False
         for step in self.steps:
-            if not report.get(step.results_column) and step.curate_case(
-                    report):
-                if not report_printed:
-                    self._print_report(report)
-                    report_printed = True
-                step.print_additional_info(report)
-                ans = step.get_answer(report)
-                if ans:
-                    report[step.results_column] = ans
-                    db.collisions.replace(report)
+            if report.get(step.results_column) is not None:
+                LOG.debug("%s has already been curated by %s, skipping",
+                          report["case_no"], step.__class__.__name__)
+                continue
+            elif not step.curate_case(report):
+                LOG.debug("%s is not flagged for curation by %s, skipping",
+                          report["case_no"], step.__class__.__name__)
+                continue
+
+            if not report_printed:
+                self._print_report(report)
+                report_printed = True
+            step.print_additional_info(report)
+            ans = step.get_answer(report)
+            if ans is not None:
+                report[step.results_column] = ans
+                db.collisions.replace(report)
 
     def __call__(self):
         complete = 0
@@ -328,7 +382,8 @@ class Curate(base.Command):
                     LOG.debug("%s doesn't match the search regex, skipping",
                               report["case_no"])
                 else:
-                    self._curate_one(report)
+                    with db.collisions.delay_write():
+                        self._curate_one(report)
                     LOG.info("%s/%s curated (%.02f%%)", complete, total,
                              100.0 * complete / total)
             complete += 1
