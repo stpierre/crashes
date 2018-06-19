@@ -11,7 +11,6 @@ import textwrap
 from backports.shutil_get_terminal_size import get_terminal_size
 from six.moves import input
 import termcolor
-from textblob import classifiers
 
 from crashes.commands import base
 from crashes import db
@@ -20,8 +19,8 @@ from crashes import utils
 LOG = logging.getLogger(__name__)
 ROWS = get_terminal_size()[0]
 
-CurationStatus = collections.namedtuple("CurationStatus", ("name",
-                                                           "description"))
+CurationStatus = collections.namedtuple("CurationStatus",
+                                        ("name", "description"))
 
 
 class StatusDict(collections.MutableMapping):
@@ -57,8 +56,8 @@ class StatusDict(collections.MutableMapping):
 
     @property
     def help(self):
-        longest_key = min(1,
-                          max(len(str(key)) for key in self._statuses.keys()))
+        longest_key = min(1, max(
+            len(str(key)) for key in self._statuses.keys()))
         indent = " " * (longest_key + 2)
         rv = []
         for key in self:
@@ -76,13 +75,13 @@ class StatusDict(collections.MutableMapping):
         return "/".join(str(k) for k in self)
 
     def input(self, default=None):
-        if self._display_choices and default:
-            prompt = "%s [%s, default=%s] " % (self._prompt, self.choices,
-                                               default)
-        elif self._display_choices:
-            prompt = "%s [%s]: " % (self._prompt, self.choices)
-        elif default:
-            prompt = "%s [default=%s] " % (self._prompt, default)
+        prompt_info = []
+        if self._display_choices:
+            prompt_info.append(self.choices)
+        if default is not None:
+            prompt_info.append("default=%s" % default)
+        if prompt_info:
+            prompt = "%s [%s] " % (self._prompt, ", ".join(prompt_info))
         else:
             prompt = "%s: " % self._prompt
 
@@ -113,54 +112,14 @@ class CurationStep(object):
     status_fixture = None
     order = None
     prompt = "Status"
-    use_bayes = True
     display_choices = True
 
     def __init__(self):
-        self._curated = 0
-        self._predicted = 0
-        # NOTE(stpierre): we have to defer the population of the
-        # status dict and bayesian classifier until after the
-        # constructor is called, since they depends on database
-        # initialization to read the fixture data/report data. But db
-        # init is called after option parsing, which is when the
-        # constructor is called.
+        # NOTE(stpierre): we have to defer the population of the status dict
+        # until after the constructor is called, since it depends on database
+        # initialization to read the fixture data/report data. But db init is
+        # called after option parsing, which is when the constructor is called.
         self._statuses = None
-        self._classifier = None
-
-    @staticmethod
-    def _get_report_bayes_data(report):
-        return "\n".join([
-            utils.get_report_text(report),
-            "Road location: %s" % report.get("road_location"),
-            "DOT code: %s" % report.get("dotcode")
-        ])
-
-    def _get_training_data(self):
-        return [(self._get_report_bayes_data(r), r[self.results_column])
-                for r in db.collisions
-                if r.get(self.results_column) and utils.get_report_text(r)]
-
-    def classify(self, report):
-        if not self.use_bayes:
-            raise NotImplementedError(
-                "Bayesian classification is disabled for %s objects" %
-                self.__class__.__name__)
-        if self._classifier is None:
-            LOG.debug(
-                "Collecting training data for Bayesian classifier for %s",
-                self.__class__.__name__)
-            train = self._get_training_data()
-            if train:
-                LOG.debug(
-                    "Training Bayesian classifier for %s with %s records",
-                    self.__class__.__name__, len(train))
-                self._classifier = classifiers.NaiveBayesClassifier(train)
-            else:
-                LOG.debug("No training data for %s, skipping classification",
-                          self.__class__.__name__)
-                return None
-        return self._classifier.classify(utils.get_report_text(report))
 
     def get_sorted_choices(self):
         return self.status_fixture.items()
@@ -175,43 +134,15 @@ class CurationStep(object):
                     name, status["desc"])
         return self._statuses
 
-    def _get_default(self, report):
-        if self.use_bayes:
-            default = self.classify(report)
-            if default:
-                if default in self.statuses:
-                    # DOT coding is stored as the shortcut, so we can
-                    # return it directly
-                    return default
-                else:
-                    # assume that we've gotten the name, not the
-                    # shortcut, and return the shortcut. This is how
-                    # the road location/hit and run coding works.
-                    return self.statuses.get_shortcut(default)
+    def get_default(self, report):
         return None
 
-    def print_additional_info(self, report):
-        pass
+    def get_additional_info(self, report):
+        return []
 
     def get_answer(self, report):
-        default = self._get_default(report)
-        answer = self.statuses.input(default=default)
-        self._curated += 1
-        if self.use_bayes:
-            if (answer is not None and default is not None
-                    and self.statuses[default].name == answer):
-                # predicted default was correct
-                self._predicted += 1
-            LOG.debug("Bayesian accuracy: %0.2f%% (%s/%s)",
-                      self.bayes_accuracy, self._predicted, self._curated)
-        return answer
-
-    @property
-    def bayes_accuracy(self):
-        if self._curated:
-            return 100.0 * self._predicted / self._curated
-        else:
-            return 0.0
+        default = self.get_default(report)
+        return self.statuses.input(default=default)
 
     def curate_case(self, report):
         return True
@@ -228,11 +159,36 @@ class LocationCuration(CurationStep):
     prompt = "Road location"
     order = 0
 
-    def _get_training_data(self):
-        return [(utils.get_report_text(r), r[self.results_column])
-                for r in db.collisions
-                if r.get(self.results_column) not in (
-                    None, "unknown") and utils.get_report_text(r)]
+    def get_additional_info(self, report):
+        info = []
+        if "location" in report:
+            info.append("Location: %(location)s" % report)
+        if 'non_motorist_location_s1' in report:
+            info.append(
+                'Cyclist location: %(non_motorist_location_s1)s' % report)
+        return info
+
+    def include_report_in_training_data(self, report):
+        return (super(LocationCuration,
+                      self).include_report_in_training_data(report)
+                and report.get(self.results_column) != "unknown")
+
+    def get_default(self, report):
+        loc = report.get('non_motorist_location_s1')
+        if loc in ('Marked crosswalk at intersection',
+                   'At intersection but no crosswalk'):
+            return 'C'
+        elif loc in ('Driveway access crosswalk', 'Sidewalk'):
+            return 'S'
+        elif loc in ('In roadway', 'Shoulder'):
+            return 'R'
+        elif loc == 'Shared-use path or trail':
+            return 'B'
+        elif loc == 'Non-intersection crosswalk':
+            return 'T'
+        # if 'crosswalk' in report['report']:
+        #     return 'C'
+        return super(LocationCuration, self).get_default(report)
 
 
 class DOTCoding(CurationStep):
@@ -244,12 +200,36 @@ class DOTCoding(CurationStep):
     order = 5
     display_choices = False
 
-    def print_additional_info(self, report):
-        print("Road location: %(road_location)s" % report)
+    def get_additional_info(self, report):
+        info = ["Road location: %(road_location)s" % report]
+        if report.get('v1_driver_contributing_circumstances_m') not in (
+                None, 'Unknown'):
+            info.append(
+                "Driver error: %(v1_driver_contributing_circumstances_m)s" %
+                report)
+
+        cyclist_errors = [
+            e for e in (report.get('non_motorist_error_s5a'),
+                        report.get('non_motorist_error_s5b'))
+            if e not in (None, 'Other', 'Unknown')
+        ]
+        if cyclist_errors:
+            info.append('Cyclist error: %s' % '; '.join(cyclist_errors))
+
+        if report.get('v1_traffic_control_n') not in (None, 'Unknown'):
+            info.append(
+                "Driver traffic control: %(v1_traffic_control_n)s" % report)
+        return info
 
     def get_sorted_choices(self):
         return sorted(
             self.status_fixture.items(), key=lambda v: v[1]["shortcut"])
+
+    def get_default(self, report):
+        loc = report.get('road_location')
+        if loc == 'sidewalk':
+            return '322'
+        return None
 
     def curate_case(self, report):
         if report.get("road_location") in (None, 'not involved'):
@@ -266,9 +246,8 @@ class HitnrunCuration(CurationStep):
     status_fixture = db.hit_and_run_status
     prompt = "Hit and run status"
     order = 10
-    use_bayes = False
 
-    def _get_default(self, _):
+    def get_default(self, _):
         # not trying to be biased here, this is just a sensible default :(
         return "D"
 
@@ -277,7 +256,8 @@ class HitnrunCuration(CurationStep):
             LOG.debug("Cyclist was not involved in %s, skipping hit-and-run",
                       report["case_no"])
             return False
-        if not report.get("hit_and_run", False):
+        if (not report.get("hit_and_run", False)
+                and not report.get("hit_and_run_yes", False)):
             LOG.debug("%s was not a hit-and-run, skipping", report["case_no"])
             return False
         return True
@@ -302,21 +282,26 @@ class BlindRightCuration(CurationStep):
             return False
         dotcode = int(report.get("dotcode", 0))
         if (120 <= dotcode < 140 or  # cyclist or motorist lost control
-                220 <= dotcode < 230 or  # cyclist ride out
-                230 <= dotcode < 250 or  # cyclist or motorst overtaking
-                250 <= dotcode < 260 or  # head-on
+                220 <= dotcode < 260 or  # cyclist ride-out; overtaking/head-on
                 310 <= dotcode < 320 or  # cyclist ride out
                 dotcode >= 400 or  # non-roadway, other oddities
                 dotcode in (144, 156, 215, 216, 280)):
-            LOG.debug("DOT code for %s indicates non-right turn crash, "
-                      "skipping blind right (%s)", report["case_no"],
-                      report["dotcode"])
+            LOG.debug(
+                "DOT code for %s indicates non-right turn crash, "
+                "skipping blind right (%s)", report["case_no"],
+                report["dotcode"])
             return False
         return True
 
-    def print_additional_info(self, report):
-        print("Road location: %(road_location)s" % report)
-        print("DOT code: %(dotcode)s" % report)
+    def get_default(self, report):
+        dotcode = int(report.get("dotcode", 0))
+        return 'Y' if dotcode in (141, 151) else 'N'
+
+    def get_additional_info(self, report):
+        return [
+            "Road location: %(road_location)s" % report,
+            "DOT code: %(dotcode)s" % report
+        ]
 
 
 class Curate(base.Command):
@@ -324,25 +309,28 @@ class Curate(base.Command):
 
     fmt = "%%-10s %%%ds" % (ROWS - 12)
     search_re = re.compile(r'\b(bicycle|bike|(?:bi)?cyclist)\b', re.I)
-    highlight_re = re.compile(r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
-                              r'crosswalk|sidewalk|intersection)', re.I)
+    highlight_re = re.compile(
+        r'((?:bi|tri|pedal)cycle|bike|(?:bi)?cyclist|'
+        r'crosswalk|sidewalk|intersection)', re.I)
 
     def __init__(self, options):
         super(Curate, self).__init__(options)
         self.steps = []
-        for name, obj in globals().items():
-            if (not name.startswith("_") and isinstance(obj, type)
-                    and issubclass(obj, CurationStep) and obj != CurationStep):
-                self.steps.append(obj())
+        for name, curation_cls in globals().items():
+            if (not name.startswith("_") and isinstance(curation_cls, type)
+                    and issubclass(curation_cls, CurationStep)
+                    and curation_cls.results_column is not None):
+                self.steps.append(curation_cls())
         self.steps.sort(key=operator.attrgetter("order"))
 
     def _print_report(self, report):
         split = self.highlight_re.split(utils.get_report_text(report))
 
-        print(termcolor.colored(
-            self.fmt % (report["case_no"], report["date"]),
-            'red',
-            attrs=['bold']))
+        print(
+            termcolor.colored(
+                self.fmt % (report["case_no"], report["date"]),
+                'red',
+                attrs=['bold']))
         # colorize matches in the output to make it easier to curate
         for i in range(1, len(split), 2):
             split[i] = termcolor.colored(split[i], 'green', attrs=["bold"])
@@ -363,7 +351,10 @@ class Curate(base.Command):
             if not report_printed:
                 self._print_report(report)
                 report_printed = True
-            step.print_additional_info(report)
+            addl_info = step.get_additional_info(report)
+            if addl_info:
+                print("\n".join(addl_info))
+
             ans = step.get_answer(report)
             if ans is not None:
                 report[step.results_column] = ans

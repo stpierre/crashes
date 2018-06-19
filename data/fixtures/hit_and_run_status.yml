@@ -6,7 +6,7 @@
   shortcut: C
   desc: Cyclist only left scene
 - name: both
-  shortcut: 2
+  shortcut: '2'
   desc: Both driver and cyclist left the scene
 - name: unknown
   shortcut: N

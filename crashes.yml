@@ -1,7 +1,7 @@
 ---
 form:
   sleep_min: 0
-  sleep_max: 5
+  sleep_max: 3
 
 fetch:
   start: 2012-01-01
