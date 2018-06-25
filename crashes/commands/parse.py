@@ -27,13 +27,12 @@ import yaml
 
 from crashes.commands import base
 from crashes import db
-from crashes import log
 from crashes import utils
 
 LOG = logging.getLogger(__name__)
 
-ParsedPDFObjectData = collections.namedtuple("ParsedPDFObjectData", ("name",
-                                                                     "data"))
+ParsedPDFObjectData = collections.namedtuple("ParsedPDFObjectData",
+                                             ("name", "data"))
 
 
 class PDFObjectParsingException(Exception):
@@ -169,7 +168,7 @@ class IntegerMapping(Integer):
 
 
 class PDFDocument(collections.Iterable):
-    def __init__(self, filename, layout, logger=None):
+    def __init__(self, filename, layout):
         self.filename = filename
         self.stream = open(filename, 'rb')
         self.document = None
@@ -177,7 +176,6 @@ class PDFDocument(collections.Iterable):
         self.device = None
         self.interpreter = None
         self.layout = layout
-        self.logger = logger or LOG
 
     def _parse(self):
         if self.interpreter is None:
@@ -201,11 +199,9 @@ class PDFDocument(collections.Iterable):
             objects = list(layout)
 
             try:
-                self.logger.debug(
-                    "Instantiating page object for page %s of %s", page_num,
-                    self.filename)
-                yield PDFPage.factory(
-                    objects, self.layout, number=page_num, logger=self.logger)
+                LOG.debug("Instantiating page object for page %s of %s",
+                          page_num, self.filename)
+                yield PDFPage.factory(objects, self.layout, number=page_num)
             except UnknownPageType:
                 yield UnknownPageType("%s page %s" % (self.filename, page_num))
 
@@ -218,13 +214,12 @@ class PDFPage(collections.Iterable):
     name = None
     _subclasses = None
 
-    def __init__(self, objects, layout, number=0, logger=None):
+    def __init__(self, objects, layout, number=0):
         self.objects = objects
         self.layout = layout
         self.number = number
         self.start_index = layout["start_index"].get(self.name, 0)
         self.start_y = layout["start_y"].get(self.name)
-        self.logger = logger or LOG
 
     def __iter__(self):
         for obj in self.objects[self.start_index:]:
@@ -234,10 +229,10 @@ class PDFPage(collections.Iterable):
             yield obj
 
     @classmethod
-    def factory(cls, objects, layout, number=0, logger=None):
+    def factory(cls, objects, layout, number=0):
         for subclass in cls._get_subclasses():
             if subclass.matches(objects):
-                return subclass(objects, layout, number=number, logger=logger)
+                return subclass(objects, layout, number=number)
         raise UnknownPageType()
 
     @classmethod
@@ -344,13 +339,11 @@ class Coordinates(collections.Iterable):
     def merge(self, other):
         if hasattr(other, "xmin"):
             return self.__class__(
-                min(self.xmin, other.xmin),
-                max(self.xmax, other.xmax),
+                min(self.xmin, other.xmin), max(self.xmax, other.xmax),
                 min(self.ymin, other.ymin), max(self.ymax, other.ymax))
         else:
             return self.__class__(
-                min(self.xmin, other[0]),
-                max(self.xmax, other[1]),
+                min(self.xmin, other[0]), max(self.xmax, other[1]),
                 min(self.ymin, other[2]), max(self.ymax, other[3]))
 
     def __iter__(self):
@@ -465,9 +458,8 @@ class Parse(base.Command):
             return self.options.files
         elif self.options.reparse_curated:
             reports = [
-                r for r in db.collisions
-                if r["road_location"] is not None and not r["case_no"]
-                .startswith("NDOR")
+                r for r in db.collisions if r.get("road_location") not in
+                (None, 'not involved') and not r["case_no"].startswith("NDOR")
             ]
             return [
                 os.path.join(self.options.pdfdir,
@@ -560,21 +552,21 @@ class Parse(base.Command):
 class Parser(object):
     interactive = True
 
+    _skip_fuzz = 0.2
+    _obj_fuzz = 0.5
     _injured_name_re = re.compile(r'^\s*(?P<name>[^\d]*?)\s+\d')
 
     def __init__(self, options):
         self.options = options
         self.layout = yaml.load(open(self.options.layout))
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-
         for objects in self.layout["objects"].values():
             for obj in objects.values():
                 try:
                     obj["raw_coordinates"] = obj["coordinates"]
                 except KeyError:
-                    self.logger.error("Malformed layout object: %s", obj)
-                    self.logger.error("Missing 'coordinates' key")
+                    LOG.error("Malformed layout object: %s", obj)
+                    LOG.error("Missing 'coordinates' key")
                     raise
                 obj["coordinates"] = Coordinates(*obj["raw_coordinates"])
 
@@ -613,8 +605,7 @@ class Parser(object):
                 name = input("Enter name: ")
             layout_obj = candidates[name]
             new_coords = coords.merge(layout_obj["coordinates"])
-            self.logger.debug("Updating coordinates for %s to %s" %
-                              (name, new_coords))
+            LOG.debug("Updating coordinates for %s to %s" % (name, new_coords))
             obj = self.layout["objects"][page.name][name]
             obj["coordinates"] = new_coords
             obj["raw_coordinates"] = new_coords.to_list()
@@ -627,9 +618,9 @@ class Parser(object):
     def _handle_record_without_candidates(self, pdfobj, page, filename):
         coords = Coordinates(*pdfobj.bbox)
         if self.interactive:
-            print("Could not determine what %s on page %s of %s is. "
-                  "No candidates." % (pdfobj_repr(pdfobj), page.name,
-                                      filename))
+            print(
+                "Could not determine what %s on page %s of %s is. "
+                "No candidates." % (pdfobj_repr(pdfobj), page.name, filename))
             existing_names = itertools.chain(
                 [o.keys() for o in self.layout["objects"].values()])
             name = None
@@ -637,8 +628,7 @@ class Parser(object):
                 name = input("Enter name, or 'S' to skip: ")
 
             if name.upper() == 'S':
-                self.logger.debug("Adding %s to skip list for %s", coords,
-                                  page.name)
+                LOG.debug("Adding %s to skip list for %s", coords, page.name)
                 self.layout["skip"].setdefault(page.name, []).append(coords)
                 return None, None
             else:
@@ -647,7 +637,7 @@ class Parser(object):
                     "raw_coordinates": coords.to_list(),
                 }
 
-                self.logger.debug("Adding %s to layout object list", name)
+                LOG.debug("Adding %s to layout object list", name)
                 self.layout["objects"][page.name][name] = layout_record
                 return name, layout_record
         else:
@@ -663,19 +653,18 @@ class Parser(object):
 
         skip_pdf_obj = False
         for skip_coords in self.layout["skip"].get(page.name, []):
-            if skip_coords.contains(coords, fuzz=0.1):
-                self.logger.debug(
-                    "Skipping PDF object %s: contained within %s",
-                    pdfobj_repr(pdfobj), skip_coords)
+            if skip_coords.contains(coords, fuzz=self._skip_fuzz):
+                LOG.debug("Skipping PDF object %s: contained within %s",
+                          pdfobj_repr(pdfobj), skip_coords)
                 skip_pdf_obj = True
                 break
         if skip_pdf_obj:
             return None
 
-        self.logger.debug("Finding candidates for %s", pdfobj_repr(pdfobj))
+        LOG.debug("Finding candidates for %s", pdfobj_repr(pdfobj))
         candidates = {}
         for obj_name, obj in self.layout["objects"][page.name].items():
-            if obj["coordinates"].contains(coords, fuzz=0.1):
+            if obj["coordinates"].contains(coords, fuzz=self._obj_fuzz):
                 candidates[obj_name] = obj
         if len(candidates) > 1:
             obj_name, layout_obj = self._handle_record_multiple_candidates(
@@ -696,23 +685,23 @@ class Parser(object):
                         (record, obj_name, filename,
                          layout_obj["converter"].__class__.__name__, err),
                         obj_name=obj_name)
-            self.logger.debug("Found %s at %s in %s: %r", obj_name, coords,
-                              filename, record)
+            LOG.debug("Found %s at %s in %s: %r", obj_name, coords, filename,
+                      record)
             return ParsedPDFObjectData(obj_name, record)
         return None
 
     def _parse_pdf(self, filename):
         """Parse a single PDF and return the known data."""
-        self.logger.info("Parsing accident report data from %s" % filename)
+        LOG.info("Parsing accident report data from %s" % filename)
 
         data = {
             "filename": filename,
             "case_no": utils.filename_to_case_no(filename)
         }
         try:
-            doc = PDFDocument(filename, self.layout, logger=self.logger)
+            doc = PDFDocument(filename, self.layout)
         except IOError as err:
-            self.logger.error("Could not read %s: %s", filename, err)
+            LOG.error("Could not read %s: %s", filename, err)
             data["unreadable"] = True
             data["parsed"] = False
             return data
@@ -720,22 +709,21 @@ class Parser(object):
         page_types = []
         for page in doc:
             if isinstance(page, UnknownPageType):
-                self.logger.warning("Unknown page type: %s" % page)
+                LOG.warning("Unknown page type: %s" % page)
                 continue
             if page.name in page_types:
-                self.logger.warning(
-                    "Already parsed %s page in %s; skipping page %s",
-                    page.name, filename, page.number)
+                LOG.warning("Already parsed %s page in %s; skipping page %s",
+                            page.name, filename, page.number)
                 continue
             page_types.append(page.name)
 
-            self.logger.debug("Parsing page %s (%s)", page.number, page.name)
+            LOG.debug("Parsing page %s (%s)", page.number, page.name)
 
             for pdfobj in page:
                 try:
                     obj_data = self._parse_pdfobj(pdfobj, page, filename)
                 except PDFObjectParsingException as err:
-                    self.logger.error(err)
+                    LOG.error(err)
                     if "unparsed_data" not in data:
                         data["unparsed_data"] = []
                     if hasattr(err, "obj_name"):
@@ -755,7 +743,7 @@ class Parser(object):
         try:
             return self._parse_pdf(filename)
         except psparser.PSException as err:
-            self.logger.warn("Parsing %s failed, skipping: %s", filename, err)
+            LOG.warn("Parsing %s failed, skipping: %s", filename, err)
             return None
 
 
@@ -779,38 +767,29 @@ class ParseChildProcess(Parser, multiprocessing.Process):
         self._result_queue = result_queue
         self._max_result_queue_length = max_result_queue_length
 
-        self.logger = logging.getLogger("%s.%s" % (self.__class__.__name__,
-                                                   name))
-
-        log.setup_logging(
-            max(0, self.options.verbose - 1),
-            prefix=self.name,
-            logger=self.logger)
-        self.logger.info("Created child process %s", name)
+        LOG.info("Created child process %s", name)
 
     def run(self):
         while not self._terminate.is_set():
             while self._result_queue.qsize() >= self._max_result_queue_length:
-                self.logger.info("Result queue contains %s items, > %s",
-                                 self._result_queue.qsize(),
-                                 self._max_result_queue_length)
-                self.logger.info(
-                    "Pausing %s seconds to allow result queue to drain",
-                    self.result_queue_sleep)
+                LOG.info("Result queue contains %s items, > %s",
+                         self._result_queue.qsize(),
+                         self._max_result_queue_length)
+                LOG.info("Pausing %s seconds to allow result queue to drain",
+                         self.result_queue_sleep)
                 time.sleep(self.result_queue_sleep)
 
             try:
                 fpath = self._work_queue.get_nowait()
-                self.logger.info("Got file path from work queue: %s", fpath)
+                LOG.info("Got file path from work queue: %s", fpath)
                 data = self.parse(fpath)
                 if data:
-                    self.logger.info("Returning data for %s to results queue",
-                                     fpath)
+                    LOG.info("Returning data for %s to results queue", fpath)
                     self._result_queue.put(data)
             except queue.Empty:
-                self.logger.info("Work queue is empty, exiting")
+                LOG.info("Work queue is empty, exiting")
                 break
             except KeyboardInterrupt:
-                self.logger.info("Caught Ctrl-C, exiting")
+                LOG.info("Caught Ctrl-C, exiting")
                 break
-        self.logger.info("Exited loop normally")
+        LOG.info("Exited loop normally")

@@ -11,20 +11,26 @@ def setup_logging(verbose, prefix=None, deconfigure=True, logger=None):
             logger.removeHandler(handler)
     stderr = logging.StreamHandler()
     level = logging.WARNING
-    fmt = ["%(message)s"]
+    format_elements = []
     if prefix:
-        fmt.insert(0, prefix)
+        format_elements.insert(0, prefix)
     requests_level = logging.WARN
     if verbose == 1:
         level = logging.INFO
     elif verbose > 1:
         level = logging.DEBUG
         requests_level = logging.INFO
-        fmt.insert(0, "%(levelname)s")
+        format_elements.insert(0, "(%(threadName)s)")
+        format_elements.insert(0, "%(levelname)s")
         if verbose > 2:
             requests_level = logging.DEBUG
-            fmt.insert(0, "%(asctime)s")
-    stderr.setFormatter(logging.Formatter(": ".join(fmt)))
+            format_elements.insert(0, "%(asctime)s")
+    if format_elements:
+        log_fmt = " ".join(format_elements) + ": %(message)s"
+    else:
+        log_fmt = "%(message)s"
+    stderr.setFormatter(logging.Formatter(log_fmt))
+
     logger.setLevel(level)
     logger.addHandler(stderr)
     logger.debug("Set verbose to %s", verbose)
