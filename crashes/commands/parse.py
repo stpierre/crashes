@@ -282,7 +282,8 @@ class ContinuationPage40a(PDFPage):
 
     @classmethod
     def matches(cls, objects):
-        return len(objects) > 241 and "40a" in get_text(objects[241])
+        return ((len(objects) > 241 and "40a" in get_text(objects[241]))
+                or (len(objects) > 194 and "40a" in get_text(objects[194])))
 
 
 class ContinuationPage40b(PDFPage):
@@ -441,6 +442,7 @@ class Parse(base.Command):
                         self._store_one_result(result)
                         results += 1
                 except queue.Empty:
+                    LOG.debug("Result queue empty")
                     continue
         return results
 
@@ -564,11 +566,16 @@ class Parser(object):
             for obj in objects.values():
                 try:
                     obj["raw_coordinates"] = obj["coordinates"]
+                    obj["coordinates"] = Coordinates(*obj["raw_coordinates"])
                 except KeyError:
                     LOG.error("Malformed layout object: %s", obj)
                     LOG.error("Missing 'coordinates' key")
                     raise
-                obj["coordinates"] = Coordinates(*obj["raw_coordinates"])
+                except TypeError:
+                    LOG.error("Malformed layout object: %s", obj)
+                    LOG.error("Invalid coordinates: %s",
+                              obj["raw_coordinates"])
+                    raise
 
                 if "type" in obj:
                     obj["converter"] = Converter.load_converter(obj["type"])
@@ -605,7 +612,7 @@ class Parser(object):
                 name = input("Enter name: ")
             layout_obj = candidates[name]
             new_coords = coords.merge(layout_obj["coordinates"])
-            LOG.debug("Updating coordinates for %s to %s" % (name, new_coords))
+            LOG.debug("Updating coordinates for %s to %s", name, new_coords)
             obj = self.layout["objects"][page.name][name]
             obj["coordinates"] = new_coords
             obj["raw_coordinates"] = new_coords.to_list()

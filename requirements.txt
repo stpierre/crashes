@@ -1,18 +1,18 @@
 beautifulsoup4==4.6.0
 lxml==4.0.0
-requests==2.9.1
+requests==2.21.0
 -e git+https://github.com/euske/pdfminer.git@8150458718e9024c80b00e74965510b20206e588#egg=pdfminer
 six==1.10.0
 termcolor==1.1.0
-jinja2==2.8
+jinja2==2.10.1
 geocoder==1.12.0
 astral==1.4
 pytz
 numpy==1.12.0
-PyYAML==3.12
+PyYAML==5.1
 unicodecsv==0.14.1
 backports.shutil_get_terminal_size==1.0.0
 yapf==0.16.3
-prospector==0.12.7
+prospector==1.1.6.2
 mccabe==0.6.1
 textblob==0.15.0

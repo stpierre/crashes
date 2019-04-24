@@ -222,8 +222,7 @@ class Fetch(base.Command):
 
     def _fetch_curated(self):
         reports = [
-            c for c in db.collisions
-            if c["road_location"] is not None
+            c for c in db.collisions if c["road_location"] is not None
             and not c["case_no"].startswith("NDOR")
         ]
         for report in reports:
@@ -235,7 +234,6 @@ class Fetch(base.Command):
 
     def _fetch_by_date(self):
         for date in self._dates_in_range():
-            self._sleep()
             LOG.info("Fetching reports from %s", date.isoformat())
             for url in self._list_reports_for_date(date):
                 self._download_report(url, force=self.options.force)

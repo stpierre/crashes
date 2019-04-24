@@ -60,6 +60,15 @@ objects:
     distance_in_feet:
       coordinates: [270.06, 768.03, 281.653, 780.16]
       type: *distance_unit_type
+    distance_north:
+      coordinates: [193.25, 788.62, 253.4, 800.06]
+      type: &distance_direction_type
+        class: MultipleChoice
+        choices:
+          - distance_north
+          - distance_south
+          - distance_east
+          - distance_west
     nearest_landmark:
       coordinates: [401.05, 752.92, 564.13, 767.26]
     sunday:
@@ -505,7 +514,7 @@ objects:
       coordinates: [48.91, 289.24, 371.58, 305.79]
       type: PII
     injury1_local_num:
-      coordinates: [48.91, 269.11, 115.05, 243.92]
+      coordinates: [48.91, 269.11, 115.05, 283.92]
       type: PII
     injury1_sex:
       coordinates: [574.17, 291.45, 589.69, 305.79]
@@ -1271,6 +1280,9 @@ objects:
     v3_driver_dob:
       coordinates: [468.3, 611.61, 562.76, 625.95]
       type: Date
+    v3_driver_local_num:
+      coordinates: [468.0, 629.61, 562.46, 641.84]
+      type: PII
     v3_driver_male:
       coordinates: [525.75, 647.57, 537.34, 659.7]
       type: &v3_driver_gender
@@ -1292,6 +1304,9 @@ objects:
       type: PII
     v3_owner_phone:
       coordinates: [350.7, 593.76, 454.97, 607.18]
+      type: PII
+    v3_owner_local_num:
+      coordinates: [469.65, 592.26, 564.61, 604.5]
       type: PII
     v3_owner_address:
       coordinates: [47.55, 574.5, 373.69, 585.29]
@@ -1374,20 +1389,152 @@ objects:
     v3_citation_pending:
       coordinates: [381.9, 571.37, 393.49, 583.5]
       type: *v3_citation_type
+    v3_driver_citation_num:
+      coordinates: [469.65, 574.4, 512.91, 585.75]
     v3_driver_alcohol_drugs:
       coordinates: [540.2, 296.85, 554.46, 307.59]
       type: *alcohol_drugs_suspected_type
     v3_airbag_front_driver:
       coordinates: [313.81, 265.51, 327.63, 274.9]
       type: *airbag_type
+    v3_airbag_rear_passenger:
+      coordinates: [343.46, 289.7, 357.28, 299.09]
+      type: *airbag_type
     v3_restraint_front_driver:
       coordinates: [406.2, 265.35, 420.02, 275.4]
+      type: *restraint_type
+    v3_restraint_front_passenger:
+      coordinates: [406.05, 288.45, 419.87, 298.8]
       type: *restraint_type
     v3_restraint_rear_driver:
       coordinates: [435.2, 265.35, 450.02, 275.4]
       type: *restraint_type
     v3_restraint_rear_passenger:
       coordinates: [435.2, 288, 450.02, 298.5]
+      type: *restraint_type
+    v4_num_occupants:
+      coordinates: [574.33, 296.55, 588.59, 307.6]
+      type: Integer
+    v4_license_plate:
+      coordinates: [130.29, 377.75, 367.93, 391.17]
+    v4_license_plate_state:
+      coordinates: [532.99, 377.32, 562.32, 391.66]
+    v4_license_plate_year:
+      coordinates: [422.63, 377.32, 472.33, 391.66]
+    v4_license_plate_type:
+      coordinates: [85.56, 376.83, 111.42, 391.17]
+    v4_vin:
+      coordinates: [94.01, 340.04, 375.39, 354.38]
+    v4_drivers_license_num:
+      coordinates: [130.8, 469.11, 419.64, 483.45]
+      type: PII
+    v4_drivers_license_state:
+      coordinates: [468.15, 469.41, 498.47999999999996, 483.75]
+    v4_year:
+      coordinates: [117.87, 358.92, 162.1, 373.26]
+    v4_make:
+      coordinates: [171.56, 359.43, 238.17, 373.77)]
+    v4_model:
+      coordinates: [244.65, 358.92, 311.75, 373.26]
+    v4_style:
+      coordinates: [315.73, 358.43, 382.85, 372.77]
+    v4_color:
+      coordinates: [388.81, 358.92, 455.91, 373.26]
+    v4_driver_name:
+      coordinates: [49.95, 449.76, 342.29, 462.15]
+      type: Initials
+    v4_driver_phone:
+      coordinates: [350.44, 450.58, 453.9, 464.0]
+      type: PII
+    v4_driver_address:
+      coordinates: [49.95, 431.01, 416.87, 443.24]
+      type: PII
+    v4_driver_dob:
+      coordinates: [468.86, 433.5, 563.32, 447.84]
+      type: Date
+    v4_driver_male:
+      coordinates: [526.14, 468.6, 537.73, 480.73]
+      type: &v4_driver_gender
+        class: MultipleChoice
+        choices:
+          - v4_driver_male
+          - v4_driver_female
+    v4_driver_bac_tested_no:
+      coordinates: [569.64, 252.18, 581.64, 261.18]
+      type: BooleanChoice
+    v4_owner_name:
+      coordinates: [49.8, 412.11, 343.62, 424.2]
+      type: PII
+    v4_owner_phone:
+      coordinates: [351.42, 413.17, 455.5, 426.59]
+      type: PII
+    v4_owner_address:
+      coordinates: [49.65, 393.36, 375.8, 405.89]
+      type: PII
+    v4_insurance_co:
+      coordinates: [390.37, 337.41, 562.88, 349.88]
+    v4_insurance_policy_num:
+      coordinates: [388.5, 318.29, 561.5, 331.12]
+      type: PII
+    v4_damage_o:
+      coordinates: [23.1, 391.62, 44.61, 406.5]
+      type: *damage_extent_type
+    v4_damage_value:
+      coordinates: [516.61, 359.47, 566.32, 373.81]
+    v4_first_event_1:
+      coordinates: [568.12, 345.87, 589.63, 360.75]
+      type: *event_type
+    v4_most_harmful_event_5:
+      coordinates: [567.75, 439.61, 589.26, 454.49]
+      type: *event_type
+    v4_speed_limit_6:
+      coordinates: [568.5, 320.74, 590.01, 335.62]
+      type: Integer
+    v4_driver_contributing_circumstances_m:
+      coordinates: [22.8, 440.37, 44.31, 455.25]
+      type: *motorist_error
+    v4_traffic_control_n:
+      coordinates: [23.1, 416.22, 44.61, 431.1]
+      type: *traffic_control_type
+    v4_driver_condition_p:
+      coordinates: [23.1, 368.52, 44.61, 383.4]
+      type: *condition_type
+    v4_movement:
+      coordinates: [40.05, 213.32, 66.22, 225.45]
+      type: *vehicle_movement_type
+    v4_e:
+      coordinates: [54.61, 252.06, 62.02, 261.45]
+      type: &v4_direction_type
+        class: MultipleChoice
+        choices:
+          - v4_n
+          - v4_s
+          - v4_e
+          - v4_w
+    v4_road:
+      coordinates: [73.2, 249.47, 136.81, 261.6]
+    v4_point_of_impact:
+      coordinates: [253.36, 251.88, 279.53, 264.01]
+      type: *vehicle_damage_type
+    v4_most_damaged_area:
+      coordinates: [253.73, 232.76, 279.9, 244.89]
+      type: *vehicle_damage_type
+    v4_citation_no:
+      coordinates: [433.57, 392.94, 445.16, 405.07]
+      type: &v4_citation_type
+        class: MultipleChoice
+        choices:
+          - v4_citation_no
+          - v4_citation_yes
+          - v4_citation_pending
+    v4_driver_alcohol_drugs:
+      coordinates: [563.77, 205.86, 586.49, 217.99]
+      type: *alcohol_drugs_suspected_type
+    v4_airbag_front_driver:
+      coordinates: [312.75, 160.35, 327.3, 171.0]
+      type: *airbag_type
+    v4_restraint_front_driver:
+      coordinates: [405.75, 160.65, 420.0, 170.85]
       type: *restraint_type
     injury4_vehicle_num:
       coordinates: [23.63, 102.42, 44.02, 116.76]
@@ -1431,6 +1578,9 @@ objects:
     injury5_seat_pos:
       coordinates: [472.43, 80.82, 492.82, 95.16]
       type: *seat_position_type
+    injury5_ejected:
+      coordinates: [496.28, 80.82, 511.2, 95.16]
+      type: *ejected_type
     injury5_body_region:
       coordinates: [514.28, 80.82, 534.67, 95.16]
       type: *body_region_type
@@ -1523,39 +1673,39 @@ skip:
   report:
     - [235.22, 895.1, 379.36, 909.44]
   40a:
-    - [32.62, 746.64, 125.25, 772.15]
-    - [557.45, 297.0, 571.71, 307.6]
     - [149.16, 723.88, 287.9, 738.22]
+    - [183.37, 195.37, 271.87, 280.87]
+    - [22.22, 647.53, 40.81, 663.13]
+    - [22.65, 344.22, 44.16, 359.1]
+    - [22.8, 252.15, 34.8, 261.15]
+    - [22.95, 269.55, 34.95, 278.55]
+    - [23.1, 232.2, 35.1, 241.2]
+    - [23.15, 527.13, 44.66, 542.01]
+    - [23.25, 214.34, 35.25, 223.34]
+    - [24.92, 471.8, 43.52, 487.4]
+    - [258.38, 270.38, 271.12, 280.12]
     - [273.75, 678.07, 542.98, 692.41]
     - [273.9, 691.5, 560.77, 705.9]
     - [293.1, 707.16, 494.88, 720.0]
     - [309.3, 724.26, 495.28, 738.6]
-    - [56.25, 696.66, 199.38, 711.0]
-    - [568.5, 220.12, 580.5, 229.12]
-    - [532.5, 220.49, 544.5, 229.49]
-    - [258.38, 270.38, 271.12, 280.12]
-    - [183.37, 195.37, 271.87, 280.87]
-    - [341.35, 353.35, 195.15, 204.15]
-    - [341.25, 353.25, 300.6, 309.6]
-    - [564.75, 579.09, 749.78, 764.12]
-    - [525.04, 539.38, 749.3, 763.64]
-    - [337.12, 347.99, 667.42, 676.5]
-    - [433.87, 445.87, 301.49, 310.49]
-    - [337.2, 349.2, 487.5, 496.5]
-    - [434.25, 446.25, 195.6, 204.6]
-    - [568.22, 586.81, 648.73, 664.33]
-    - [569.25, 587.85, 471.15, 486.75]
-    - [522.2, 297.3, 536.46, 307.6]
-    - [22.8, 252.15, 34.8, 261.15]
-    - [22.95, 269.55, 34.95, 278.55]
-    - [23.25, 214.34, 35.25, 223.34]
-    - [23.1, 232.2, 35.1, 241.2]
+    - [313.33, 289.7, 327.15, 299.09]
+    - [32.62, 746.64, 125.25, 772.15]
+    - [337.12, 667.42, 347.99, 676.5]
+    - [337.2, 487.5, 349.2, 496.5]
+    - [341.25, 300.6, 353.25, 309.6]
     - [341.35, 195.15, 353.35, 204.15]
     - [433.87, 301.49, 445.87, 310.49]
     - [434.25, 195.6, 446.25, 204.6]
-    - [22.22, 647.53, 40.81, 663.13]
-    - [24.92, 471.8, 43.52, 487.4]
-    - [23.15, 527.13, 44.66, 542.01]
+    - [522.2, 297.3, 536.46, 307.6]
+    - [525.04, 539.38, 749.3, 763.64]
+    - [532.5, 220.49, 544.5, 229.49]
+    - [557.45, 297.0, 571.71, 307.6]
+    - [56.25, 696.66, 199.38, 711.0]
+    - [564.75, 579.09, 749.78, 764.12]
+    - [568.22, 586.81, 648.73, 664.33]
+    - [568.5, 220.12, 580.5, 229.12]
+    - [569.25, 471.15, 587.85, 486.75]
+    - [569.25, 587.85, 471.15, 486.75]
   40b:
     - [154.08, 720.24, 289.084, 742.56]
     - [161.81, 60.24, 257.04, 83.04]
