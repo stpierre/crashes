@@ -192,7 +192,11 @@ class LocationCuration(CurationStep):
 
 
 class DOTCoding(CurationStep):
-    """Determine the DOT collision code."""
+    """Determine the DOT collision code.
+
+    Listed at
+    https://www.fhwa.dot.gov/publications/research/safety/pedbike/06089/appendf.cfm.
+    """
 
     results_column = "dotcode"
     status_fixture = db.dotcode

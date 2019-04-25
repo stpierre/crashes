@@ -53,8 +53,8 @@ class Serializer(object):
         """Serialize a value, including the magic to flag it as serialized."""
         if isinstance(value, self.cls):
             return "%s%s" % (self._magic, self.encode(value))
-        raise SerializationNotSupported("%r is not of type %s" % (value,
-                                                                  self.cls))
+        raise SerializationNotSupported(
+            "%r is not of type %s" % (value, self.cls))
 
     def deserialize(self, value):
         """Deserialize a value, stripping the magic flag."""
@@ -62,8 +62,8 @@ class Serializer(object):
             if value.startswith(self._magic):
                 raw_value = value[len(self._magic):]
                 return self.decode(raw_value)
-            raise DeserializationNotSupported("%r doesn't start with %s" %
-                                              (value, self._magic))
+            raise DeserializationNotSupported(
+                "%r doesn't start with %s" % (value, self._magic))
         except AttributeError:
             return value
 
@@ -124,7 +124,7 @@ class Fixture(collections.Mapping):
     def _load_data(self):
         if self._data is None:
             LOG.debug("Loading fixture data from %s", self._filepath)
-            raw_data = yaml.load(open(self._filepath))
+            raw_data = yaml.safe_load(open(self._filepath))
             self._data = {r[self.key]: r for r in raw_data}
 
     def __getitem__(self, key):

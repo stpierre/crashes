@@ -26,7 +26,7 @@ def new_geojson():
 
 
 def cleanup_geojson(geojson, case_no):
-    retval = copy.deepcopy(geojson)
+    retval = copy.deepcopy(geojson['features'][0])
     retval['properties']['case_no'] = case_no
     # remove some of the extraneous junk from the geojson properties
     for key in ('status', 'confidence', 'ok', 'encoding', 'geometry',
@@ -52,8 +52,13 @@ def save_categorized_geojson(reports, geocoding_dir):
         by_loc[report["road_location"]]["features"].append(report["geojson"])
         all_collisions["features"].append(report["geojson"])
     for loc, data in by_loc.items():
-        fpath = os.path.join(geocoding_dir, "%s.json" % loc.replace(" ", "_"))
-        _save_geojson(data, fpath)
+        if loc is None:
+            LOG.warning('Not saving categorized data for %s items '
+                        'with no known road location', len(data))
+        else:
+            fpath = os.path.join(geocoding_dir,
+                                 "%s.json" % loc.replace(" ", "_"))
+            _save_geojson(data, fpath)
     _save_geojson(all_collisions, os.path.join(geocoding_dir, "all.json"))
 
 
@@ -153,13 +158,13 @@ class Geocode(base.Command):
         retval = None
         ans = None
         while True:
-            default, usable = self._parse_location(report["location"])
-            if not usable or retval:
+            default, usable = self._parse_location(report["street_location"])
+            if retval or not usable:
                 # either the default location isn't immediately
                 # searchable; or this is our second time through the
                 # loop, so we have to prompt for user interactionn
                 print("Original: %s" % termcolor.colored(
-                    report["location"], "green"))
+                    report["street_location"], "green"))
                 print("Default: %s" % termcolor.colored(default, "green"))
                 ans = input("Enter to %s, 's' to skip, or enter address: " %
                             ("accept" if retval else "search"))
@@ -174,12 +179,10 @@ class Geocode(base.Command):
                           "search", default)
             address = (ans or default) + ", Lincoln, NE"
             loc = geocoder.google(address)
-            retval = loc.geojson
-            if not retval['properties']['ok']:
-                LOG.error("Error finding %s: %s", address,
-                          retval['properties']['status'])
+            if not loc.ok:
+                LOG.error("Error finding %s: %s", address, loc.status)
             else:
-                retval = cleanup_geojson(retval, report["case_no"])
+                retval = cleanup_geojson(loc.geojson, report["case_no"])
                 print("Address: %s" % termcolor.colored(
                     retval['properties']['address'], "green", attrs=["bold"]))
 

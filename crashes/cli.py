@@ -92,7 +92,7 @@ def parse_args():
     options = parser.parse_args()
 
     # parse config file
-    config = yaml.load(options.config)
+    config = yaml.safe_load(options.config)
 
     def _get_config(key, val):
         return config.get(key, {}).get(val, DEFAULTS[key][val])
