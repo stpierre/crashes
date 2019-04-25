@@ -34,7 +34,7 @@ def _ticket_row_sort(row):
 
 
 class CSVify(base.Command):
-    """Collision database operations."""
+    """Export data as CSV."""
 
     def dump_tickets(self):
         output_path = os.path.join(self.options.csvdir, "ticket.csv")

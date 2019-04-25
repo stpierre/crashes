@@ -45,7 +45,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2017-04-03 09:28
+            Last updated: 2017-08-07 11:08 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -65,9 +65,34 @@
           on where they happened. The following locations are tracked:
 
           <ul class="simple">
-            {% for name, desc in status_descriptions %}
-            <li><b>{{ name }}</b>: {{ desc }}</li>
-            {% endfor %}
+
+            <li><b>Bike Lane</b>: Collision happened while a person on a bicycle was riding in a bike lane, including in an intersection.
+</li>
+
+            <li><b>Bike Trail</b>: Collision happened while a person on a bicycle was riding on a bike trail, not in an intersection.
+</li>
+
+            <li><b>Bike Trail Crossing</b>: Collision happened while a person on a bicycle was using a crosswalk between two bike trail segments, or continuing past the end of a bike trail over a crosswalk to the start of a sidewalk. This does not include cyclists crossing perpendicularly to a bike trail, unless they are continuing on another bike trail on the other side.
+</li>
+
+            <li><b>Crosswalk</b>: Collision happened while a person on a bicycle was using a crosswalk between two sidewalks; that is, attempting to cross a road or intersection either in a painted crosswalk that is not part of a bike trail, or crossing an intersection from one sidewalk to another. This does not include cyclists who are riding on the street and pass through the intersection without using a crosswalk, nor cyclists in a crosswalk that is part of a bike trail.
+</li>
+
+            <li><b>Elsewhere</b>: Collision happened elsewhere (alleyways, parking lots, etc.). This also includes ride-outs at mid-block and other collisions that happened on the road, but where the cyclist was not riding on the road as such.
+</li>
+
+            <li><b>Intersection</b>: Collision happened while a person on a bicycle was riding through an intersection on the road, not using a crosswalk. Does not include cyclists who entered the intersection from a bike lane.
+</li>
+
+            <li><b>Road</b>: Collision happened while a person on a bicycle was riding on the road, excluding intersections.
+</li>
+
+            <li><b>Sidewalk</b>: Collision happened while a person on a bicycle was riding on a sidewalk that is not a bike trail. For instance, a car entering or leaving a private driveway or, in rare situations, a car that jumps the curb.
+</li>
+
+            <li><b>Unknown</b>: The police report contained insufficient information to determine where the collision happened; or the collision record came from NDOR and no police report could be located.
+</li>
+
           </ul>
 
           <p>There is some inherent difficulty in categorizing certain
@@ -81,9 +106,9 @@
         <div class="section">
           <h2>Quantitative Results</h2>
 
-          <p>The current dataset includes 45,223 reports, from January 15, 2008 to March 30, 2017. Since 2012, when LPD
+          <p>The current dataset includes 48,211 reports, from January 15, 2008 to August  5, 2017. Since 2012, when LPD
             started widespread use of computer-written accident
-            reports, the dataset includes 37,371 reports, 701 (1.9%) of which involved a person on a bicycle.</p>
+            reports, the dataset includes 40,358 reports, 756 (1.9%) of which involved a person on a bicycle.</p>
 
           <p>This number is almost certainly an underestimate, for
             several reasons:</p>
@@ -110,7 +135,7 @@
             include data from 2008. I've noted this where it's
             relevant.</p>
 
-          <p>7368 reports could not be parsed
+          <p>7369 reports could not be parsed
             automatically, largely because they were handwritten. The
             years 2012-2014 have been cross-checked against the NDOR
             data (which includes handwritten reports), and the handful
@@ -126,7 +151,7 @@
 
           <div class="right">
             <p>The majority of collisions involving a bicycle
-              (368/701) happened in a
+              (399/756) happened in a
               crosswalk.</p>
 
             <p>Large numbers of collisions also involve people riding
@@ -152,10 +177,10 @@
               so it's not possible to extrapolate from the data shown
               above to conclude whether it's more dangerous to ride in
               the street or on the sidewalk. It is worth noting,
-              though, that 69.0% (484) of the collisions
+              though, that 68.5% (518) of the collisions
               indicate a pattern of riding on sidewalks, while merely
-              20.0%
-              (140) indicate a pattern of riding in the
+              20.2%
+              (153) indicate a pattern of riding in the
               street.</p>
 
             <p>Unsurprisingly, no collisions were reported on
@@ -229,7 +254,7 @@
               the collision rate during any given month, measured in
               Collisions Per Monthly Rock Island Rider
               (CPMRIR). Although the line looks fairly flat, this is a
-              logarithmic scale so it's anything but -- you're 5.1 times more likely to be
+              logarithmic scale so it's anything but -- you're 4.8 times more likely to be
               hit in November as in March.</p>
 
             <p>It's not immediately obvious why this tremendous
@@ -248,7 +273,7 @@
 
             <p>Ultimately, for all the fluctuations of the CPMRIR,
               collisions per month correlates quite closely with MRIR
-              (r=0.87), suggesting that
+              (r=0.86), suggesting that
               our transportation system is just plain designed to
               bring cyclists into inevitable conflict with drivers, no
               matter how many of us are on the roads or what time of
@@ -280,16 +305,12 @@
               exceedingly dangerous year, and we're on a very slow
               upward trend in general.</p>
 
-            <p>2017 is shaping up to be the safest year since 2009,
-              though, so it might be part (along with 2015) of a new
-              downward trend.</p>
-
             <p>We only have bike traffic count data from 2014 onward,
               so it's too soon to tell if that upward trend is due to
               increased ridership, or to other factors, or (hopefully)
               if ridership increases outpace collision increases.</p>
 
-            <p>Mean collisions per year is 117.67
+            <p>Mean collisions per year is 123.78
               and median collisions is 127.</p>
           </div>
 
@@ -440,7 +461,7 @@
             <p>More collisions happen at night during the winter
               months, but that's probably because there's just more
               night. The rate of daytime collisions loosely correlates
-              with the hours of daylight per day (r=0.82), but not as strongly as with
+              with the hours of daylight per day (r=0.83), but not as strongly as with
               the number of cyclists out.</p>
 
             <p>In other words, lack of visibility is a factor in the
@@ -474,11 +495,11 @@
               age crowd; then a slow descent to 40, after which it
               picks up again, presumably with the MAMIL crowd.</p>
 
-            <p>But seriously, over 32% of people hit on bikes in Lincoln
+            <p>But seriously, over 33% of people hit on bikes in Lincoln
               are <i>children</i>.</p>
 
             <p>We only have age data for cyclists injured since 2011,
-              but given that 88.3% of cyclists in collisions are injured,
+              but given that 91.1% of cyclists in collisions are injured,
               it's still a pretty broad sample.</p>
           </div>
         </div>
@@ -488,15 +509,7 @@
 
           <div class="left">
             <p>Men are apparently over-represented, but this again
-              might just be a graph of ridership numbers. These line
-              up with national figures on ridership; People For Bikes
-              reports that
-              <a href="http://www.peopleforbikes.org/statistics/category/participation-statistics">about
-              24% of bike trips nationally are taken by women</a>
-              (based on a 2009 study). Compared to other small cities,
-              though, if this <i>is</i> a chart of ridership numbers,
-              Lincoln seems to have a fairly high number of women
-              riding.</p>
+              might just be a graph of ridership numbers.</p>
 
             <p>This uses LPD's reporting of the gender of injured
               cyclists; the gender of uninjured cyclists is not
@@ -584,22 +597,22 @@
         <div class="section-b">
           <h3>Hit-and-runs</h3>
 
-
+          
 
           <div class="ct-chart ct-major-seventh left"
                id="hit-and-run-pie-chart"></div>
 
           <div class="right">
-            <p>Of the 701 collisions,
-              106 (15.1%) were categorized as
-              hit-and-runs by LPD. In 7 cases, either both the
+            <p>Of the 756 collisions,
+              119 (15.7%) were categorized as
+              hit-and-runs by LPD. In 9 cases, either both the
               driver and cyclist left the scene, or it couldn't be
               easily determined who left the scene. In the remaining
-              99 cases, the driver fled the scene the vast
-              majority of times -- 85
-              times, or 85.9% of remaining cases.</p>
+              110 cases, the driver fled the scene the vast
+              majority of times -- 94
+              times, or 85.5% of remaining cases.</p>
 
-            <p>Overall, in 12.1% of <i>all</i> bike-car
+            <p>Overall, in 12.4% of <i>all</i> bike-car
               collisions the driver fled the scene. If you are hit,
               make sure to immediately get license plate numbers!</p>
 
@@ -742,15 +755,6 @@
             blocked. I guess you should leave the Oakleys at home and
             wear your X-ray glasses.</p>
 
-          <p>Some officers may not really have a good understanding of
-          right of way at all; in <a href="http://cjis.lincoln.ne.gov/~ACC/B703/B7033773.PDF"
-          class="reference external">one case</a>, a motorist was
-          cited for running a stop sign and hitting a child on a bike,
-          but the <i>cyclist</i> was "educated/lectured about yielding
-          right of way," which is apparently something that all
-          cyclists owe all drivers regardless of the actual rules of
-          the road.</p>
-
           <p>Perhaps ironically, in <a href="http://cjis.lincoln.ne.gov/~ACC/B405/B4055506.PDF" class="reference external">one
             case</a> a cyclist who had dismounted to walk his bike
             across the intersection was hit while on foot.</p>
@@ -763,20 +767,16 @@
 
           <p>In some cases, the accident report
             <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3046597.PDF" class="reference external">mentions</a> that the cyclist
-            <a href="http://cjis.lincoln.ne.gov/~ACC/B403/B4032910.PDF"
-            class="reference external">was not wearing</a>
-            a <a href="http://cjis.lincoln.ne.gov/~ACC/B702/B7025699.PDF">helmet</a>,
+            <a href="http://cjis.lincoln.ne.gov/~ACC/B403/B4032910.PDF" class="reference external">was not wearing a helmet</a>,
             despite the fact that this has absolutely no legal
             bearing, nor does it have any bearing on whether or not a
             cyclist is hit. It's hard to see this as anything other
             than editorial victim-blaming. In another case the fact
-            that cyclists
-            *were* <a href="http://cjis.lincoln.ne.gov/~ACC/B510/B5102671.PDF"
-            class="reference external">wearing helmets and reflective
-            clothing</a> is mentioned; although the reflective
-            clothing has a clear bearing on their visibility, helmet
-            use again seems to be mentioned simply as part of a false
-            correlation with "proper" cycling.</p>
+            that cyclists *were* <a href="http://cjis.lincoln.ne.gov/~ACC/B510/B5102671.PDF" class="reference external">wearing
+            helmets and reflective clothing</a> is mentioned; although
+            the reflective clothing has a clear bearing on their
+            visibility, helmet use again seems to be mentioned simply
+            as part of a false correlation with "proper" cycling.</p>
 
           <p>A <a href="http://cjis.lincoln.ne.gov/~ACC/B304/B3049103.PDF" class="reference external">number</a> of accident
             reports reverse the agents, claiming that
