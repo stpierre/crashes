@@ -1,7 +1,7 @@
 beautifulsoup4==4.6.0
 lxml==4.0.0
 requests==2.21.0
--e git+https://github.com/euske/pdfminer.git@8150458718e9024c80b00e74965510b20206e588#egg=pdfminer
+pdfminer.six==20181108
 six==1.10.0
 termcolor==1.1.0
 jinja2==2.10.1

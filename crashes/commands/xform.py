@@ -63,6 +63,10 @@ def auto_percent_with_abs(total):
     return lambda p: "%d (%0.1f%%)" % (round(total * p / 100), p)
 
 
+def get_crash_time(report):
+    return report.get('time', report.get('accident_time'))
+
+
 class Xform(base.Command):
     """Produce nicely transformed data for graphs."""
 
@@ -105,9 +109,20 @@ class Xform(base.Command):
 
     @staticmethod
     def _get_age(report):
-        """Get the age of the cyclist in years for the given collision."""
-        if report["date"] and report["dob"]:
-            diff = report["date"] - report["dob"]
+        """Get the age of the cyclist in years for the given collision.
+
+        Frequently data about the cyclist is not recorded, but they're
+        usually the first (and only) injury. There are a few isolated
+        reports in which the cyclist is listed as a 'driver,' and I
+        suppose it's possible for the cyclist to not be the first
+        injured party in a report, so this isn't perfect, but it's
+        close enough."""
+        if report["date"] and report.get("injury1_dob"):
+            if not hasattr(report["injury1_dob"], "day"):
+                LOG.warn("Unknown date format in %s: %s", report["case_no"],
+                         report["injury1_dob"])
+                return None
+            diff = report["date"] - report["injury1_dob"]
             return diff.days / 365.25
         else:
             return None
@@ -151,8 +166,8 @@ class Xform(base.Command):
 
         traffic_raw_counts = collections.defaultdict(int)
         traffic_num_readings = collections.defaultdict(int)
-        first_traffic_reading = min(t["date"]
-                                    for t in self._get_bike_traffic())
+        first_traffic_reading = min(
+            t["date"] for t in self._get_bike_traffic())
         last_traffic_reading = max(t["date"] for t in self._get_bike_traffic())
 
         for record in self._get_bike_traffic():
@@ -283,14 +298,15 @@ class Xform(base.Command):
         average_data["labels"] = rate_labels
 
         self._save_data("monthly_average.json", average_data)
-        self._save_data("monthly_rates.json", {
-            "labels":
-            rate_labels,
-            "series": [
-                monthly_rate, [], monthly_traffic_counts, [],
-                monthly_collision_rate
-            ]
-        })
+        self._save_data(
+            "monthly_rates.json", {
+                "labels":
+                rate_labels,
+                "series": [
+                    monthly_rate, [], monthly_traffic_counts, [],
+                    monthly_collision_rate
+                ]
+            })
 
         self._template_data["mrir_correlation"] = numpy.corrcoef(
             monthly_traffic_counts, monthly_rate)[1][0]
@@ -304,8 +320,8 @@ class Xform(base.Command):
                         (len(yearly_counts) - 1))
         predicted = (yearly_counts[cur_year] / expected) * avg_per_year
         self._template_data["yearly_mean"] = avg_per_year
-        self._template_data["yearly_median"] = (
-            sorted(yearly_counts.values())[len(yearly_counts) / 2])
+        self._template_data["yearly_median"] = (sorted(
+            yearly_counts.values())[len(yearly_counts) / 2])
 
         years = sorted(yearly_counts.keys())
         yearly_data = {
@@ -324,8 +340,8 @@ class Xform(base.Command):
         projected = [0] * len(years)
         projected[-1] = predicted
         yearly_data["series"].append(projected)
-        yearly_data["labels"][-1] = "%s (projected)" % (
-            yearly_data["labels"][-1], )
+        yearly_data["labels"][
+            -1] = "%s (projected)" % (yearly_data["labels"][-1], )
         tooltip = yearly_data["tooltips"][0][-1].splitlines()
         tooltip[0] = "%s (actual)" % (tooltip[0])
         tooltip.insert(1, "%d (projected)" % (projected[-1]))
@@ -394,9 +410,10 @@ class Xform(base.Command):
         # the fill-opacity to 1 and it looks stacked, rather than
         # having the big (100%) line blot everything else out.
         series.reverse()
-        self._save_data("location_by_age.json",
-                        {"labels": labels,
-                         "series": series})
+        self._save_data("location_by_age.json", {
+            "labels": labels,
+            "series": series
+        })
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())
@@ -422,10 +439,10 @@ class Xform(base.Command):
 
         times = [0] * 24
         for report in self._get_relevant_crashes():
-            if report["time"] is None:
+            crash_time = get_crash_time(report)
+            if crash_time is None:
                 continue
-            times[report["time"].hour] += 1 / self._template_data[
-                'report_years']
+            times[crash_time.hour] += 1 / self._template_data['report_years']
 
         rates = []
         labels = []
@@ -433,8 +450,8 @@ class Xform(base.Command):
         for i in range(24):
             end = i + 1 if i < 23 else 0
             labels.append("%d:00 - %d:00" % (i, end))
-            traffic_counts[i] = traffic_raw_counts[i] / (
-                traffic_num_readings[i] / 4.0)
+            traffic_counts[
+                i] = traffic_raw_counts[i] / (traffic_num_readings[i] / 4.0)
             rates.append(float(times[i]) / traffic_counts[i])
 
         self._save_data("hourly.json", {
@@ -507,8 +524,8 @@ class Xform(base.Command):
         total = sum(severities.values())
         data = {"labels": [], "series": []}
         for key, val in severities.items():
-            data["labels"].append("%s: %d (%0.1f%%)" %
-                                  (key, val, float(val) / total * 100))
+            data["labels"].append(
+                "%s: %d (%0.1f%%)" % (key, val, float(val) / total * 100))
             data["series"].append(val)
         self._save_data("injury_severities.json", data)
 
@@ -535,9 +552,9 @@ class Xform(base.Command):
             if region == "Unknown" or float(count) / total < 0.04:
                 other += count
             else:
-                data["labels"].append("%s: %d (%0.1f%%)" %
-                                      (region, count,
-                                       float(count) / total * 100))
+                data["labels"].append(
+                    "%s: %d (%0.1f%%)" % (region, count,
+                                          float(count) / total * 100))
                 data["series"].append(count)
         if other:
             data["labels"].append("Other/Unknown: %d (%0.1f%%)" %
@@ -558,9 +575,9 @@ class Xform(base.Command):
         data = {"labels": [], "series": []}
         for name, num_cases in reversed(
                 sorted(statuses.items(), key=operator.itemgetter(1))):
-            data["labels"].append("%s: %d (%0.1f%%)" %
-                                  (name.title(), num_cases,
-                                   float(num_cases) / total * 100))
+            data["labels"].append(
+                "%s: %d (%0.1f%%)" % (name.title(), num_cases,
+                                      float(num_cases) / total * 100))
             data["series"].append(num_cases)
         self._save_data("proportions.json", data)
 
@@ -576,8 +593,8 @@ class Xform(base.Command):
         data = {"labels": [], "series": []}
 
         def _record(label, count):
-            data["labels"].append("%s: %s (%0.1f%%)" % (label, count,
-                                                        100.0 * count / total))
+            data["labels"].append(
+                "%s: %s (%0.1f%%)" % (label, count, 100.0 * count / total))
             data["series"].append(count)
 
         _record("Male", by_gender["M"])
@@ -649,12 +666,12 @@ class Xform(base.Command):
         by_month = {}
 
         for report in self._get_relevant_crashes():
-            if report["date"] and report["time"]:
+            report_time = get_crash_time(report)
+            if report["date"] and report_time:
                 crashtime = datetime.datetime(
                     report["date"].year, report["date"].month,
-                    report["date"].month, report["time"].hour,
-                    report["time"].minute, report["time"].second).replace(
-                        tzinfo=self.tz)
+                    report["date"].month, report_time.hour, report_time.minute,
+                    report_time.second).replace(tzinfo=self.tz)
             else:
                 continue
 
@@ -676,11 +693,11 @@ class Xform(base.Command):
             "series": []
         }
         for phase in self.daylight_phases:
-            pie_data["labels"].append("%s: %d" % (phase.title(),
-                                                  totals[phase]))
+            pie_data["labels"].append(
+                "%s: %d" % (phase.title(), totals[phase]))
             pie_data["series"].append(totals[phase])
-            pie_data["tooltips"].append("%0.1f%% of total" %
-                                        (100 * float(totals[phase]) / total))
+            pie_data["tooltips"].append(
+                "%0.1f%% of total" % (100 * float(totals[phase]) / total))
 
             line_data["series"].append([[] for m in range(12)])
             for month in range(12):
@@ -688,10 +705,9 @@ class Xform(base.Command):
                 line_data["series"][-1][month] = 100 * float(
                     by_month[month + 1].get(phase, 0)) / month_total
 
-        line_data["series"].append(
-            [(100 * operator.sub(*reversed(
-                self.city.daylight(date=datetime.date(2017, m, 1)))).seconds /
-              60.0 / 60 / 24) for m in range(1, 13)])
+        line_data["series"].append([(100 * operator.sub(*reversed(
+            self.city.daylight(date=datetime.date(2017, m, 1)))).seconds / 60.0
+                                     / 60 / 24) for m in range(1, 13)])
         self._save_data("daylight_totals.json", pie_data)
         self._save_data("daylight_by_month.json", line_data)
 
@@ -720,8 +736,8 @@ class Xform(base.Command):
         traffic_rates = {}
         collision_rates = {}
         for phase, traffic in traffic_by_phase.items():
-            traffic_rates[phase] = (
-                float(traffic) / phase_duration[phase]) * 60 * 60
+            traffic_rates[
+                phase] = (float(traffic) / phase_duration[phase]) * 60 * 60
             collision_rates[phase] = (
                 float(totals[phase]) / traffic_rates[phase])
             self._template_data["%s_collision_rate" % phase] = (
@@ -778,8 +794,9 @@ class Xform(base.Command):
         self._template_data["bike_reports"] = bike_report_count
         self._template_data["post_2011_reports"] = post_2011_reports
 
-        self._template_data["bike_pct"] = (100.0 * self._template_data[
-            "bike_reports"] / self._template_data["post_2011_reports"])
+        self._template_data["bike_pct"] = (
+            100.0 * self._template_data["bike_reports"] /
+            self._template_data["post_2011_reports"])
 
         status_counts = collections.defaultdict(int)
         for report in db.collisions:
