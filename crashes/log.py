@@ -3,25 +3,26 @@
 import logging
 
 
-def setup_logging(verbose, prefix=None, deconfigure=True, logger=None):
+def setup_logging(verbose):
     """Configure logging according to the verbosity level."""
-    logger = logger or logging.root
-    if deconfigure:
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
+    if verbose > 2:
+        # for high verbosity levels, configure the root logger to get stupid
+        # amounts of logging from third-party modules
+        logger = logging.getLogger()
+    else:
+        logger = logging.getLogger('crashes')
+
     stderr = logging.StreamHandler()
     level = logging.WARNING
-    format_elements = []
-    if prefix:
-        format_elements.insert(0, prefix)
+    format_elements = ["%(levelname)s"]
     requests_level = logging.WARN
     if verbose == 1:
         level = logging.INFO
+        format_elements.append("%(name)s")
     elif verbose > 1:
         level = logging.DEBUG
         requests_level = logging.INFO
-        format_elements.insert(0, "(%(threadName)s)")
-        format_elements.insert(0, "%(levelname)s")
+        format_elements.append("(%(threadName)s)")
         if verbose > 2:
             requests_level = logging.DEBUG
             format_elements.insert(0, "%(asctime)s")
