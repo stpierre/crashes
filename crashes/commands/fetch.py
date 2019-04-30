@@ -123,6 +123,9 @@ class Fetch(base.Command):
         page_data = bs4.BeautifulSoup(response.text, self.bs4_parser)
         crash_table = page_data.find('table', attrs={'border': 1})
 
+        if not crash_table:
+            raise Exception("No crash table found for %s" % date.isoformat())
+
         ticket_url = crash_table.form["action"]
         ticket_token = crash_table.input["value"]
 
