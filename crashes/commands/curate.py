@@ -180,7 +180,9 @@ class LocationCuration(CurationStep):
             return 'C'
         elif loc in ('Driveway access crosswalk', 'Sidewalk'):
             return 'S'
-        elif loc in ('In roadway', 'Shoulder'):
+        elif loc == 'In roadway':
+            return 'I'
+        elif loc == 'Shoulder':
             return 'R'
         elif loc == 'Shared-use path or trail':
             return 'B'
@@ -231,8 +233,10 @@ class DOTCoding(CurationStep):
 
     def get_default(self, report):
         loc = report.get('road_location')
-        if loc == 'sidewalk':
+        if loc in ('sidewalk', 'bike trail'):
             return '322'
+        if loc == 'unknown':
+            return '980'
         return None
 
     def curate_case(self, report):
