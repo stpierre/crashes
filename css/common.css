@@ -72,6 +72,18 @@ div.legend {
     background: #59922b;
     color: #fff;
 }
+.legend .ct-series-g {
+    background: #0544d3;
+    color: #fff;
+}
+.legend .ct-series-h {
+    background: #6b0392;
+    color: #fff;
+}
+.legend .ct-series-i {
+  background: #f05b4f;
+  color: #fff;
+}
 
 .has-legend {
     width: 80%;

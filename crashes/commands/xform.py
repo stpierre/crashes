@@ -427,9 +427,11 @@ class Xform(base.Command):
         # the fill-opacity to 1 and it looks stacked, rather than
         # having the big (100%) line blot everything else out.
         series.reverse()
-        self._save_data("location_by_age.json",
-                        {"labels": labels,
-                         "series": series})
+        self._save_data("location_by_age.json", {
+            "labels": labels,
+            "series": series,
+            "tooltips": tooltips,
+        })
 
         ages_data = {"labels": [], "series": [[]], "tooltips": [[]]}
         total = sum(total_by_age.values())
@@ -865,16 +867,16 @@ class Xform(base.Command):
     def __call__(self):
         self._pre_xform_template_data()
 
-        self._xform_proportions()
-        self._xform_injury_severities()
-        self._xform_injury_severities_by_location()
-        self._xform_injury_regions()
-        self._xform_timings()
-        self._xform_collision_times()
+        # self._xform_proportions()
+        # self._xform_injury_severities()
+        # self._xform_injury_severities_by_location()
+        # self._xform_injury_regions()
+        # self._xform_timings()
+        # self._xform_collision_times()
         self._xform_ages()
-        self._xform_genders()
-        self._xform_hit_and_runs()
-        self._xform_daylight()
+        # self._xform_genders()
+        # self._xform_hit_and_runs()
+        # self._xform_daylight()
 
         self._post_xform_template_data()
 
