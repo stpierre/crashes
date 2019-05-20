@@ -867,16 +867,16 @@ class Xform(base.Command):
     def __call__(self):
         self._pre_xform_template_data()
 
-        # self._xform_proportions()
-        # self._xform_injury_severities()
-        # self._xform_injury_severities_by_location()
-        # self._xform_injury_regions()
-        # self._xform_timings()
-        # self._xform_collision_times()
+        self._xform_proportions()
+        self._xform_injury_severities()
+        self._xform_injury_severities_by_location()
+        self._xform_injury_regions()
+        self._xform_timings()
+        self._xform_collision_times()
         self._xform_ages()
-        # self._xform_genders()
-        # self._xform_hit_and_runs()
-        # self._xform_daylight()
+        self._xform_genders()
+        self._xform_hit_and_runs()
+        self._xform_daylight()
 
         self._post_xform_template_data()
 
