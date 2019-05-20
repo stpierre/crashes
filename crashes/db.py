@@ -208,7 +208,8 @@ class Database(collections.MutableSequence):
             if not force and suffix not in self._needs_write:
                 LOG.debug("Shard %s has no new data, skipping write", suffix)
                 continue
-            self._needs_write.remove(suffix)
+            if suffix in self._needs_write:
+                self._needs_write.remove(suffix)
 
             write_success = False
             while not write_success:

@@ -53,8 +53,9 @@ def save_categorized_geojson(reports, geocoding_dir):
         all_collisions["features"].append(report["geojson"])
     for loc, data in by_loc.items():
         if loc is None:
-            LOG.warning('Not saving categorized data for %s items '
-                        'with no known road location', len(data))
+            LOG.warning(
+                'Not saving categorized data for %s items '
+                'with no known road location', len(data))
         else:
             fpath = os.path.join(geocoding_dir,
                                  "%s.json" % loc.replace(" ", "_"))
@@ -80,8 +81,8 @@ class Geocode(base.Command):
     quit = object()
 
     def _random_jitter(self):
-        val = (random.random() *
-               (self.jitter_max - self.jitter_min) + self.jitter_min)
+        val = (random.random() * (self.jitter_max - self.jitter_min) +
+               self.jitter_min)
         if random.choice((True, False)):
             val *= -1
         return val
@@ -137,11 +138,9 @@ class Geocode(base.Command):
             # * Gets confused if there's no space between the
             #   direction and street number, e.g., 'S40th' instead of
             #   'S 40th'.
-            retval = self.no_space_re.sub(r'\1 \2',
-                                          self.o_re.sub(
-                                              'East O',
-                                              self.quote_re.sub(
-                                                  r'\1 ', retval)))
+            retval = self.no_space_re.sub(
+                r'\1 \2',
+                self.o_re.sub('East O', self.quote_re.sub(r'\1 ', retval)))
 
             LOG.debug("Transformed address from %s to %s", location, retval)
             return retval, True
@@ -157,14 +156,15 @@ class Geocode(base.Command):
     def _get_coordinates(self, report):
         retval = None
         ans = None
+        street_location = report.get("street_location", "")
+        default, usable = self._parse_location(street_location)
         while True:
-            default, usable = self._parse_location(report["street_location"])
             if retval or not usable:
                 # either the default location isn't immediately
                 # searchable; or this is our second time through the
                 # loop, so we have to prompt for user interactionn
                 print("Original: %s" % termcolor.colored(
-                    report["street_location"], "green"))
+                    street_location, "green"))
                 print("Default: %s" % termcolor.colored(default, "green"))
                 ans = input("Enter to %s, 's' to skip, or enter address: " %
                             ("accept" if retval else "search"))
@@ -175,12 +175,14 @@ class Geocode(base.Command):
                 if retval and not ans:
                     return retval
             else:
-                LOG.debug("Transformed address %s is immediately usable in "
-                          "search", default)
+                LOG.debug(
+                    "Transformed address %s is immediately usable in "
+                    "search", default)
             address = (ans or default) + ", Lincoln, NE"
             loc = geocoder.google(address)
             if not loc.ok:
                 LOG.error("Error finding %s: %s", address, loc.status)
+                usable = False
             else:
                 retval = cleanup_geojson(loc.geojson, report["case_no"])
                 print("Address: %s" % termcolor.colored(
@@ -203,10 +205,11 @@ class Geocode(base.Command):
             if (report.get("road_location") not in (None, "not involved")
                     and not report.get("skip_geojson")
                     and report.get("geojson") is None):
-                print(termcolor.colored(
-                    "%-10s %50s" % (report["case_no"], report["date"]),
-                    'red',
-                    attrs=['bold']))
+                print(
+                    termcolor.colored(
+                        "%-10s %50s" % (report["case_no"], report["date"]),
+                        'red',
+                        attrs=['bold']))
                 print(textwrap.fill(report["report"]))
                 geojson = self._get_coordinates(report)
                 if geojson is None:
@@ -233,9 +236,10 @@ class Geocode(base.Command):
         for report in db.collisions:
             if report.get("geojson"):
                 geocoded.append(report)
-                key = (round(
-                    report["geojson"]['geometry']['coordinates'][0], 6), round(
-                        report["geojson"]['geometry']['coordinates'][1], 6))
+                key = (round(report["geojson"]['geometry']['coordinates'][0],
+                             6),
+                       round(report["geojson"]['geometry']['coordinates'][1],
+                             6))
                 duplicates.setdefault(key, []).append(report)
 
         for reports in duplicates.values():
