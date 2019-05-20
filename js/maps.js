@@ -37,6 +37,16 @@ function init_collision_map() {
     layers['bike_lane'].setStyle({icon: markers + "L/990000/"})
     layers['bike_lane'].setMap(all_map)
 
+    layers['bike_lane'] = new google.maps.Data()
+    layers['bike_lane'].loadGeoJson(datadir + "bike_trail_crossing.json");
+    layers['bike_lane'].setStyle({icon: markers + "T/6600FF/"})
+    layers['bike_lane'].setMap(all_map)
+
+    layers['bike_lane'] = new google.maps.Data()
+    layers['bike_lane'].loadGeoJson(datadir + "bike_trail.json");
+    layers['bike_lane'].setStyle({icon: markers + "B/00FF66/"})
+    layers['bike_lane'].setMap(all_map)
+
     layers['elsewhere'] = new google.maps.Data()
     layers['elsewhere'].loadGeoJson(datadir + "elsewhere.json");
     layers['elsewhere'].setStyle({icon: markers + "E/CC33FF"})

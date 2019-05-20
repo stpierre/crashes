@@ -45,7 +45,7 @@
       <article>
         <footer class="post-info">
           <abbr class="published">
-            Last updated: 2019-05-20 13:46 
+            Last updated: 2019-05-20 14:51 
           </abbr>
 
           <address class="vcard author">By Chris St. Pierre</address>
@@ -199,12 +199,15 @@
 
             <!-- TODO: autogenerate this legend -->
             <div class="legend" id="location-by-age-legend">
-              <div class="ct-series-a">Road</div>
-              <div class="ct-series-b">Crosswalk</div>
-              <div class="ct-series-c">Intersection</div>
-              <div class="ct-series-d">Sidewalk</div>
-              <div class="ct-series-e">Bike lane</div>
-              <div class="ct-series-f">Elsewhere</div>
+              <div class="ct-series-a">?</div>
+              <div class="ct-series-b">?</div>
+              <div class="ct-series-c">?</div>
+              <div class="ct-series-d">?</div>
+              <div class="ct-series-e">?</div>
+              <div class="ct-series-f">?</div>
+              <div class="ct-series-g">?</div>
+              <div class="ct-series-h">Crosswalk</div>
+              <div class="ct-series-i">?</div>
             </div>
           </div>
 
@@ -244,10 +247,10 @@
               a bike traffic counter installed on the Rock Island
               Trail since July 2014, and it provides our best
               estimates of how many people are out riding at any given
-              time. So it's a slightly arbitrary number, we expect
-              that the number of riders on the Rock Island Trail
-              roughly mirrors the total number of riders in Lincoln
-              during each month.</p>
+              time. So while it's a slightly arbitrary number, we
+              expect that the number of riders on the Rock Island
+              Trail roughly mirrors the total number of riders in
+              Lincoln during each month.</p>
 
             <p>Combining the MRIR with the average number of
               collisions per month we can see a reasonable estimate of
@@ -298,17 +301,15 @@
           <h3>Collisions per year</h3>
 
           <div class="left">
-            <p>The decrease from 2012 to 2013 is real, and very good
-              news -- it's a <i>huge</i> drop. Since then things have
-              been mostly flat, with the exception of a small decrease
-              in 2015. Unfortunately it looks like 2012 was just an
-              exceedingly dangerous year, and we're on a very slow
-              upward trend in general.</p>
-
-            <p>We only have bike traffic count data from 2014 onward,
-              so it's too soon to tell if that upward trend is due to
-              increased ridership, or to other factors, or (hopefully)
-              if ridership increases outpace collision increases.</p>
+            <p>It's hard to tell how much of the fluctuation here is
+            just randomness and how much is a trend; the changes are
+            rapid and fairly small. We had been on an upward trend
+            from 2012 through 2016, but we only have bike traffic
+            count data from 2014 onward so it's hard to tell if that
+            upward trend is due to increased ridership, or to other
+            factors. There appears to be a downward trend since 2016,
+            which could be due to projects like the N street bikeway,
+            or could just be pure chance.</p>
 
             <p>Mean collisions per year is 122.40
               and median collisions is 126.</p>
@@ -323,9 +324,9 @@
           <div class="ct-chart ct-major-twelfth"
                id="monthly-line-chart"></div>
 
-          <p>January 2010, February 2015 and January 2017 are the only
-            months without a recorded collision. August 2012 is still
-            the most dangerous month in the data set.</p>
+          <p>January 2010, February 2015, January 2017, January 2019, February 2019, March 2019, April 2019, May 2019 are the only months
+            without a recorded collision. The most dangerous months in
+            the data set, with 24, are September 2008, September 2011, September 2016.</p>
         </div>
 
         <div class="section-a">
@@ -460,12 +461,12 @@
           <div class="below">
             <p>More collisions happen at night during the winter
               months, but that's probably because there's just more
-              night. The rate of daytime collisions loosely correlates
-              with the hours of daylight per day (r=0.88), but not as strongly as with
-              the number of cyclists out.</p>
+              night. The rate of daytime collisions correlates quite
+              strongly with the hours of daylight per day (r=0.88), but not as strongly
+              as with the number of cyclists out.</p>
 
             <p>In other words, lack of visibility is a factor in the
-              collision rate, but a much greater factor is the simple
+              collision rate, but a greater factor is the simple
               presence of bikes. This aligns with
               the <a href="#toc-collision-rate-by-position-of-sun">earlier
               finding</a> that riding at night is more dangerous than
@@ -499,7 +500,7 @@
               are <i>children</i>.</p>
 
             <p>We only have age data for cyclists injured since 2011,
-              but given that 70.3% of cyclists in collisions are injured,
+              but given that 93.9% of cyclists in collisions are injured,
               it's still a pretty broad sample.</p>
           </div>
         </div>
@@ -540,15 +541,15 @@
             <p>Interestingly, different locations have different
               injury rates.</p>
 
-            <p>Sidewalks have the highest injury rate, but also the
-              most non-disabling injuries. Collisions occurring on
-              the road are the least likely to lead to injuries, but
-              when they do, the injuries are more likely to be
-              disabling. Intersections also show more disabling
-              injuries. Overall, a collision while riding in the
-              street (whether in an intersection or not) is about 2%
-              less likely to result in injury, but about 12% more
-              likely to result in disabling injury.</p>
+            <p>Sidewalks have one of the highest injury rates, but
+              also the most non-disabling injuries. Collisions
+              occurring in dedicated bike infrastructure -- bike lanes
+              and trail crossings -- are the least likely to lead to
+              injuries. Collisions on the road and in intersections
+              generally show more disabling injuries. (Collisions on
+              bike trails *away from* intersections also show a lot of
+              disabling injuries, but that's due to the extremely
+              small sample size.)</p>
 
             <p>Note that these data are based entirely on accident
               reports, and so do not take into account cyclists who
@@ -558,9 +559,6 @@
             <p>Non-injury collisions are the most likely collisions to
               not be reported, so all of the injury rates are
               hopefully overestimates.</p>
-
-            <p>Bike lane collisions are so rare that the data here
-              aren't really reliable.</p>
           </div>
 
           <div class="ct-chart-container right">
@@ -700,6 +698,12 @@
           <button class="map-buttons current" map-layer="bike_lane">
             <img src="http://www.googlemapsmarkers.com/v1/L/990000/"
                  alt="Bike lane marker"> Bike Lane</button>
+          <button class="map-buttons current" map-layer="bike_trail_crossing">
+            <img src="http://www.googlemapsmarkers.com/v1/T/6600FF/"
+                 alt="Bike trail crossing marker"> Bike Trail Crossing</button>
+          <button class="map-buttons current" map-layer="bike_lane">
+            <img src="http://www.googlemapsmarkers.com/v1/B/00FF66/"
+                 alt="Bike trail marker"> Bike Trail</button>
           <button class="map-buttons current" map-layer="elsewhere">
             <img src="http://www.googlemapsmarkers.com/v1/E/CC33FF"
                  alt="Elsewhere marker"> Elsewhere</button>
